@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     admin_email: str = "admin@bakery.local"
     admin_password: str = "admin123"
     debug: bool = False
+    port: int = 8000
 
     model_config = SettingsConfigDict(env_file=".env")
 

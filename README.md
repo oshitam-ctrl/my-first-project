@@ -29,6 +29,36 @@ uvicorn app.main:app --reload
 
 ブラウザで http://localhost:8000 を開いてください。
 
+### スマホからアクセス（同じWi-Fi内）
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+PCのIPアドレスを確認して `http://<PCのIP>:8000` にアクセス。
+
+## デプロイ（スマホからどこでもアクセス）
+
+### Render（おすすめ）
+
+1. GitHubにリポジトリをpush
+2. [Render](https://render.com) でアカウント作成
+3. 「New Web Service」→ リポジトリを選択
+4. 自動で `render.yaml` が読み込まれてデプロイされる
+
+### Railway
+
+1. [Railway](https://railway.app) でアカウント作成
+2. 「New Project」→ GitHubリポジトリを選択
+3. `Procfile` が自動検出されてデプロイされる
+
+### Docker
+
+```bash
+docker build -t bakery .
+docker run -p 8000:8000 bakery
+```
+
 ### 管理者アカウント（デモ）
 
 - Email: `admin@bakery.local`
