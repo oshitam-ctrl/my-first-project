@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}在庫管理 - パン屋予約{% endblock %}
+
+{% block content %}
+<h1>在庫管理</h1>
+<p>各商品の日別在庫数を管理できます。</p>
+
+<div style="overflow-x: auto;">
+<table>
+    <thead>
+        <tr>
+            <th>商品</th>
+            {% for date in dates %}
+            <th>{{ date.strftime('%m/%d') }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in products %}
+        <tr>
+            <td><strong>{{ product.name }}</strong></td>
+            {% for date in dates %}
+            {% set inv = grid[product.id][date|string] %}
+            <td>
+                <form method="post" action="/admin/inventory" style="margin:0;display:flex;gap:0.25rem;align-items:center">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <input type="hidden" name="date" value="{{ date }}">
+                    <input type="number" name="total_quantity" min="0" style="width:70px;padding:0.25rem;margin:0"
+                           value="{{ inv.total_quantity if inv else 0 }}">
+                    <button type="submit" style="padding:0.25rem 0.5rem;margin:0" class="outline">更新</button>
+                </form>
+                {% if inv %}
+                <small>予約済: {{ inv.reserved_quantity }} / 残: {{ inv.available_quantity }}</small>
+                {% endif %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<p><a href="/admin">← 管理画面に戻る</a></p>
+{% endblock %}

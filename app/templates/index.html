@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}パン屋予約システム{% endblock %}
+
+{% block content %}
+<h1>本日のパン</h1>
+<p>お好みのパンを選んで予約しましょう！</p>
+
+<div class="product-grid">
+    {% for product in products %}
+    <article class="product-card">
+        <img src="{{ product.image_url }}" alt="{{ product.name }}">
+        <h3>{{ product.name }}</h3>
+        <p>{{ product.description }}</p>
+        <p class="price">¥{{ "%.0f"|format(product.price) }}</p>
+        {% if user %}
+            <a href="/reservations/new?product_id={{ product.id }}" role="button">予約する</a>
+        {% else %}
+            <a href="/auth/login" role="button" class="outline">ログインして予約</a>
+        {% endif %}
+    </article>
+    {% endfor %}
+</div>
+
+{% if not products %}
+<p>現在、商品がありません。</p>
+{% endif %}
+{% endblock %}

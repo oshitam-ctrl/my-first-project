@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}管理画面 - パン屋予約{% endblock %}
+
+{% block content %}
+<h1>管理画面</h1>
+
+<nav>
+    <a href="/admin/products" role="button" class="outline">商品管理</a>
+    <a href="/admin/reservations" role="button" class="outline">予約一覧</a>
+    <a href="/admin/inventory" role="button" class="outline">在庫管理</a>
+</nav>
+
+<div class="stats-grid">
+    <article class="stat-card">
+        <div class="number">{{ total_users }}</div>
+        <div>登録ユーザー数</div>
+    </article>
+    <article class="stat-card">
+        <div class="number">{{ today_reservations }}</div>
+        <div>本日の予約数</div>
+    </article>
+    <article class="stat-card">
+        <div class="number">¥{{ "%.0f"|format(total_revenue) }}</div>
+        <div>累計売上</div>
+    </article>
+</div>
+
+<h2>最近の予約</h2>
+{% if recent_reservations %}
+<table>
+    <thead>
+        <tr><th>#</th><th>顧客</th><th>受取日</th><th>金額</th><th>ステータス</th></tr>
+    </thead>
+    <tbody>
+        {% for r in recent_reservations %}
+        <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.user.name }}</td>
+            <td>{{ r.pickup_date }}</td>
+            <td>¥{{ "%.0f"|format(r.total_price) }}</td>
+            <td><span class="badge badge-{{ r.status }}">
+                {% if r.status == 'confirmed' %}確定{% elif r.status == 'cancelled' %}キャンセル{% else %}{{ r.status }}{% endif %}
+            </span></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>まだ予約がありません。</p>
+{% endif %}
+{% endblock %}

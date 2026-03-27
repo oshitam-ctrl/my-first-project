@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}商品管理 - パン屋予約{% endblock %}
+
+{% block content %}
+<h1>商品管理</h1>
+<a href="/admin/products/new" role="button">新規商品追加</a>
+
+<table>
+    <thead>
+        <tr><th>ID</th><th>商品名</th><th>価格</th><th>有効</th><th></th></tr>
+    </thead>
+    <tbody>
+        {% for p in products %}
+        <tr>
+            <td>{{ p.id }}</td>
+            <td>{{ p.name }}</td>
+            <td>¥{{ "%.0f"|format(p.price) }}</td>
+            <td>{{ "✓" if p.is_active else "✗" }}</td>
+            <td><a href="/admin/products/{{ p.id }}/edit">編集</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p><a href="/admin">← 管理画面に戻る</a></p>
+{% endblock %}

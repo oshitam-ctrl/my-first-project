@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}ログイン - パン屋予約{% endblock %}
+
+{% block content %}
+<article style="max-width: 450px; margin: 2rem auto;">
+    <h2>ログイン</h2>
+    <form method="post" action="/auth/login">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label for="email">メールアドレス</label>
+        <input type="email" id="email" name="email" required placeholder="例: user@example.com">
+        <label for="password">パスワード</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit">ログイン</button>
+    </form>
+    <p>アカウントをお持ちでない方は <a href="/auth/register">会員登録</a></p>
+</article>
+{% endblock %}

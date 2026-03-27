@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}予約 #{{ reservation.id }} - パン屋予約{% endblock %}
+
+{% block content %}
+<h1>予約 #{{ reservation.id }}</h1>
+
+<article>
+    <header>
+        <span class="badge badge-{{ reservation.status }}">
+            {% if reservation.status == 'confirmed' %}確定{% elif reservation.status == 'cancelled' %}キャンセル{% else %}{{ reservation.status }}{% endif %}
+        </span>
+    </header>
+
+    <table>
+        <tr><th>受取日</th><td>{{ reservation.pickup_date }}</td></tr>
+        <tr><th>受取時間</th><td>{{ reservation.pickup_time }}</td></tr>
+        <tr><th>作成日時</th><td>{{ reservation.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+    </table>
+
+    <h3>注文内容</h3>
+    <table>
+        <thead><tr><th>商品</th><th>数量</th><th>単価</th><th>小計</th></tr></thead>
+        <tbody>
+            {% for item in reservation.items %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>¥{{ "%.0f"|format(item.unit_price) }}</td>
+                <td>¥{{ "%.0f"|format(item.unit_price * item.quantity) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr><th colspan="3">合計</th><td><strong>¥{{ "%.0f"|format(reservation.total_price) }}</strong></td></tr>
+        </tfoot>
+    </table>
+
+    {% if reservation.status == 'confirmed' %}
+    <form method="post" action="/reservations/{{ reservation.id }}/cancel">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="secondary">予約をキャンセル</button>
+    </form>
+    {% endif %}
+</article>
+
+<p><a href="/reservations">← 予約一覧に戻る</a></p>
+{% endblock %}
