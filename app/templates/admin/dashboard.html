@@ -1,35 +1,37 @@
 {% extends "base.html" %}
-{% block title %}管理画面 - パン屋予約{% endblock %}
+{% block title %}管理画面｜プチヘルメース{% endblock %}
 
 {% block content %}
-<h1>管理画面</h1>
+<div class="section-header">
+    <h2>管理画面</h2>
+</div>
 
-<nav>
-    <a href="/admin/products" role="button" class="outline">商品管理</a>
-    <a href="/admin/reservations" role="button" class="outline">予約一覧</a>
-    <a href="/admin/inventory" role="button" class="outline">在庫管理</a>
+<nav style="text-align:center;margin-bottom:2rem;">
+    <a href="/admin/products" class="reserve-btn" style="margin:0.25rem;">商品管理</a>
+    <a href="/admin/reservations" class="reserve-btn" style="margin:0.25rem;">予約一覧</a>
+    <a href="/admin/inventory" class="reserve-btn" style="margin:0.25rem;">在庫管理</a>
 </nav>
 
 <div class="stats-grid">
     <article class="stat-card">
         <div class="number">{{ total_users }}</div>
-        <div>登録ユーザー数</div>
+        <div class="label">登録ユーザー</div>
     </article>
     <article class="stat-card">
         <div class="number">{{ today_reservations }}</div>
-        <div>本日の予約数</div>
+        <div class="label">本日の予約</div>
     </article>
     <article class="stat-card">
         <div class="number">¥{{ "%.0f"|format(total_revenue) }}</div>
-        <div>累計売上</div>
+        <div class="label">累計売上</div>
     </article>
 </div>
 
-<h2>最近の予約</h2>
+<h3 style="margin-top:2rem;">最近の予約</h3>
 {% if recent_reservations %}
 <table>
     <thead>
-        <tr><th>#</th><th>顧客</th><th>受取日</th><th>金額</th><th>ステータス</th></tr>
+        <tr><th>#</th><th>お客様</th><th>受取日</th><th>金額</th><th>状態</th></tr>
     </thead>
     <tbody>
         {% for r in recent_reservations %}
@@ -46,6 +48,6 @@
     </tbody>
 </table>
 {% else %}
-<p>まだ予約がありません。</p>
+<p style="color:#7A6B5D;">まだ予約がありません。</p>
 {% endif %}
 {% endblock %}

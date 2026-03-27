@@ -1,0 +1,24 @@
+<svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+  <rect fill="#F5EDE0" width="400" height="280"/>
+  <!-- Cloth texture -->
+  <rect fill="#EDE5D5" x="20" y="180" width="360" height="80" rx="4"/>
+  <line stroke="#E0D5C0" x1="30" y1="190" x2="370" y2="190" stroke-width="0.5"/>
+  <line stroke="#E0D5C0" x1="30" y1="200" x2="370" y2="200" stroke-width="0.5"/>
+  <line stroke="#E0D5C0" x1="30" y1="210" x2="370" y2="210" stroke-width="0.5"/>
+  <!-- Bread body -->
+  <ellipse fill="#C8965A" cx="200" cy="160" rx="120" ry="70"/>
+  <ellipse fill="#D4A66A" cx="200" cy="155" rx="115" ry="65"/>
+  <!-- Score marks -->
+  <path d="M140 130 Q170 120 200 130 Q230 140 260 130" fill="none" stroke="#B8864A" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M150 155 Q180 145 210 155 Q240 165 270 155" fill="none" stroke="#B8864A" stroke-width="2" stroke-linecap="round"/>
+  <!-- Flour dusting -->
+  <circle fill="#F5EDE0" cx="160" cy="125" r="3" opacity="0.6"/>
+  <circle fill="#F5EDE0" cx="180" cy="135" r="2" opacity="0.5"/>
+  <circle fill="#F5EDE0" cx="220" cy="128" r="2.5" opacity="0.5"/>
+  <circle fill="#F5EDE0" cx="240" cy="140" r="2" opacity="0.4"/>
+  <circle fill="#F5EDE0" cx="195" cy="148" r="3" opacity="0.5"/>
+  <!-- Wheat decoration -->
+  <ellipse fill="#D4B896" cx="60" cy="230" rx="5" ry="10" transform="rotate(-20 60 230)"/>
+  <ellipse fill="#D4B896" cx="68" cy="224" rx="5" ry="10" transform="rotate(-10 68 224)"/>
+  <line stroke="#8B6B4A" x1="55" y1="238" x2="50" y2="260" stroke-width="1.5"/>
+</svg>

@@ -1,0 +1,37 @@
+<svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+  <rect fill="#F5EDE0" width="400" height="280"/>
+  <!-- Baking paper -->
+  <rect fill="#F0E8D8" x="50" y="100" width="300" height="160" rx="4"/>
+  <!-- Focaccia base -->
+  <rect fill="#D4A66A" x="70" y="110" width="260" height="140" rx="12"/>
+  <rect fill="#DEBC82" x="75" y="115" width="250" height="130" rx="10"/>
+  <!-- Olive oil pools -->
+  <circle fill="#C8B060" cx="120" cy="155" r="8" opacity="0.4"/>
+  <circle fill="#C8B060" cx="250" cy="175" r="7" opacity="0.3"/>
+  <circle fill="#C8B060" cx="180" cy="200" r="6" opacity="0.35"/>
+  <!-- Dimples -->
+  <circle fill="#D0A860" cx="130" cy="150" r="4" opacity="0.5"/>
+  <circle fill="#D0A860" cx="200" cy="140" r="4" opacity="0.5"/>
+  <circle fill="#D0A860" cx="270" cy="155" r="4" opacity="0.5"/>
+  <circle fill="#D0A860" cx="160" cy="190" r="4" opacity="0.5"/>
+  <circle fill="#D0A860" cx="240" cy="200" r="4" opacity="0.5"/>
+  <!-- Vegetables: tomato -->
+  <circle fill="#D94040" cx="140" cy="165" r="10"/>
+  <circle fill="#E85050" cx="140" cy="163" r="8"/>
+  <line stroke="#C03030" x1="135" y1="163" x2="145" y2="163" stroke-width="0.5"/>
+  <!-- Vegetables: zucchini slices -->
+  <circle fill="#7A8450" cx="220" cy="160" r="9"/>
+  <circle fill="#9CAF70" cx="220" cy="160" r="6"/>
+  <circle fill="#B8C888" cx="220" cy="160" r="3"/>
+  <!-- Vegetables: onion -->
+  <circle fill="#E8D0E0" cx="280" cy="185" r="8" opacity="0.8"/>
+  <circle fill="none" stroke="#D0B8C8" cx="280" cy="185" r="5" stroke-width="0.5"/>
+  <!-- Rosemary -->
+  <line stroke="#5A7040" x1="160" y1="210" x2="200" y2="195" stroke-width="1.5"/>
+  <ellipse fill="#7A9050" cx="170" cy="207" rx="4" ry="2" transform="rotate(-15 170 207)"/>
+  <ellipse fill="#7A9050" cx="178" cy="204" rx="4" ry="2" transform="rotate(-15 178 204)"/>
+  <ellipse fill="#7A9050" cx="186" cy="201" rx="4" ry="2" transform="rotate(-15 186 201)"/>
+  <ellipse fill="#7A9050" cx="194" cy="198" rx="4" ry="2" transform="rotate(-15 194 198)"/>
+  <!-- Olive oil drizzle -->
+  <path d="M100 135 Q110 130 115 140" fill="none" stroke="#C8A840" stroke-width="1" opacity="0.5"/>
+</svg>

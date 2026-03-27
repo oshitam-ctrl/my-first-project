@@ -1,8 +1,10 @@
 {% extends "base.html" %}
-{% block title %}予約一覧 - パン屋予約{% endblock %}
+{% block title %}予約一覧｜プチヘルメース{% endblock %}
 
 {% block content %}
-<h1>予約一覧</h1>
+<div class="section-header">
+    <h2>予約一覧</h2>
+</div>
 
 {% if reservations %}
 <table>
@@ -10,9 +12,9 @@
         <tr>
             <th>#</th>
             <th>受取日</th>
-            <th>受取時間</th>
-            <th>合計金額</th>
-            <th>ステータス</th>
+            <th>時間</th>
+            <th>合計</th>
+            <th>状態</th>
             <th></th>
         </tr>
     </thead>
@@ -34,6 +36,9 @@
     </tbody>
 </table>
 {% else %}
-<p>予約はまだありません。<a href="/">商品を見る</a></p>
+<p style="text-align:center;color:#7A6B5D;margin:3rem 0;">
+    まだ予約がありません。<br>
+    <a href="/">パンを見てみる →</a>
+</p>
 {% endif %}
 {% endblock %}

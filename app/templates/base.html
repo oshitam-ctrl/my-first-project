@@ -1,51 +1,51 @@
 <!DOCTYPE html>
-<html lang="ja" data-theme="light">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}パン屋予約システム{% endblock %}</title>
+    <title>{% block title %}プチヘルメース｜毎日食べたい幸せ酵母{% endblock %}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <nav class="container-fluid">
-        <ul>
-            <li><strong><a href="/">🍞 パン屋予約</a></strong></li>
-        </ul>
-        <ul>
-            {% if user %}
-                <li><a href="/reservations">予約一覧</a></li>
-                {% if user.is_admin %}
-                    <li><a href="/admin">管理画面</a></li>
+    <nav class="site-nav">
+        <div class="container-fluid" style="display:flex;justify-content:space-between;align-items:center;">
+            <a href="/" class="brand">プチヘルメース</a>
+            <ul>
+                {% if user %}
+                    <li><a href="/reservations">予約一覧</a></li>
+                    {% if user.is_admin %}
+                        <li><a href="/admin">管理画面</a></li>
+                    {% endif %}
+                    <li>
+                        <form method="post" action="/auth/logout" style="margin:0">
+                            <button type="submit" class="nav-btn">ログアウト</button>
+                        </form>
+                    </li>
+                {% else %}
+                    <li><a href="/auth/login">ログイン</a></li>
+                    <li><a href="/auth/register" class="nav-btn">会員登録</a></li>
                 {% endif %}
-                <li>
-                    <form method="post" action="/auth/logout" style="margin:0">
-                        <button type="submit" class="outline secondary" style="margin:0;padding:0.25rem 0.75rem">ログアウト</button>
-                    </form>
-                </li>
-            {% else %}
-                <li><a href="/auth/login">ログイン</a></li>
-                <li><a href="/auth/register">会員登録</a></li>
-            {% endif %}
-        </ul>
+            </ul>
+        </div>
     </nav>
 
     <main class="container">
         {% if error %}
-        <article aria-label="error" style="background: var(--pico-del-color); color: white; padding: 0.75rem 1rem; border-radius: 4px; margin-bottom: 1rem;">
-            {{ error }}
-        </article>
+        <div class="alert alert-error">{{ error }}</div>
         {% endif %}
         {% if success %}
-        <article aria-label="success" style="background: var(--pico-ins-color); color: white; padding: 0.75rem 1rem; border-radius: 4px; margin-bottom: 1rem;">
-            {{ success }}
-        </article>
+        <div class="alert alert-success">{{ success }}</div>
         {% endif %}
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="container">
-        <small>パン屋予約システム &copy; 2026</small>
+    <footer class="site-footer">
+        <div class="container">
+            <p style="margin-bottom:0.25rem;">プチヘルメース ─ 毎日食べたい幸せ酵母</p>
+            <p style="font-size:0.8rem;">〒731-1533 広島県山県郡北広島町南方1920（旧南方小学校）</p>
+            <p style="font-size:0.8rem;">営業日：水曜・土曜</p>
+        </div>
     </footer>
 </body>
 </html>

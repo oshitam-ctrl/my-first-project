@@ -1,27 +1,107 @@
 {% extends "base.html" %}
-{% block title %}パン屋予約システム{% endblock %}
+{% block title %}プチヘルメース｜毎日食べたい幸せ酵母{% endblock %}
 
 {% block content %}
-<h1>本日のパン</h1>
-<p>お好みのパンを選んで予約しましょう！</p>
+<!-- Hero -->
+<section class="hero">
+    <h1>プチヘルメース</h1>
+    <p class="subtitle">毎日食べたい幸せ酵母</p>
+    <p class="tagline">
+        広島県北広島町の旧南方小学校から届ける、<br>
+        自家製酵母と地元素材のやさしいパン。<br>
+        今日のパンが、未来の野菜に。
+    </p>
+</section>
+
+<!-- About -->
+<section class="about-section">
+    <div class="about-image">
+        <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+            <rect fill="#F5EDE0" width="400" height="300" rx="8"/>
+            <!-- School building silhouette -->
+            <rect fill="#D4B896" x="60" y="120" width="280" height="140" rx="4"/>
+            <rect fill="#C2A67A" x="80" y="100" width="240" height="30" rx="2"/>
+            <rect fill="#B8956A" x="160" y="80" width="80" height="30" rx="2"/>
+            <!-- Windows -->
+            <rect fill="#FDF6EC" x="90" y="140" width="35" height="40" rx="3"/>
+            <rect fill="#FDF6EC" x="140" y="140" width="35" height="40" rx="3"/>
+            <rect fill="#FDF6EC" x="225" y="140" width="35" height="40" rx="3"/>
+            <rect fill="#FDF6EC" x="275" y="140" width="35" height="40" rx="3"/>
+            <!-- Door -->
+            <rect fill="#8B6B4A" x="180" y="180" width="40" height="80" rx="3"/>
+            <circle fill="#D4B896" cx="212" cy="220" r="3"/>
+            <!-- Trees -->
+            <circle fill="#9CAF88" cx="40" cy="180" r="30"/>
+            <rect fill="#8B6B4A" x="37" y="200" width="6" height="60"/>
+            <circle fill="#7A8450" cx="360" cy="170" r="35"/>
+            <rect fill="#8B6B4A" x="357" y="195" width="6" height="65"/>
+            <!-- Wheat -->
+            <ellipse fill="#D4B896" cx="340" cy="240" rx="4" ry="8"/>
+            <ellipse fill="#D4B896" cx="348" cy="235" rx="4" ry="8"/>
+            <ellipse fill="#D4B896" cx="332" cy="238" rx="4" ry="8"/>
+            <line stroke="#8B6B4A" x1="340" y1="248" x2="340" y2="270" stroke-width="1.5"/>
+            <!-- Sky elements -->
+            <circle fill="#F0E4D0" cx="320" cy="50" r="20" opacity="0.5"/>
+            <path d="M50 60 Q70 45 90 60 Q110 45 130 60" fill="none" stroke="#D4B896" stroke-width="1.5" opacity="0.4"/>
+        </svg>
+    </div>
+    <div>
+        <h2>旧校舎から届ける<br>やさしいパン</h2>
+        <p>
+            2013年に閉校した旧南方小学校。<br>
+            その教室が、パンの香り漂う工房に生まれ変わりました。
+        </p>
+        <p>
+            地元・北広島町の畑で採れた規格外の野菜や果物を<br>
+            自家製酵母のパンに活かしています。<br>
+            食べることが、地域の未来をつくる。<br>
+            そんな「おいしい循環」を目指しています。
+        </p>
+        <p style="font-size:0.85rem; color: var(--color-olive);">
+            🌿 乳製品不使用 ・ 食事パン中心 ・ コンポスタブル包装
+        </p>
+    </div>
+</section>
+
+<div class="artisan-divider">🌾</div>
+
+<!-- Products -->
+<div class="section-header">
+    <h2>本日のパン</h2>
+    <p>ひとつひとつ、手づくりで焼き上げています</p>
+</div>
 
 <div class="product-grid">
     {% for product in products %}
     <article class="product-card">
-        <img src="{{ product.image_url }}" alt="{{ product.name }}">
-        <h3>{{ product.name }}</h3>
-        <p>{{ product.description }}</p>
-        <p class="price">¥{{ "%.0f"|format(product.price) }}</p>
-        {% if user %}
-            <a href="/reservations/new?product_id={{ product.id }}" role="button">予約する</a>
-        {% else %}
-            <a href="/auth/login" role="button" class="outline">ログインして予約</a>
-        {% endif %}
+        <img src="{{ product.image_url }}" alt="{{ product.name }}" class="card-image">
+        <div class="card-body">
+            <h3>{{ product.name }}</h3>
+            <p class="description">{{ product.description }}</p>
+        </div>
+        <div class="card-footer">
+            <span class="price">¥{{ "%.0f"|format(product.price) }}<small>（税込）</small></span>
+            {% if user %}
+                <a href="/reservations/new?product_id={{ product.id }}" class="reserve-btn">予約する</a>
+            {% else %}
+                <a href="/auth/login" class="reserve-btn outline">ログインして予約</a>
+            {% endif %}
+        </div>
     </article>
     {% endfor %}
 </div>
 
 {% if not products %}
-<p>現在、商品がありません。</p>
+<p style="text-align:center;color:#7A6B5D;">現在、商品の準備中です。</p>
 {% endif %}
+
+<div class="artisan-divider">🌿</div>
+
+<!-- Info -->
+<section style="text-align:center;margin:2rem 0;">
+    <h2>お店について</h2>
+    <p>📍 広島県山県郡北広島町南方1920（旧南方小学校1階）</p>
+    <p>📅 営業日：<strong>水曜日・土曜日</strong></p>
+    <p>📷 <a href="https://www.instagram.com/petit_hermes/" target="_blank" rel="noopener">Instagram @petit_hermes</a></p>
+</section>
 {% endblock %}

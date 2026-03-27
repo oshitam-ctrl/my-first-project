@@ -1,0 +1,23 @@
+<svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+  <rect fill="#F5EDE0" width="400" height="280"/>
+  <!-- Cutting board -->
+  <rect fill="#D4B896" x="80" y="170" width="240" height="90" rx="6"/>
+  <line stroke="#C8A880" x1="90" y1="175" x2="310" y2="175" stroke-width="0.5"/>
+  <!-- Bread loaf -->
+  <rect fill="#D4A66A" x="120" y="80" width="160" height="110" rx="8"/>
+  <!-- Top dome -->
+  <path d="M120 90 Q200 30 280 90" fill="#C8965A"/>
+  <path d="M125 90 Q200 35 275 90" fill="#D4A66A"/>
+  <!-- Crust highlight -->
+  <path d="M130 90 Q200 45 270 90" fill="none" stroke="#E8BF88" stroke-width="1.5" opacity="0.6"/>
+  <!-- Slice lines -->
+  <line stroke="#C8A880" x1="180" y1="55" x2="180" y2="190" stroke-width="1" opacity="0.3"/>
+  <line stroke="#C8A880" x1="220" y1="50" x2="220" y2="190" stroke-width="1" opacity="0.3"/>
+  <!-- Cut slice next to loaf -->
+  <rect fill="#F5E6C8" x="295" y="100" width="25" height="85" rx="3" transform="rotate(8 295 100)"/>
+  <path d="M295 100 Q307 85 320 100" fill="#D4A66A" transform="rotate(8 295 100)"/>
+  <!-- Crumb texture on slice -->
+  <circle fill="#EDD9B5" cx="305" cy="130" r="2" opacity="0.5"/>
+  <circle fill="#EDD9B5" cx="312" cy="145" r="1.5" opacity="0.4"/>
+  <circle fill="#EDD9B5" cx="300" cy="155" r="1.5" opacity="0.5"/>
+</svg>

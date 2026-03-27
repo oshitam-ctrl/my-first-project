@@ -1,0 +1,32 @@
+<svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+  <rect fill="#F5EDE0" width="400" height="280"/>
+  <!-- Basket -->
+  <path d="M80 180 Q80 250 200 260 Q320 250 320 180" fill="none" stroke="#B8956A" stroke-width="3"/>
+  <path d="M80 180 Q80 200 200 210 Q320 200 320 180" fill="#D4B896" opacity="0.3"/>
+  <!-- Basket weave lines -->
+  <path d="M90 195 Q200 208 310 195" fill="none" stroke="#C8A878" stroke-width="1"/>
+  <path d="M85 210 Q200 225 315 210" fill="none" stroke="#C8A878" stroke-width="1"/>
+  <path d="M85 225 Q200 240 315 225" fill="none" stroke="#C8A878" stroke-width="1"/>
+  <!-- Handle -->
+  <path d="M120 180 Q200 80 280 180" fill="none" stroke="#B8956A" stroke-width="3"/>
+  <!-- Bread 1 (round) -->
+  <ellipse fill="#D4A66A" cx="160" cy="170" rx="45" ry="30"/>
+  <ellipse fill="#DEBC82" cx="160" cy="168" rx="40" ry="26"/>
+  <path d="M135 165 Q160 155 185 165" fill="none" stroke="#C8965A" stroke-width="1.5"/>
+  <!-- Bread 2 (baguette) -->
+  <rect fill="#C8965A" x="200" y="145" width="100" height="25" rx="12" transform="rotate(-15 250 158)"/>
+  <path d="M210 148 L220 143 L230 148 L240 143 L250 148 L260 143 L270 148" fill="none" stroke="#B8864A" stroke-width="1.5" transform="rotate(-15 250 158)"/>
+  <!-- Bread 3 (small roll) -->
+  <ellipse fill="#DEBC82" cx="140" cy="200" rx="25" ry="18"/>
+  <ellipse fill="#E8CC92" cx="140" cy="198" rx="22" ry="15"/>
+  <!-- Vegetables peeking out -->
+  <circle fill="#D94040" cx="240" cy="185" r="12"/>
+  <circle fill="#E85050" cx="240" cy="183" r="10"/>
+  <path d="M235 176 Q240 172 245 176" fill="#5A7040" stroke="none"/>
+  <!-- Carrot -->
+  <path d="M280 195 L295 230 L285 230 Z" fill="#E87040"/>
+  <path d="M285 195 Q290 188 295 195" fill="#5A7040"/>
+  <!-- Leaf garnish -->
+  <ellipse fill="#9CAF88" cx="120" cy="185" rx="8" ry="4" transform="rotate(-40 120 185)"/>
+  <ellipse fill="#7A8450" cx="112" cy="182" rx="6" ry="3" transform="rotate(-50 112 182)"/>
+</svg>

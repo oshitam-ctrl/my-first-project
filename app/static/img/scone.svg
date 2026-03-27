@@ -1,0 +1,29 @@
+<svg viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg">
+  <rect fill="#F5EDE0" width="400" height="280"/>
+  <!-- Plate -->
+  <ellipse fill="#E8E0D0" cx="200" cy="200" rx="140" ry="40"/>
+  <ellipse fill="#F0E8D8" cx="200" cy="198" rx="135" ry="37"/>
+  <!-- Scone 1 (center) -->
+  <path d="M160 140 Q200 90 240 140 Q250 170 200 180 Q150 170 160 140" fill="#D4A66A"/>
+  <path d="M163 142 Q200 95 237 142" fill="#C8965A"/>
+  <!-- Crack -->
+  <path d="M190 120 Q200 135 210 118" fill="none" stroke="#E8C888" stroke-width="2"/>
+  <!-- Texture dots (dried fruit) -->
+  <circle fill="#8B4513" cx="185" cy="145" r="3"/>
+  <circle fill="#8B4513" cx="210" cy="150" r="2.5"/>
+  <circle fill="#6B3410" cx="195" cy="160" r="2"/>
+  <circle fill="#D4A020" cx="220" cy="140" r="2.5"/>
+  <!-- Scone 2 (left) -->
+  <path d="M100 165 Q125 130 150 165 Q155 185 125 190 Q95 185 100 165" fill="#D0A060"/>
+  <path d="M103 167 Q125 135 147 167" fill="#C49058"/>
+  <circle fill="#8B4513" cx="120" cy="170" r="2.5"/>
+  <circle fill="#6B3410" cx="135" cy="175" r="2"/>
+  <!-- Scone 3 (right) -->
+  <path d="M250 165 Q275 130 300 165 Q305 185 275 190 Q245 185 250 165" fill="#D0A060"/>
+  <path d="M253 167 Q275 135 297 167" fill="#C49058"/>
+  <circle fill="#D4A020" cx="270" cy="172" r="2.5"/>
+  <circle fill="#8B4513" cx="285" cy="178" r="2"/>
+  <!-- Herb garnish -->
+  <ellipse fill="#9CAF88" cx="310" cy="190" rx="6" ry="3" transform="rotate(-30 310 190)"/>
+  <ellipse fill="#9CAF88" cx="318" cy="185" rx="5" ry="2.5" transform="rotate(-20 318 185)"/>
+</svg>

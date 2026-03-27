@@ -1,61 +1,574 @@
-/* Custom styles for bakery reservation system */
+/* ===================================
+   天然酵母パン屋 予約システム
+   Warm, artisan, organic design
+   =================================== */
 
-.product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin: 1.5rem 0;
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap');
+
+:root {
+    /* Warm earth tone palette */
+    --color-cream: #FDF6EC;
+    --color-warm-white: #FAF3E8;
+    --color-beige: #F0E4D0;
+    --color-tan: #D4B896;
+    --color-caramel: #B8860B;
+    --color-brown: #6B4226;
+    --color-dark-brown: #3E2723;
+    --color-terracotta: #C2703E;
+    --color-olive: #7A8450;
+    --color-sage: #9CAF88;
+    --color-rust: #A0522D;
+
+    /* Pico CSS overrides */
+    --pico-font-family: 'Zen Maru Gothic', sans-serif;
+    --pico-font-size: 16px;
+    --pico-line-height: 1.8;
+    --pico-border-radius: 12px;
+    --pico-primary: var(--color-brown);
+    --pico-primary-hover: var(--color-dark-brown);
+    --pico-background-color: var(--color-cream);
+    --pico-card-background-color: #FFFFFF;
 }
 
-.product-card img {
+/* --- Global --- */
+body {
+    background-color: var(--color-cream);
+    color: var(--color-dark-brown);
+    font-family: 'Zen Maru Gothic', sans-serif;
+}
+
+h1, h2, h3, h4 {
+    font-family: 'Noto Serif JP', serif;
+    color: var(--color-dark-brown);
+    letter-spacing: 0.02em;
+}
+
+a {
+    color: var(--color-brown);
+}
+
+a:hover {
+    color: var(--color-terracotta);
+}
+
+/* --- Hero section --- */
+.hero {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: linear-gradient(135deg, var(--color-warm-white) 0%, var(--color-beige) 100%);
+    border-radius: 20px;
+    margin-bottom: 2.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, var(--color-tan) 0%, transparent 70%);
+    opacity: 0.3;
+}
+
+.hero::after {
+    content: '';
+    position: absolute;
+    bottom: -30px;
+    left: -30px;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, var(--color-sage) 0%, transparent 70%);
+    opacity: 0.2;
+}
+
+.hero h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+.hero .subtitle {
+    color: var(--color-rust);
+    font-size: 1rem;
+    font-family: 'Noto Serif JP', serif;
+    position: relative;
+}
+
+.hero .tagline {
+    color: var(--color-brown);
+    font-size: 0.9rem;
+    margin-top: 1rem;
+    line-height: 1.6;
+    position: relative;
+}
+
+/* --- Navigation --- */
+nav.site-nav {
+    background: var(--color-dark-brown);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0;
+    margin: 0;
+}
+
+nav.site-nav a,
+nav.site-nav strong {
+    color: var(--color-cream) !important;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+nav.site-nav a:hover {
+    color: var(--color-tan) !important;
+}
+
+nav.site-nav .brand {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.05em;
+}
+
+nav.site-nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+nav.site-nav .nav-btn {
+    background: var(--color-terracotta);
+    color: var(--color-cream) !important;
+    padding: 0.3rem 0.8rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-family: 'Zen Maru Gothic', sans-serif;
+}
+
+nav.site-nav .nav-btn:hover {
+    background: var(--color-rust);
+}
+
+/* --- Product grid --- */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.product-card {
+    background: #FFFFFF;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(62, 39, 35, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid var(--color-beige);
+}
+
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(62, 39, 35, 0.12);
+}
+
+.product-card .card-image {
     width: 100%;
-    height: 180px;
+    height: 200px;
     object-fit: cover;
-    border-radius: 4px;
+    display: block;
+}
+
+.product-card .card-body {
+    padding: 1.25rem;
+}
+
+.product-card h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.15rem;
+}
+
+.product-card .description {
+    color: #7A6B5D;
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+}
+
+.product-card .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.25rem 1.25rem;
 }
 
 .product-card .price {
-    font-size: 1.25rem;
-    font-weight: bold;
-    color: var(--pico-primary);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--color-terracotta);
+    font-family: 'Noto Serif JP', serif;
 }
 
+.product-card .price small {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #999;
+}
+
+.product-card .reserve-btn {
+    background: var(--color-brown);
+    color: var(--color-cream);
+    padding: 0.5rem 1.25rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: 'Zen Maru Gothic', sans-serif;
+}
+
+.product-card .reserve-btn:hover {
+    background: var(--color-terracotta);
+    color: white;
+}
+
+.product-card .reserve-btn.outline {
+    background: transparent;
+    border: 1.5px solid var(--color-brown);
+    color: var(--color-brown);
+}
+
+.product-card .reserve-btn.outline:hover {
+    background: var(--color-brown);
+    color: var(--color-cream);
+}
+
+/* --- Section headers --- */
+.section-header {
+    text-align: center;
+    margin: 2rem 0 1.5rem;
+}
+
+.section-header h2 {
+    display: inline-block;
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.section-header h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: var(--color-terracotta);
+    border-radius: 2px;
+}
+
+.section-header p {
+    color: #7A6B5D;
+    font-size: 0.9rem;
+}
+
+/* --- Forms (auth, reservation) --- */
+.form-card {
+    max-width: 480px;
+    margin: 2rem auto;
+    background: #FFFFFF;
+    padding: 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 2px 16px rgba(62, 39, 35, 0.08);
+    border: 1px solid var(--color-beige);
+}
+
+.form-card h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.form-card label {
+    color: var(--color-brown);
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.form-card input,
+.form-card select,
+.form-card textarea {
+    border: 1.5px solid var(--color-beige);
+    border-radius: 10px;
+    padding: 0.65rem 0.85rem;
+    background: var(--color-warm-white);
+    font-family: 'Zen Maru Gothic', sans-serif;
+}
+
+.form-card input:focus,
+.form-card select:focus,
+.form-card textarea:focus {
+    border-color: var(--color-terracotta);
+    box-shadow: 0 0 0 3px rgba(194, 112, 62, 0.15);
+}
+
+.form-card button[type="submit"] {
+    width: 100%;
+    background: var(--color-brown);
+    color: var(--color-cream);
+    border: none;
+    border-radius: 25px;
+    padding: 0.75rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    margin-top: 0.5rem;
+}
+
+.form-card button[type="submit"]:hover {
+    background: var(--color-terracotta);
+}
+
+.form-card .form-link {
+    text-align: center;
+    margin-top: 1.25rem;
+    font-size: 0.9rem;
+}
+
+/* --- Stats / Dashboard --- */
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
+    gap: 1.25rem;
     margin: 1.5rem 0;
 }
 
 .stat-card {
     text-align: center;
     padding: 1.5rem;
+    background: #FFFFFF;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(62, 39, 35, 0.06);
+    border: 1px solid var(--color-beige);
 }
 
 .stat-card .number {
     font-size: 2rem;
-    font-weight: bold;
-    color: var(--pico-primary);
+    font-weight: 700;
+    color: var(--color-terracotta);
+    font-family: 'Noto Serif JP', serif;
 }
 
+.stat-card .label {
+    color: #7A6B5D;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}
+
+/* --- Tables --- */
 table {
     width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #FFFFFF;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 8px rgba(62, 39, 35, 0.06);
 }
 
+thead {
+    background: var(--color-warm-white);
+}
+
+th {
+    color: var(--color-brown);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 1rem;
+}
+
+td {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--color-beige);
+    font-size: 0.9rem;
+}
+
+/* --- Badges --- */
 .badge {
     display: inline-block;
-    padding: 0.2rem 0.6rem;
-    border-radius: 12px;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 600;
 }
 
 .badge-confirmed {
-    background: #d4edda;
-    color: #155724;
+    background: #E8F5E9;
+    color: #2E7D32;
 }
 
 .badge-cancelled {
-    background: #f8d7da;
-    color: #721c24;
+    background: #FFEBEE;
+    color: #C62828;
+}
+
+/* --- Reservation detail --- */
+.reservation-detail {
+    background: #FFFFFF;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 2px 12px rgba(62, 39, 35, 0.08);
+    border: 1px solid var(--color-beige);
+}
+
+.reservation-detail header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--color-beige);
+}
+
+/* --- Cancel button --- */
+.btn-cancel {
+    background: transparent;
+    color: #C62828;
+    border: 1.5px solid #C62828;
+    border-radius: 25px;
+    padding: 0.5rem 1.5rem;
+    cursor: pointer;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+    background: #C62828;
+    color: white;
+}
+
+/* --- Footer --- */
+footer.site-footer {
+    text-align: center;
+    padding: 2rem 0;
+    margin-top: 3rem;
+    border-top: 1px solid var(--color-beige);
+    color: #9E8E7E;
+    font-size: 0.85rem;
+}
+
+/* --- Alert messages --- */
+.alert {
+    padding: 0.85rem 1.25rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.alert-error {
+    background: #FFF3F0;
+    color: #C62828;
+    border: 1px solid #FFCDD2;
+}
+
+.alert-success {
+    background: #F1F8E9;
+    color: #2E7D32;
+    border: 1px solid #C8E6C9;
+}
+
+/* --- Artisan details (decorative) --- */
+.artisan-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 2rem 0;
+    color: var(--color-tan);
+}
+
+.artisan-divider::before,
+.artisan-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-beige);
+}
+
+/* --- About section on home --- */
+.about-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    align-items: center;
+    margin: 3rem 0;
+    padding: 2.5rem;
+    background: #FFFFFF;
+    border-radius: 20px;
+    box-shadow: 0 2px 12px rgba(62, 39, 35, 0.06);
+    border: 1px solid var(--color-beige);
+}
+
+.about-section .about-image {
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.about-section .about-image svg {
+    width: 100%;
+    height: auto;
+}
+
+.about-section h2 {
+    font-size: 1.4rem;
+}
+
+.about-section p {
+    color: #7A6B5D;
+    line-height: 2;
+    font-size: 0.9rem;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 1.5rem;
+    }
+
+    .product-grid {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .about-section {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+    }
+
+    .form-card {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
+
+    nav.site-nav {
+        padding: 0.5rem 1rem;
+    }
+
+    nav.site-nav ul {
+        gap: 0.75rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
 }

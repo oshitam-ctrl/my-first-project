@@ -1,9 +1,12 @@
 {% extends "base.html" %}
-{% block title %}会員登録 - パン屋予約{% endblock %}
+{% block title %}会員登録｜プチヘルメース{% endblock %}
 
 {% block content %}
-<article style="max-width: 450px; margin: 2rem auto;">
+<div class="form-card">
     <h2>会員登録</h2>
+    <p style="text-align:center;color:#7A6B5D;font-size:0.9rem;margin-bottom:1.5rem;">
+        アカウントを作成してパンの予約ができます
+    </p>
     <form method="post" action="/auth/register">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <label for="name">お名前</label>
@@ -14,6 +17,6 @@
         <input type="password" id="password" name="password" required minlength="8">
         <button type="submit">登録する</button>
     </form>
-    <p>アカウントをお持ちの方は <a href="/auth/login">ログイン</a></p>
-</article>
+    <p class="form-link">アカウントをお持ちの方は <a href="/auth/login">ログイン</a></p>
+</div>
 {% endblock %}
