@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-cream: #FFF8F0;
+  --color-bread-crust: #D4A574;
+  --color-bread-dark: #8B6914;
+  --color-warm-brown: #A0522D;
+  --color-soft-green: #7CB342;
+  --color-berry-pink: #E91E63;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: #333;
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@supports (padding-top: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
