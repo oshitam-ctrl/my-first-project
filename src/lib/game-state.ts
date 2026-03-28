@@ -80,8 +80,9 @@ interface GameState {
   useBreadCrumb: () => boolean;
 }
 
-const BASE_FERMENT_HOURS = 3;
-const BONUS_REDUCTION = 0.5;
+// デモ用：10秒で完成（本番は3時間に戻す）
+const BASE_FERMENT_HOURS = 10 / 3600; // 10秒
+const BONUS_REDUCTION = 0;
 
 function buildGachaPool(): string[] {
   const pool: string[] = [];
