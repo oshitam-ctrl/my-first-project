@@ -86,7 +86,7 @@ export default function GameIdle() {
 
       {/* 所持酵母一覧 */}
       <div className="bg-white rounded-2xl p-4 shadow-sm">
-        <h3 className="font-bold text-[#8B6914] mb-3">所持している酵母</h3>
+        <h3 className="font-bold text-[#8B6914] mb-3">仲間の妖精たち</h3>
         <div className="space-y-2">
           {ownedYeasts.map((oy) => {
             const yeast = YEASTS.find((y) => y.id === oy.yeastId);

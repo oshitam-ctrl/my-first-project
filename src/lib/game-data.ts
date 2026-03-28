@@ -31,16 +31,16 @@ export interface ToppingData {
 // 酵母マスターデータ
 export const YEASTS: YeastData[] = [
   // 通年酵母（★）
-  { id: "yeast-yuzu", name: "ゆず酵母", rarity: 1, season: "all", description: "お店の定番。地元の規格外ゆずから起こした酵母。爽やかな柑橘の香り。", emoji: "🍋" },
-  { id: "yeast-apple", name: "りんご酵母", rarity: 1, season: "all", description: "傷ついて出荷できなくなったりんごから起こした酵母。ほのかな甘い香り。", emoji: "🍎" },
+  { id: "yeast-yuzu", name: "ゆず酵母", rarity: 1, season: "all", description: "ゆずの妖精。柑橘色の羽を持つ。", emoji: "🧚‍♀️" },
+  { id: "yeast-apple", name: "りんご酵母", rarity: 1, season: "all", description: "りんごの妖精。赤いほっぺが可愛い。", emoji: "🧚" },
   // 季節酵母（★★）
-  { id: "yeast-strawberry", name: "いちご酵母", rarity: 2, season: "spring", description: "地元農家の規格外いちごから起こした酵母。ほんのり甘い香り。", emoji: "🍓" },
-  { id: "yeast-herb", name: "ハーブ酵母", rarity: 2, season: "summer", description: "校庭の片隅で育てたハーブから起こした酵母。清涼感のある香り。", emoji: "🌿" },
-  { id: "yeast-grape", name: "ぶどう酵母", rarity: 2, season: "autumn", description: "収穫シーズンの規格外ぶどうから起こした酵母。芳醇な香り。", emoji: "🍇" },
-  { id: "yeast-yuzu-special", name: "ゆず酵母〈特別版〉", rarity: 2, season: "winter", description: "冬至の日に仕込む特別なゆず酵母。通常版より香りが濃厚。", emoji: "✨" },
+  { id: "yeast-strawberry", name: "いちご酵母", rarity: 2, season: "spring", description: "いちごの妖精。ピンクの髪が特徴。", emoji: "🧚‍♀️" },
+  { id: "yeast-herb", name: "ハーブ酵母", rarity: 2, season: "summer", description: "ハーブの妖精。緑の衣をまとう。", emoji: "🧝‍♀️" },
+  { id: "yeast-grape", name: "ぶどう酵母", rarity: 2, season: "autumn", description: "ぶどうの妖精。紫色に輝く羽。", emoji: "🧚" },
+  { id: "yeast-yuzu-special", name: "ゆず酵母〈特別版〉", rarity: 2, season: "winter", description: "冬のゆず妖精。金色の光を放つ。", emoji: "✨" },
   // レア酵母（★★★）
-  { id: "yeast-rose", name: "バラ酵母", rarity: 3, season: "all", description: "オーナーの原点。北海道の叔母の庭のバラがきっかけで生まれた酵母。", emoji: "🌹" },
-  { id: "yeast-honey", name: "はちみつ酵母", rarity: 3, season: "all", description: "北広島町産はちみつから起こした酵母。まろやかで深い甘さ。", emoji: "🍯" },
+  { id: "yeast-rose", name: "バラ酵母", rarity: 3, season: "all", description: "バラの妖精。最も美しく気高い。オーナーの原点。", emoji: "🌹" },
+  { id: "yeast-honey", name: "はちみつ酵母", rarity: 3, season: "all", description: "はちみつの妖精。蜂と友達。", emoji: "🐝" },
 ];
 
 // トッピングマスターデータ

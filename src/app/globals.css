@@ -9,10 +9,13 @@
   --color-warm-brown: #A0522D;
   --color-soft-green: #7CB342;
   --color-berry-pink: #E91E63;
+  --color-soft-orange: #F5C88A;
+  --color-light-pink: #FFE4E1;
 }
 
 body {
-  background-color: var(--color-cream);
+  background: linear-gradient(180deg, #FFF8F0 0%, #FFECD2 30%, #FFF0E0 60%, #FFF8F0 100%);
+  background-attachment: fixed;
   color: #333;
   font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -26,4 +29,740 @@ body {
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
+}
+
+/* ===== かわいいボタンスタイル ===== */
+.btn-cute {
+  position: relative;
+  border-radius: 1.5rem;
+  font-weight: 700;
+  padding: 1rem 2rem;
+  transition: all 0.2s ease;
+  box-shadow:
+    0 4px 6px rgba(212, 165, 116, 0.25),
+    0 2px 0 rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+}
+.btn-cute::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s ease;
+}
+.btn-cute:hover::after {
+  left: 100%;
+}
+.btn-cute:active {
+  transform: scale(0.95) translateY(1px);
+  box-shadow:
+    0 2px 3px rgba(212, 165, 116, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.btn-bake {
+  background: linear-gradient(135deg, #E8913A 0%, #D4A574 50%, #F5C88A 100%);
+  color: white;
+  box-shadow:
+    0 6px 20px rgba(232, 145, 58, 0.4),
+    0 2px 0 rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.btn-green {
+  background: linear-gradient(135deg, #7CB342 0%, #8BC34A 50%, #AED581 100%);
+  color: white;
+  box-shadow:
+    0 6px 20px rgba(124, 179, 66, 0.35),
+    0 2px 0 rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* ===== ふわふわシャドウ ===== */
+.shadow-fluffy {
+  box-shadow:
+    0 4px 15px rgba(212, 165, 116, 0.15),
+    0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-fluffy-lg {
+  box-shadow:
+    0 8px 30px rgba(212, 165, 116, 0.2),
+    0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.shadow-dreamy {
+  box-shadow:
+    0 8px 32px rgba(212, 165, 116, 0.18),
+    0 2px 8px rgba(232, 145, 58, 0.08),
+    0 0 0 1px rgba(212, 165, 116, 0.06);
+}
+
+/* ===== カードスタイル ===== */
+.card-cute {
+  background: white;
+  border-radius: 1.5rem;
+  padding: 1.25rem;
+  box-shadow:
+    0 4px 15px rgba(212, 165, 116, 0.12),
+    0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(212, 165, 116, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+.card-cute::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #F5C88A, #D4A574, #E8913A, #D4A574, #F5C88A);
+  border-radius: 1.5rem 1.5rem 0 0;
+}
+
+.card-cute-highlight {
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFF8F0 50%, #FFF5EB 100%);
+  border-radius: 1.5rem;
+  padding: 1.25rem;
+  box-shadow:
+    0 4px 15px rgba(212, 165, 116, 0.18),
+    0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1.5px solid rgba(212, 165, 116, 0.2);
+}
+
+/* ===== パンのCSS形状 ===== */
+.bread-shape {
+  width: 80px;
+  height: 64px;
+  background: linear-gradient(145deg, #F5C88A 0%, #D4A574 60%, #C09060 100%);
+  border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+  position: relative;
+  box-shadow:
+    inset 0 -4px 8px rgba(139, 105, 20, 0.15),
+    0 4px 12px rgba(212, 165, 116, 0.3);
+}
+.bread-shape::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50%;
+  height: 35%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent);
+  border-radius: 50%;
+}
+
+.melon-pan {
+  width: 80px;
+  height: 72px;
+  background: linear-gradient(145deg, #F5E6A3 0%, #E8C970 60%, #D4B044 100%);
+  border-radius: 50%;
+  position: relative;
+  box-shadow:
+    inset 0 -3px 6px rgba(139, 105, 20, 0.15),
+    0 4px 12px rgba(212, 165, 116, 0.3);
+}
+.melon-pan::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    transparent 0deg 20deg,
+    rgba(139, 105, 20, 0.08) 20deg 22deg
+  );
+}
+.melon-pan::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 15%;
+  width: 70%;
+  height: 40%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent);
+  border-radius: 50%;
+}
+
+.croissant-shape {
+  width: 80px;
+  height: 48px;
+  background: linear-gradient(145deg, #F5C88A 0%, #D4A574 50%, #C09060 100%);
+  border-radius: 0 80% 80% 0 / 0 50% 50% 0;
+  transform: rotate(-15deg);
+  position: relative;
+  box-shadow:
+    inset 0 -3px 6px rgba(139, 105, 20, 0.1),
+    0 4px 10px rgba(212, 165, 116, 0.25);
+}
+
+/* ===== キラキラアニメーション ===== */
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+@keyframes sparkle-twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.5); }
+  25% { opacity: 1; transform: scale(1.2); }
+  50% { opacity: 0.6; transform: scale(0.8); }
+  75% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-5px) rotate(1deg); }
+  50% { transform: translateY(-10px) rotate(0deg); }
+  75% { transform: translateY(-5px) rotate(-1deg); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes bounce-in {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.15); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(232, 145, 58, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(232, 145, 58, 0.6), 0 0 40px rgba(232, 145, 58, 0.2); }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes confetti-burst {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes bubble-rise {
+  0% { transform: translateY(0) scale(1); opacity: 0.7; }
+  100% { transform: translateY(-60px) scale(0.3); opacity: 0; }
+}
+
+@keyframes sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+
+@keyframes steam {
+  0% { transform: translateY(0) scaleX(1); opacity: 0.6; }
+  50% { transform: translateY(-15px) scaleX(1.2); opacity: 0.3; }
+  100% { transform: translateY(-30px) scaleX(0.8); opacity: 0; }
+}
+
+@keyframes rainbow-border {
+  0% { border-color: #F5C88A; }
+  25% { border-color: #E8913A; }
+  50% { border-color: #D4A574; }
+  75% { border-color: #C09060; }
+  100% { border-color: #F5C88A; }
+}
+
+@keyframes shake-jar {
+  0%, 100% { transform: rotate(0deg) translateX(0); }
+  10% { transform: rotate(-8deg) translateX(-3px); }
+  20% { transform: rotate(8deg) translateX(3px); }
+  30% { transform: rotate(-6deg) translateX(-2px); }
+  40% { transform: rotate(6deg) translateX(2px); }
+  50% { transform: rotate(-3deg) translateX(-1px); }
+  60% { transform: rotate(3deg) translateX(1px); }
+  70% { transform: rotate(-1deg); }
+  80% { transform: rotate(1deg); }
+}
+
+@keyframes oven-glow {
+  0%, 100% { background-color: rgba(232, 145, 58, 0.1); }
+  50% { background-color: rgba(232, 145, 58, 0.25); }
+}
+
+@keyframes card-shine {
+  0% { left: -100%; }
+  50%, 100% { left: 100%; }
+}
+
+@keyframes pop-in {
+  0% { transform: scale(0) rotate(-12deg); opacity: 0; }
+  60% { transform: scale(1.1) rotate(3deg); }
+  80% { transform: scale(0.95) rotate(-1deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-float-gentle {
+  animation: float-gentle 4s ease-in-out infinite;
+}
+
+.animate-wiggle {
+  animation: wiggle 2s ease-in-out infinite;
+}
+
+.animate-bounce-soft {
+  animation: bounce-soft 2s ease-in-out infinite;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.6s ease-out forwards;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-sway {
+  animation: sway 3s ease-in-out infinite;
+}
+
+.animate-steam {
+  animation: steam 2s ease-out infinite;
+}
+
+.animate-shake-jar {
+  animation: shake-jar 0.5s ease-in-out;
+}
+
+.animate-pop-in {
+  animation: pop-in 0.5s ease-out forwards;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* ===== 紙吹雪 ===== */
+.confetti-piece {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  top: -10px;
+  animation: confetti-fall 3s ease-in forwards;
+  z-index: 50;
+}
+
+/* ===== スタンプカード ===== */
+.stamp-card {
+  background: linear-gradient(135deg, #FFF8F0 0%, #FFECD2 100%);
+  border: 2px solid rgba(212, 165, 116, 0.3);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.stamp-card::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(232,145,58,0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.stamp-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.stamp-dot-filled {
+  background: linear-gradient(135deg, #D4A574, #E8913A);
+  color: white;
+  box-shadow: 0 3px 10px rgba(212, 165, 116, 0.4);
+}
+.stamp-dot-filled::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 30%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.4), transparent);
+  border-radius: 50%;
+}
+
+.stamp-dot-empty {
+  background: #F5F0EB;
+  border: 2px dashed rgba(212, 165, 116, 0.3);
+  color: #ccc;
+}
+
+/* ===== バブルアニメーション ===== */
+.bubble {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(212, 165, 116, 0.3);
+  animation: bubble-rise 2s ease-out infinite;
+}
+
+/* ===== レンジスライダー カスタム ===== */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(to right, #F5E6D0, #E8C9A0);
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #D4A574, #E8913A);
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(212, 165, 116, 0.5);
+  border: 3px solid white;
+  transition: transform 0.2s ease;
+}
+input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(1.15);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #D4A574, #E8913A);
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(212, 165, 116, 0.5);
+  border: 3px solid white;
+}
+
+/* ===== レアリティカラー ===== */
+.rarity-1 {
+  color: #A0522D;
+}
+.rarity-2 {
+  color: #D4A574;
+  text-shadow: 0 0 4px rgba(212, 165, 116, 0.3);
+}
+.rarity-3 {
+  background: linear-gradient(90deg, #FFD700, #FF8C00, #FFD700);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 2s linear infinite;
+}
+
+/* ===== ヘッダーグラデーション ===== */
+.header-gradient {
+  background: linear-gradient(135deg, #D4A574 0%, #C09060 30%, #B8845A 60%, #D4A574 100%);
+  position: relative;
+  overflow: hidden;
+}
+.header-gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(255,255,255,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 50%, rgba(255,255,255,0.05) 0%, transparent 50%),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 20px,
+      rgba(255, 255, 255, 0.03) 20px,
+      rgba(255, 255, 255, 0.03) 40px
+    );
+}
+.header-gradient::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 120 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 8 C15 0, 30 0, 40 8 C50 0, 65 0, 80 8 C90 0, 105 0, 120 8' fill='%23FFF8F0'/%3E%3C/svg%3E") repeat-x;
+  background-size: 120px 8px;
+}
+
+/* ===== タブバー ===== */
+.tab-indicator {
+  position: absolute;
+  bottom: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(90deg, #D4A574, #E8913A);
+  transition: left 0.3s ease, width 0.3s ease;
+}
+
+/* ===== 果物カードグラデーション ===== */
+.fruit-card-apple {
+  background: linear-gradient(135deg, #FFF5F5, #FFE4E1);
+}
+.fruit-card-grape {
+  background: linear-gradient(135deg, #F5F0FF, #E8E0F0);
+}
+.fruit-card-citrus {
+  background: linear-gradient(135deg, #FFFFF0, #FFF8DC);
+}
+.fruit-card-berry {
+  background: linear-gradient(135deg, #FFF0F5, #FFE4EC);
+}
+
+/* ===== 果物カードにホバーエフェクト ===== */
+.fruit-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+.fruit-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.6s ease;
+}
+.fruit-card:active::after {
+  left: 100%;
+}
+
+/* ===== 瓶のスタイル ===== */
+.jar-body {
+  background: linear-gradient(180deg, rgba(200, 220, 240, 0.25) 0%, rgba(200, 220, 240, 0.1) 100%);
+  border: 2px solid rgba(180, 200, 220, 0.4);
+  border-radius: 0 0 24px 24px;
+  position: relative;
+  overflow: hidden;
+}
+.jar-body::before {
+  content: "";
+  position: absolute;
+  top: 10%;
+  left: 8%;
+  width: 15%;
+  height: 60%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.3), transparent);
+  border-radius: 50%;
+  transform: rotate(-10deg);
+}
+.jar-lid {
+  background: linear-gradient(180deg, #A0522D, #8B4513);
+  border-radius: 8px 8px 0 0;
+  height: 14px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: relative;
+}
+.jar-lid::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 10%;
+  right: 10%;
+  height: 3px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+}
+.jar-liquid {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(180deg, rgba(245, 200, 138, 0.6), rgba(212, 165, 116, 0.8));
+  transition: height 0.5s ease;
+}
+
+/* ===== キラキラパーティクル ===== */
+.sparkle-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #FFD700;
+  border-radius: 50%;
+  animation: sparkle-twinkle 1.5s ease-in-out infinite;
+  pointer-events: none;
+}
+.sparkle-particle::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 10px;
+  background: linear-gradient(180deg, transparent, #FFD700, transparent);
+}
+.sparkle-particle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -3px;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #FFD700, transparent);
+}
+
+/* ===== ガチャカード光沢 ===== */
+.gacha-card {
+  position: relative;
+  overflow: hidden;
+}
+.gacha-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+  animation: card-shine 3s ease-in-out infinite;
+}
+
+/* ===== ステータスカードのデコレーション ===== */
+.status-item {
+  background: linear-gradient(135deg, #FFF8F0 0%, #FFF3E6 100%);
+  border-radius: 1rem;
+  padding: 0.875rem;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(212, 165, 116, 0.1);
+}
+.status-item::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 80%;
+  height: 80%;
+  background: radial-gradient(circle, rgba(245,200,138,0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ===== 窯（オーブン）スタイル ===== */
+.oven-frame {
+  background: linear-gradient(180deg, #8B6914 0%, #A0522D 30%, #8B4513 100%);
+  border-radius: 1.5rem;
+  padding: 3px;
+  position: relative;
+}
+.oven-inner {
+  background: linear-gradient(180deg, #1a1a1a 0%, #2d1f10 50%, #1a1a1a 100%);
+  border-radius: 1.25rem;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+  animation: oven-glow 2s ease-in-out infinite;
+}
+.oven-inner::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30%;
+  background: linear-gradient(0deg, rgba(232,145,58,0.15), transparent);
+  pointer-events: none;
+}
+
+/* ===== 湯気エフェクト ===== */
+.steam-effect {
+  position: relative;
+}
+.steam-effect::before,
+.steam-effect::after {
+  content: "~";
+  position: absolute;
+  top: -20px;
+  color: rgba(212,165,116,0.3);
+  font-size: 1.5rem;
+  animation: steam 2s ease-out infinite;
+}
+.steam-effect::before {
+  left: 30%;
+  animation-delay: 0s;
+}
+.steam-effect::after {
+  right: 30%;
+  animation-delay: 0.7s;
+}
+
+/* ===== パルスリングエフェクト ===== */
+.pulse-ring {
+  position: relative;
+}
+.pulse-ring::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(212,165,116,0.4);
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+/* ===== デコレーションドット ===== */
+.deco-dots {
+  position: relative;
+}
+.deco-dots::before {
+  content: "...";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(212,165,116,0.3);
+  font-size: 1.5rem;
+  letter-spacing: 4px;
 }

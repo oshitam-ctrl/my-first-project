@@ -167,7 +167,7 @@ export default function Gacha() {
                 </div>
               ) : (
                 <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p className="text-sm text-[#7CB342] font-bold">✨ NEW! 新しい酵母を獲得！</p>
+                  <p className="text-sm text-[#7CB342] font-bold">✨ NEW! 新しい妖精が仲間に！</p>
                 </div>
               )}
             </motion.div>
