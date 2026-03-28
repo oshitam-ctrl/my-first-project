@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useGameStore } from "@/lib/game-state";
 import { BREADS, YEASTS, type Season } from "@/lib/game-data";
 import BreadDetail from "@/components/collection/BreadDetail";
+import BreadSVG from "@/components/BreadSVG";
 
 const SEASON_TABS: { label: string; value: Season | "all" }[] = [
   { label: "通年", value: "all" },
@@ -84,7 +85,7 @@ export default function CollectionPage() {
             >
               {isOwned ? (
                 <>
-                  <span className="text-3xl mb-1">🍞</span>
+                  <BreadSVG className="w-12 h-12 mb-1" toppings={bread.toppings} showFace={false} />
                   <p className="text-[10px] text-gray-600 leading-tight line-clamp-2">
                     {bread.name}
                   </p>

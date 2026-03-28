@@ -1,6 +1,12 @@
 export type Season = "all" | "spring" | "summer" | "autumn" | "winter";
 export type Rarity = 1 | 2 | 3;
 
+export interface YeastQuotes {
+  idle: string[];
+  nurture: string[];
+  complete: string[];
+}
+
 export interface YeastData {
   id: string;
   name: string;
@@ -8,6 +14,8 @@ export interface YeastData {
   season: Season;
   description: string;
   emoji: string;
+  personality: string;
+  quotes: YeastQuotes;
 }
 
 export interface BreadData {
@@ -31,16 +39,88 @@ export interface ToppingData {
 // 酵母マスターデータ
 export const YEASTS: YeastData[] = [
   // 通年酵母（★）
-  { id: "yeast-yuzu", name: "ゆず酵母", rarity: 1, season: "all", description: "ゆずの妖精。柑橘色の羽を持つ。", emoji: "🧚‍♀️" },
-  { id: "yeast-apple", name: "りんご酵母", rarity: 1, season: "all", description: "りんごの妖精。赤いほっぺが可愛い。", emoji: "🧚" },
+  {
+    id: "yeast-yuzu", name: "ゆず酵母", rarity: 1, season: "all",
+    description: "ゆずの妖精。柑橘色の羽を持つ。", emoji: "🧚‍♀️",
+    personality: "おっとりしてて、たまに寝坊する",
+    quotes: {
+      idle: ["ふわぁ〜いい天気だね", "今日もいっしょにパンを焼こうよ", "ゆずの香り、好き？"],
+      nurture: ["もうちょっと振って〜！", "あったかくて気持ちいい〜", "おさとう、おいしいなぁ"],
+      complete: ["やったー！上手に焼けたね！", "いい香り〜！"],
+    },
+  },
+  {
+    id: "yeast-apple", name: "りんご酵母", rarity: 1, season: "all",
+    description: "りんごの妖精。赤いほっぺが可愛い。", emoji: "🧚",
+    personality: "元気いっぱいで食いしん坊",
+    quotes: {
+      idle: ["お腹すいた〜！", "りんご食べたいなぁ", "今日は何を焼く？わくわく！"],
+      nurture: ["もっともっと振って！", "甘くなってきた〜！", "ちょうどいい温度！"],
+      complete: ["できたできた！おいしそー！", "最高傑作だね！"],
+    },
+  },
   // 季節酵母（★★）
-  { id: "yeast-strawberry", name: "いちご酵母", rarity: 2, season: "spring", description: "いちごの妖精。ピンクの髪が特徴。", emoji: "🧚‍♀️" },
-  { id: "yeast-herb", name: "ハーブ酵母", rarity: 2, season: "summer", description: "ハーブの妖精。緑の衣をまとう。", emoji: "🧝‍♀️" },
-  { id: "yeast-grape", name: "ぶどう酵母", rarity: 2, season: "autumn", description: "ぶどうの妖精。紫色に輝く羽。", emoji: "🧚" },
-  { id: "yeast-yuzu-special", name: "ゆず酵母〈特別版〉", rarity: 2, season: "winter", description: "冬のゆず妖精。金色の光を放つ。", emoji: "✨" },
+  {
+    id: "yeast-strawberry", name: "いちご酵母", rarity: 2, season: "spring",
+    description: "いちごの妖精。ピンクの髪が特徴。", emoji: "🧚‍♀️",
+    personality: "恥ずかしがり屋だけど頑張り屋",
+    quotes: {
+      idle: ["えへへ…今日もよろしくね", "いちごの季節、うれしいな", "春って素敵…"],
+      nurture: ["が、がんばるね…！", "あったかい…幸せ…", "もうすこし…"],
+      complete: ["で、できた…！うれしい！", "ピンク色のパン、かわいいね"],
+    },
+  },
+  {
+    id: "yeast-herb", name: "ハーブ酵母", rarity: 2, season: "summer",
+    description: "ハーブの妖精。緑の衣をまとう。", emoji: "🧝‍♀️",
+    personality: "物知りで落ち着いている",
+    quotes: {
+      idle: ["風が気持ちいいですね", "ローズマリーの香り、癒されますよ", "今日も良い一日になりそう"],
+      nurture: ["丁寧にお願いしますね", "適温です、さすが", "じっくり発酵しましょう"],
+      complete: ["素晴らしい出来栄えです", "ハーブの香りが引き立ってますね"],
+    },
+  },
+  {
+    id: "yeast-grape", name: "ぶどう酵母", rarity: 2, season: "autumn",
+    description: "ぶどうの妖精。紫色に輝く羽。", emoji: "🧚",
+    personality: "陽気でお祭り好き",
+    quotes: {
+      idle: ["パーティしよう！", "ぶどう踏みの歌、知ってる？", "今日もにぎやかにいこう！"],
+      nurture: ["イエーイ！もっと振れ振れ！", "甘い甘い！最高！", "熱気がたまんないね！"],
+      complete: ["カンパーイ！完成だ！", "芳醇な香り〜たまらん！"],
+    },
+  },
+  {
+    id: "yeast-yuzu-special", name: "ゆず酵母〈特別版〉", rarity: 2, season: "winter",
+    description: "冬のゆず妖精。金色の光を放つ。", emoji: "✨",
+    personality: "上品で温かい心の持ち主",
+    quotes: {
+      idle: ["寒い日は温かいパンに限りますね", "冬至のゆず、特別なんですよ", "ほっこりしましょう"],
+      nurture: ["ゆっくり、丁寧に…", "冬の酵母は力が強いの", "いい香りがしてきましたね"],
+      complete: ["心まで温まるパンができました", "冬の贈り物ですね"],
+    },
+  },
   // レア酵母（★★★）
-  { id: "yeast-rose", name: "バラ酵母", rarity: 3, season: "all", description: "バラの妖精。最も美しく気高い。オーナーの原点。", emoji: "🌹" },
-  { id: "yeast-honey", name: "はちみつ酵母", rarity: 3, season: "all", description: "はちみつの妖精。蜂と友達。", emoji: "🐝" },
+  {
+    id: "yeast-rose", name: "バラ酵母", rarity: 3, season: "all",
+    description: "バラの妖精。最も美しく気高い。オーナーの原点。", emoji: "🌹",
+    personality: "気高くて美しい。でも本当は寂しがり",
+    quotes: {
+      idle: ["…今日も、来てくれたのね", "バラの香りは人を幸せにするの", "あなたと焼くパンが一番好き"],
+      nurture: ["優しく…そう、その調子", "美しい発酵ですこと", "もう少しだけ…"],
+      complete: ["…美しい。とても美しいパンだわ", "あなたの手から生まれた芸術品ね"],
+    },
+  },
+  {
+    id: "yeast-honey", name: "はちみつ酵母", rarity: 3, season: "all",
+    description: "はちみつの妖精。蜂と友達。", emoji: "🐝",
+    personality: "のんびりで甘えん坊",
+    quotes: {
+      idle: ["はちみつ舐めたい〜", "ぶーんぶーん♪", "お花畑で昼寝したいなぁ"],
+      nurture: ["あまーくなーれ♪", "ぽかぽかして眠くなっちゃう…", "蜂さんたちも応援してるよ"],
+      complete: ["甘くておいしいパンだ〜♪", "蜂さんも喜んでるよ！"],
+    },
+  },
 ];
 
 // トッピングマスターデータ

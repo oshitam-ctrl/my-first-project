@@ -4,38 +4,7 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { useGameStore } from "@/lib/game-state";
 import { YEASTS, BREADS } from "@/lib/game-data";
-
-/* かわいい丸パンSVG */
-function CuteBreadSVG({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 120 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* パン本体 */}
-      <ellipse cx="60" cy="58" rx="50" ry="38" fill="url(#bake-bread-grad)" />
-      {/* 割れ目 */}
-      <path d="M30 45 C40 35, 55 32, 60 38 C65 32, 80 35, 90 45" stroke="rgba(139,105,20,0.15)" strokeWidth="2" fill="none" strokeLinecap="round" />
-      {/* ハイライト */}
-      <ellipse cx="55" cy="42" rx="22" ry="10" fill="rgba(255,255,255,0.2)" />
-      {/* ほっぺ（かわいい） */}
-      <ellipse cx="38" cy="62" rx="8" ry="5" fill="rgba(255,180,150,0.25)" />
-      <ellipse cx="82" cy="62" rx="8" ry="5" fill="rgba(255,180,150,0.25)" />
-      {/* 目 */}
-      <circle cx="45" cy="55" r="2.5" fill="#5a4a2a" />
-      <circle cx="75" cy="55" r="2.5" fill="#5a4a2a" />
-      {/* 目のハイライト */}
-      <circle cx="46" cy="54" r="1" fill="white" />
-      <circle cx="76" cy="54" r="1" fill="white" />
-      {/* 口（にっこり） */}
-      <path d="M52 64 Q60 70 68 64" stroke="#5a4a2a" strokeWidth="2" fill="none" strokeLinecap="round" />
-      <defs>
-        <linearGradient id="bake-bread-grad" x1="10" y1="20" x2="110" y2="96">
-          <stop offset="0%" stopColor="#F5D6A8" />
-          <stop offset="40%" stopColor="#E8B87A" />
-          <stop offset="100%" stopColor="#C09060" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
+import BreadSVG from "@/components/BreadSVG";
 
 /* 紙吹雪コンポーネント */
 function Confetti() {
@@ -137,7 +106,7 @@ export default function BakeReveal() {
             animate={{ y: [0, -5, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <CuteBreadSVG className="w-36 h-28 mx-auto" />
+            <BreadSVG className="w-36 h-36 mx-auto" showFace={true} />
           </motion.div>
 
           {/* キラキラ */}

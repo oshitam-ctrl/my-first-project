@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/lib/game-state";
 import { YEASTS } from "@/lib/game-data";
+import { SpeechBubble } from "@/components/SpeechBubble";
 
 export default function Nurture() {
   const { selectedYeastId, setStep, startFermentation } = useGameStore();
@@ -14,6 +15,27 @@ export default function Nurture() {
   const [temperature, setTemperature] = useState(25);
   const [currentPhase, setCurrentPhase] = useState<"shake" | "sugar" | "temperature" | "done">("shake");
   const [isShaking, setIsShaking] = useState(false);
+
+  // セリフをランダムに選ぶ
+  const pickRandomQuote = useCallback(() => {
+    if (!yeast) return "";
+    const quotes = yeast.quotes.nurture;
+    return quotes[Math.floor(Math.random() * quotes.length)];
+  }, [yeast]);
+
+  const [currentQuote, setCurrentQuote] = useState(() => pickRandomQuote());
+
+  // フェーズが変わるたびにセリフを更新
+  useEffect(() => {
+    setCurrentQuote(pickRandomQuote());
+  }, [currentPhase, pickRandomQuote]);
+
+  // シェイクするたびにセリフを更新
+  useEffect(() => {
+    if (shakeCount > 0) {
+      setCurrentQuote(pickRandomQuote());
+    }
+  }, [shakeCount, pickRandomQuote]);
 
   const optimalTemp = { min: 24, max: 28 };
   const isOptimalTemp = temperature >= optimalTemp.min && temperature <= optimalTemp.max;
@@ -60,6 +82,11 @@ export default function Nurture() {
         >
           {yeast.emoji}
         </motion.span>
+        {currentQuote && (
+          <div className="mt-2 mb-1">
+            <SpeechBubble text={currentQuote} />
+          </div>
+        )}
         <h2 className="text-lg font-bold text-[#8B6914] mt-2">{yeast.name}を育てよう</h2>
         {/* フェーズインジケーター */}
         <div className="flex justify-center gap-2 mt-3">

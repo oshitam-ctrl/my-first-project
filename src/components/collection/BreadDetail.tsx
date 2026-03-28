@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { BREADS, YEASTS, TOPPINGS } from "@/lib/game-data";
+import BreadSVG from "@/components/BreadSVG";
 
 interface BreadDetailProps {
   breadId: string;
@@ -32,7 +33,7 @@ export default function BreadDetail({ breadId, onClose }: BreadDetailProps) {
 
         {/* パンイラスト */}
         <div className="text-center mb-4">
-          <span className="text-7xl">🍞</span>
+          <BreadSVG className="w-32 h-32 mx-auto" toppings={bread.toppings} showFace={true} />
           {yeast && <p className="text-sm text-gray-400 mt-1">{yeast.emoji} {yeast.name}</p>}
         </div>
 

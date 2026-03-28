@@ -1,15 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useGameStore } from "@/lib/game-state";
 import { YEASTS } from "@/lib/game-data";
+import { SpeechBubble } from "@/components/SpeechBubble";
 
 export default function Fermenting() {
   const { fermentation, checkFermentation, setStep, selectedYeastId } = useGameStore();
   const [timeLeft, setTimeLeft] = useState("");
   const [progress, setProgress] = useState(0);
   const yeast = YEASTS.find((y) => y.id === selectedYeastId);
+
+  const pickRandomQuote = useCallback(() => {
+    if (!yeast) return "";
+    const quotes = yeast.quotes.nurture;
+    return quotes[Math.floor(Math.random() * quotes.length)];
+  }, [yeast]);
+
+  const [currentQuote, setCurrentQuote] = useState(() => pickRandomQuote());
+
+  // 数秒おきにセリフを切り替え
+  useEffect(() => {
+    const quoteInterval = setInterval(() => {
+      setCurrentQuote(pickRandomQuote());
+    }, 5000);
+    return () => clearInterval(quoteInterval);
+  }, [pickRandomQuote]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -82,6 +99,12 @@ export default function Fermenting() {
             ~
           </motion.span>
         </div>
+
+        {currentQuote && (
+          <div className="mt-3 mb-1">
+            <SpeechBubble text={currentQuote} />
+          </div>
+        )}
 
         <h2 className="text-lg font-bold text-[#8B6914] mt-3">
           {yeast?.name || "酵母"}を発酵中...

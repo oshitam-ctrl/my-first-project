@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useGameStore } from "@/lib/game-state";
 import { YEASTS } from "@/lib/game-data";
+import { FairySVG } from "@/components/FairySVG";
 
 /* 小さなパンSVG */
 function SmallBreadSVG({ className = "" }: { className?: string }) {
@@ -203,15 +204,15 @@ export default function GameIdle() {
                 className="flex items-center justify-between bg-gradient-to-r from-[#FFF8F0] to-[#FFF5EB] rounded-2xl p-3.5 border border-[#E8C9A0]/15 shadow-sm"
               >
                 <div className="flex items-center gap-3">
-                  <motion.span
-                    className="text-2xl"
+                  <motion.div
                     animate={{ rotate: [0, -5, 5, 0] }}
                     transition={{ duration: 3, repeat: Infinity, delay: i * 0.3 }}
                   >
-                    {yeast.emoji}
-                  </motion.span>
+                    <FairySVG yeastId={yeast.id} size={36} />
+                  </motion.div>
                   <div>
                     <p className="font-semibold text-sm text-[#5a4a2a]">{yeast.name}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">{yeast.personality}</p>
                     <p className="text-xs mt-0.5">
                       {[...Array(yeast.rarity)].map((_, si) => (
                         <span key={si} className="text-[#E8913A]">★</span>

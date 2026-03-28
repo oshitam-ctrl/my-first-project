@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/lib/game-state";
 import { YEASTS, DUPLICATE_STORIES } from "@/lib/game-data";
+import { FairySVG } from "@/components/FairySVG";
 
 type GachaPhase = "compost" | "growing" | "reveal";
 
@@ -250,13 +251,13 @@ export default function Gacha() {
                   : "bg-gradient-to-r from-[#E8C9A0] via-[#D4A574] to-[#E8C9A0]"
               }`} />
 
-              <motion.p
-                className="text-6xl mb-3"
+              <motion.div
+                className="flex justify-center mb-3"
                 animate={{ scale: [1, 1.1, 1], y: [0, -3, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                {drawnYeast.emoji}
-              </motion.p>
+                <FairySVG yeastId={drawnYeast.id} size={96} />
+              </motion.div>
               <p className="text-lg font-bold text-[#D4A574]">{drawnYeast.name}</p>
               <div className="flex justify-center gap-0.5 mt-1">
                 {[...Array(drawnYeast.rarity)].map((_, i) => (

@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { useGameStore } from "@/lib/game-state";
 import { IRREGULAR_FRUITS, getAvailableYeasts } from "@/lib/game-data";
+import { FairySVG } from "@/components/FairySVG";
 
 const FRUIT_GRADIENTS = [
   "from-[#FFF5F5] to-[#FFE4E1]",  // ピンク系
@@ -68,7 +69,7 @@ export default function MaterialSelect() {
                 whileHover={{ rotate: [0, -5, 5, 0] }}
                 transition={{ duration: 0.4 }}
               >
-                <span className="text-4xl">{yeast.emoji}</span>
+                <FairySVG yeastId={yeast.id} size={48} />
               </motion.div>
               <div className="flex-1">
                 <p className="font-bold text-[#8B6914] text-base">{fruitName}</p>

@@ -4,24 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useGameStore } from "@/lib/game-state";
 import { TOPPINGS, BREADS } from "@/lib/game-data";
-
-/* パンプレビューSVG */
-function PreviewBreadSVG({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 80 68" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="40" cy="40" rx="35" ry="26" fill="url(#tp-bread-grad)" />
-      <ellipse cx="38" cy="32" rx="16" ry="7" fill="rgba(255,255,255,0.18)" />
-      <path d="M18 33 C24 26, 35 24, 40 28 C45 24, 56 26, 62 33" stroke="rgba(139,105,20,0.12)" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-      <defs>
-        <linearGradient id="tp-bread-grad" x1="5" y1="14" x2="75" y2="66">
-          <stop offset="0%" stopColor="#F5D6A8" />
-          <stop offset="50%" stopColor="#E8B87A" />
-          <stop offset="100%" stopColor="#C09060" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
+import BreadSVG from "@/components/BreadSVG";
 
 export default function ToppingSelect() {
   const { selectedBreadId, setSelectedToppings, setStep } = useGameStore();
@@ -65,27 +48,9 @@ export default function ToppingSelect() {
           animate={{ y: [0, -3, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          <PreviewBreadSVG className="w-20 h-16 mx-auto" />
+          <BreadSVG className="w-24 h-24 mx-auto" toppings={selected} showFace={true} />
         </motion.div>
         {bread && <p className="font-bold text-[#D4A574] mt-1">{bread.name}</p>}
-        {selected.length > 0 && (
-          <div className="flex justify-center gap-2 mt-2">
-            {selected.map((id) => {
-              const topping = TOPPINGS.find((t) => t.id === id);
-              return topping ? (
-                <motion.span
-                  key={id}
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 300 }}
-                  className="text-2xl"
-                >
-                  {topping.emoji}
-                </motion.span>
-              ) : null;
-            })}
-          </div>
-        )}
         {selected.length === 0 && (
           <p className="text-xs text-gray-300 mt-2">ここにトッピングが表示されます</p>
         )}

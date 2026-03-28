@@ -4,42 +4,7 @@ import { useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useGameStore } from "@/lib/game-state";
 import { BREADS, YEASTS, TOPPINGS } from "@/lib/game-data";
-
-/* かわいい丸パンSVG（完成版・王冠付き） */
-function CompleteBreadSVG({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 120 110" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* 王冠 */}
-      <path d="M40 22 L45 10 L52 18 L60 6 L68 18 L75 10 L80 22 Z" fill="#FFD700" stroke="#E8B200" strokeWidth="1" />
-      <circle cx="45" cy="10" r="2.5" fill="#FF6B6B" />
-      <circle cx="60" cy="6" r="2.5" fill="#4FC3F7" />
-      <circle cx="75" cy="10" r="2.5" fill="#81C784" />
-      {/* パン本体 */}
-      <ellipse cx="60" cy="62" rx="48" ry="36" fill="url(#comp-bread-grad)" />
-      {/* 割れ目 */}
-      <path d="M32 50 C42 40, 55 37, 60 43 C65 37, 78 40, 88 50" stroke="rgba(139,105,20,0.15)" strokeWidth="2" fill="none" strokeLinecap="round" />
-      {/* ハイライト */}
-      <ellipse cx="55" cy="48" rx="20" ry="9" fill="rgba(255,255,255,0.2)" />
-      {/* ほっぺ */}
-      <ellipse cx="40" cy="66" rx="7" ry="4.5" fill="rgba(255,180,150,0.3)" />
-      <ellipse cx="80" cy="66" rx="7" ry="4.5" fill="rgba(255,180,150,0.3)" />
-      {/* 目 */}
-      <circle cx="47" cy="59" r="2.5" fill="#5a4a2a" />
-      <circle cx="73" cy="59" r="2.5" fill="#5a4a2a" />
-      <circle cx="48" cy="58" r="1" fill="white" />
-      <circle cx="74" cy="58" r="1" fill="white" />
-      {/* 嬉しい口 */}
-      <path d="M52 68 Q60 76 68 68" stroke="#5a4a2a" strokeWidth="2" fill="none" strokeLinecap="round" />
-      <defs>
-        <linearGradient id="comp-bread-grad" x1="12" y1="26" x2="108" y2="98">
-          <stop offset="0%" stopColor="#F5D6A8" />
-          <stop offset="40%" stopColor="#E8B87A" />
-          <stop offset="100%" stopColor="#C09060" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
+import BreadSVG from "@/components/BreadSVG";
 
 /* ミニ紙吹雪 */
 function MiniConfetti() {
@@ -124,7 +89,7 @@ export default function Complete() {
             animate={{ y: [0, -5, 0] }}
             transition={{ duration: 2.5, repeat: Infinity }}
           >
-            <CompleteBreadSVG className="w-32 h-28 mx-auto" />
+            <BreadSVG className="w-36 h-36 mx-auto" toppings={selectedToppings} showFace={true} />
           </motion.div>
           {/* キラキラ */}
           <motion.span
