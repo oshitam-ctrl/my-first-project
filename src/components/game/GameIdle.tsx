@@ -84,6 +84,15 @@ export default function GameIdle() {
               もうしばらくお待ちください
             </p>
             <FermentationTimer completedAt={fermentation!.completedAt} />
+            <button
+              onClick={() => {
+                useGameStore.setState({ fermentation: null, selectedYeastId: null });
+                setStep("idle");
+              }}
+              className="mt-3 text-xs text-gray-400 underline"
+            >
+              リセットしてやり直す
+            </button>
           </div>
         </motion.div>
       )}
