@@ -49,7 +49,8 @@ export default function Complete() {
     selectedBreadId,
     selectedToppings,
     addBread,
-    addBreadCrumb,
+    addBreadCrumbs,
+    nurtureQuality,
     setStep,
   } = useGameStore();
 
@@ -59,10 +60,12 @@ export default function Complete() {
     .map((id) => TOPPINGS.find((t) => t.id === id))
     .filter(Boolean);
 
+  const crumbsEarned = nurtureQuality >= 3 ? 2 : 1;
+
   useEffect(() => {
     if (selectedBreadId) {
-      addBread(selectedBreadId, selectedToppings);
-      addBreadCrumb();
+      addBread(selectedBreadId, selectedToppings, nurtureQuality);
+      addBreadCrumbs(crumbsEarned);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -125,7 +128,14 @@ export default function Complete() {
         >
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#FFD700] via-[#E8913A] to-[#FFD700]" />
 
-          <p className="text-lg font-bold text-[#D4A574]">{bread.name}</p>
+          <div className="flex items-center justify-center gap-2">
+            <p className="text-lg font-bold text-[#D4A574]">{bread.name}</p>
+            <span className="text-sm">
+              {[1, 2, 3].map((s) => (
+                <span key={s} className={nurtureQuality >= s ? "text-[#FFD700]" : "text-gray-200"}>★</span>
+              ))}
+            </span>
+          </div>
 
           {yeast && (
             <div className="mt-2 bg-[#FFF8F0] rounded-xl py-1.5 px-3 inline-block">
@@ -176,8 +186,18 @@ export default function Complete() {
             >
               🍞
             </motion.span>
-            パンくずを1個獲得！ガチャが回せます
+            パンくずを{crumbsEarned}個獲得！ガチャが回せます
           </p>
+          {nurtureQuality >= 3 && (
+            <motion.p
+              className="text-xs text-[#FFD700] mt-1 font-bold"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              ⭐ 最高傑作ボーナス！+1
+            </motion.p>
+          )}
         </motion.div>
 
         <motion.div

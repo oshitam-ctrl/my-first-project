@@ -23,6 +23,7 @@ interface OwnedBread {
   breadId: string;
   customToppings: string[];
   createdAt: string;
+  quality: number; // 1〜3（ミニゲーム品質★）
 }
 
 interface Fermentation {
@@ -43,7 +44,7 @@ interface GameState {
 
   // 所持パン
   ownedBreads: OwnedBread[];
-  addBread: (breadId: string, customToppings: string[]) => void;
+  addBread: (breadId: string, customToppings: string[], quality: number) => void;
 
   // 発酵中データ
   fermentation: Fermentation | null;
@@ -76,8 +77,14 @@ interface GameState {
 
   // パンくず（ガチャ通貨）
   breadCrumbs: number;
-  addBreadCrumb: () => void;
+  addBreadCrumbs: (amount: number) => void;
   useBreadCrumb: () => boolean;
+
+  // 育成スコア（ミニゲーム成績）
+  nurtureScore: number;
+  nurtureQuality: number; // 1〜3（★の数）
+  setNurtureScore: (score: number) => void;
+  setNurtureQuality: (quality: number) => void;
 }
 
 // デモ用：10秒で完成（本番は3時間に戻す）
@@ -124,11 +131,11 @@ export const useGameStore = create<GameState>()(
       },
 
       ownedBreads: [],
-      addBread: (breadId, customToppings) => {
+      addBread: (breadId, customToppings, quality) => {
         set({
           ownedBreads: [
             ...get().ownedBreads,
-            { breadId, customToppings, createdAt: new Date().toISOString() },
+            { breadId, customToppings, createdAt: new Date().toISOString(), quality },
           ],
         });
       },
@@ -201,12 +208,17 @@ export const useGameStore = create<GameState>()(
       completeTutorial: () => set({ tutorialCompleted: true }),
 
       breadCrumbs: 0,
-      addBreadCrumb: () => set({ breadCrumbs: get().breadCrumbs + 1 }),
+      addBreadCrumbs: (amount) => set({ breadCrumbs: get().breadCrumbs + amount }),
       useBreadCrumb: () => {
         if (get().breadCrumbs <= 0) return false;
         set({ breadCrumbs: get().breadCrumbs - 1 });
         return true;
       },
+
+      nurtureScore: 0,
+      nurtureQuality: 1,
+      setNurtureScore: (score) => set({ nurtureScore: score }),
+      setNurtureQuality: (quality) => set({ nurtureQuality: quality }),
     }),
     {
       name: "petit-hermes-game",

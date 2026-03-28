@@ -7,10 +7,13 @@ import { YEASTS, BREADS } from "@/lib/game-data";
 import BreadSVG from "@/components/BreadSVG";
 
 /* 紙吹雪コンポーネント */
-function Confetti() {
-  const colors = ["#F5C88A", "#D4A574", "#E8913A", "#FFD700", "#FF8C00", "#7CB342", "#FFB6C1"];
+function Confetti({ quality = 1 }: { quality?: number }) {
+  const colors = quality >= 3
+    ? ["#FFD700", "#FFC107", "#FFB300", "#FFCA28", "#F5C88A", "#E8913A", "#FF8C00"]
+    : ["#F5C88A", "#D4A574", "#E8913A", "#FFD700", "#FF8C00", "#7CB342", "#FFB6C1"];
+  const count = quality >= 3 ? 30 : quality >= 2 ? 20 : 12;
   const pieces = useMemo(() =>
-    Array.from({ length: 20 }, (_, i) => ({
+    Array.from({ length: count }, (_, i) => ({
       id: i,
       color: colors[i % colors.length],
       left: `${Math.random() * 100}%`,
@@ -21,7 +24,7 @@ function Confetti() {
       shape: Math.random() > 0.5 ? "circle" : "square",
     }))
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  , []);
+  , [count]);
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50">
@@ -52,7 +55,7 @@ function Confetti() {
 }
 
 export default function BakeReveal() {
-  const { selectedYeastId, setSelectedBread, setStep, fermentation } = useGameStore();
+  const { selectedYeastId, setSelectedBread, setStep, fermentation, nurtureQuality } = useGameStore();
   const yeast = YEASTS.find((y) => y.id === selectedYeastId || y.id === fermentation?.yeastId);
 
   const bread = useMemo(() => {
@@ -72,7 +75,7 @@ export default function BakeReveal() {
 
   return (
     <div className="p-4 flex flex-col items-center justify-center min-h-[60vh] relative">
-      <Confetti />
+      <Confetti quality={nurtureQuality} />
 
       <motion.div
         initial={{ scale: 0.5, opacity: 0 }}
@@ -139,8 +142,22 @@ export default function BakeReveal() {
           transition={{ delay: 0.8 }}
           className="text-xl font-bold text-[#8B6914] mb-1 mt-3"
         >
-          焼き上がりました！
+          {nurtureQuality >= 3 ? "最高傑作！" : nurtureQuality >= 2 ? "おいしく焼けました！" : "焼き上がりました！"}
         </motion.h2>
+
+        {/* 品質★ */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.9, type: "spring" }}
+          className="flex justify-center gap-1 mb-2"
+        >
+          {[1, 2, 3].map((star) => (
+            <span key={star} className={`text-lg ${nurtureQuality >= star ? "text-[#FFD700]" : "text-gray-200"}`}>
+              ★
+            </span>
+          ))}
+        </motion.div>
 
         <motion.p
           initial={{ opacity: 0 }}
