@@ -2,21 +2,19 @@
 {% block title %}会員登録｜プチヘルメース{% endblock %}
 
 {% block content %}
-<div class="form-card">
-    <h2>会員登録</h2>
-    <p style="text-align:center;color:#7A6B5D;font-size:0.9rem;margin-bottom:1.5rem;">
-        アカウントを作成してパンの予約ができます
-    </p>
+<div class="form-card animate-in">
+    <h2>はじめまして</h2>
+    <p class="form-subtitle">アカウントを作成してパンの予約ができます</p>
     <form method="post" action="/auth/register">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <label for="name">お名前</label>
-        <input type="text" id="name" name="name" required placeholder="例: 山田太郎">
+        <input type="text" id="name" name="name" required placeholder="例: 山田花子">
         <label for="email">メールアドレス</label>
-        <input type="email" id="email" name="email" required placeholder="例: user@example.com">
+        <input type="email" id="email" name="email" required placeholder="例: hanako@example.com">
         <label for="password">パスワード（8文字以上）</label>
-        <input type="password" id="password" name="password" required minlength="8">
-        <button type="submit">登録する</button>
+        <input type="password" id="password" name="password" required minlength="8" placeholder="8文字以上で入力">
+        <button type="submit">会員登録する</button>
     </form>
-    <p class="form-link">アカウントをお持ちの方は <a href="/auth/login">ログイン</a></p>
+    <p class="form-link">アカウントをお持ちの方は <a href="/auth/login">ログイン</a> へ</p>
 </div>
 {% endblock %}

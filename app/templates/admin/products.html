@@ -1,10 +1,16 @@
 {% extends "base.html" %}
-{% block title %}商品管理 - パン屋予約{% endblock %}
+{% block title %}商品管理｜プチヘルメース{% endblock %}
 
 {% block content %}
-<h1>商品管理</h1>
-<a href="/admin/products/new" role="button">新規商品追加</a>
+<div class="section-header animate-in">
+    <h2>商品管理</h2>
+</div>
 
+<div style="text-align:center;margin-bottom:2rem;" class="animate-in animate-in-delay-1">
+    <a href="/admin/products/new" class="btn btn-warm">新しいパンを追加</a>
+</div>
+
+<div class="animate-in animate-in-delay-2">
 <table>
     <thead>
         <tr><th>ID</th><th>商品名</th><th>価格</th><th>有効</th><th></th></tr>
@@ -15,12 +21,13 @@
             <td>{{ p.id }}</td>
             <td>{{ p.name }}</td>
             <td>¥{{ "%.0f"|format(p.price) }}</td>
-            <td>{{ "✓" if p.is_active else "✗" }}</td>
-            <td><a href="/admin/products/{{ p.id }}/edit">編集</a></td>
+            <td>{% if p.is_active %}<span style="color:var(--olive);">有効</span>{% else %}<span style="color:#bbb;">無効</span>{% endif %}</td>
+            <td><a href="/admin/products/{{ p.id }}/edit">編集 →</a></td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+</div>
 
-<p><a href="/admin">← 管理画面に戻る</a></p>
+<p style="text-align:center;margin-top:2rem;"><a href="/admin">← 管理画面に戻る</a></p>
 {% endblock %}

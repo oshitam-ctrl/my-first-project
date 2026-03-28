@@ -2,11 +2,13 @@
 {% block title %}予約一覧｜プチヘルメース{% endblock %}
 
 {% block content %}
-<div class="section-header">
-    <h2>予約一覧</h2>
+<div class="section-header animate-in">
+    <h2>ご予約一覧</h2>
+    <p>いつもご利用ありがとうございます</p>
 </div>
 
 {% if reservations %}
+<div class="animate-in animate-in-delay-1">
 <table>
     <thead>
         <tr>
@@ -27,18 +29,21 @@
             <td>¥{{ "%.0f"|format(r.total_price) }}</td>
             <td>
                 <span class="badge badge-{{ r.status }}">
-                    {% if r.status == 'confirmed' %}確定{% elif r.status == 'cancelled' %}キャンセル{% else %}{{ r.status }}{% endif %}
+                    {% if r.status == 'confirmed' %}確定{% elif r.status == 'cancelled' %}取消{% else %}{{ r.status }}{% endif %}
                 </span>
             </td>
-            <td><a href="/reservations/{{ r.id }}">詳細</a></td>
+            <td><a href="/reservations/{{ r.id }}">詳細 →</a></td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+</div>
 {% else %}
-<p style="text-align:center;color:#7A6B5D;margin:3rem 0;">
-    まだ予約がありません。<br>
-    <a href="/">パンを見てみる →</a>
-</p>
+<div style="text-align:center;margin:4rem 0;" class="animate-in animate-in-delay-1">
+    <p style="color:#8A7B6B;font-size:1.05rem;margin-bottom:1.5rem;">
+        まだ予約がありません
+    </p>
+    <a href="/" class="btn btn-primary">パンを見てみる →</a>
+</div>
 {% endif %}
 {% endblock %}

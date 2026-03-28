@@ -3,67 +3,38 @@
 
 {% block content %}
 <!-- Hero -->
-<section class="hero">
-    <h1>プチヘルメース</h1>
-    <p class="subtitle">毎日食べたい幸せ酵母</p>
-    <p class="tagline">
-        広島県北広島町の旧南方小学校から届ける、<br>
-        自家製酵母と地元素材のやさしいパン。<br>
-        今日のパンが、未来の野菜に。
-    </p>
-</section>
-
-<!-- About -->
-<section class="about-section">
-    <div class="about-image">
-        <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-            <rect fill="#F5EDE0" width="400" height="300" rx="8"/>
-            <!-- School building silhouette -->
-            <rect fill="#D4B896" x="60" y="120" width="280" height="140" rx="4"/>
-            <rect fill="#C2A67A" x="80" y="100" width="240" height="30" rx="2"/>
-            <rect fill="#B8956A" x="160" y="80" width="80" height="30" rx="2"/>
-            <!-- Windows -->
-            <rect fill="#FDF6EC" x="90" y="140" width="35" height="40" rx="3"/>
-            <rect fill="#FDF6EC" x="140" y="140" width="35" height="40" rx="3"/>
-            <rect fill="#FDF6EC" x="225" y="140" width="35" height="40" rx="3"/>
-            <rect fill="#FDF6EC" x="275" y="140" width="35" height="40" rx="3"/>
-            <!-- Door -->
-            <rect fill="#8B6B4A" x="180" y="180" width="40" height="80" rx="3"/>
-            <circle fill="#D4B896" cx="212" cy="220" r="3"/>
-            <!-- Trees -->
-            <circle fill="#9CAF88" cx="40" cy="180" r="30"/>
-            <rect fill="#8B6B4A" x="37" y="200" width="6" height="60"/>
-            <circle fill="#7A8450" cx="360" cy="170" r="35"/>
-            <rect fill="#8B6B4A" x="357" y="195" width="6" height="65"/>
-            <!-- Wheat -->
-            <ellipse fill="#D4B896" cx="340" cy="240" rx="4" ry="8"/>
-            <ellipse fill="#D4B896" cx="348" cy="235" rx="4" ry="8"/>
-            <ellipse fill="#D4B896" cx="332" cy="238" rx="4" ry="8"/>
-            <line stroke="#8B6B4A" x1="340" y1="248" x2="340" y2="270" stroke-width="1.5"/>
-            <!-- Sky elements -->
-            <circle fill="#F0E4D0" cx="320" cy="50" r="20" opacity="0.5"/>
-            <path d="M50 60 Q70 45 90 60 Q110 45 130 60" fill="none" stroke="#D4B896" stroke-width="1.5" opacity="0.4"/>
-        </svg>
-    </div>
-    <div>
-        <h2>旧校舎から届ける<br>やさしいパン</h2>
-        <p>
-            2013年に閉校した旧南方小学校。<br>
-            その教室が、パンの香り漂う工房に生まれ変わりました。
-        </p>
-        <p>
-            地元・北広島町の畑で採れた規格外の野菜や果物を<br>
-            自家製酵母のパンに活かしています。<br>
-            食べることが、地域の未来をつくる。<br>
-            そんな「おいしい循環」を目指しています。
-        </p>
-        <p style="font-size:0.85rem; color: var(--color-olive);">
-            🌿 乳製品不使用 ・ 食事パン中心 ・ コンポスタブル包装
+<section class="hero animate-in">
+    <div class="hero-content">
+        <h1>プチヘルメース</h1>
+        <p class="subtitle">毎日食べたい幸せ酵母</p>
+        <p class="tagline">
+            広島県北広島町、旧南方小学校の教室から<br>
+            <em>自家製酵母</em>と<em>地元の恵み</em>で焼き上げる<br>
+            やさしいパンをお届けします。
         </p>
     </div>
 </section>
 
-<div class="artisan-divider">🌾</div>
+<!-- Philosophy -->
+<section class="philosophy">
+    <div class="philosophy-card animate-in animate-in-delay-1">
+        <div class="philosophy-icon">🌾</div>
+        <h3>自家製酵母</h3>
+        <p>果物や穀物から育てた自家製酵母で<br>じっくり時間をかけて発酵。<br>素材の旨みを引き出します。</p>
+    </div>
+    <div class="philosophy-card animate-in animate-in-delay-2">
+        <div class="philosophy-icon">🥕</div>
+        <h3>畑からパンへ</h3>
+        <p>北広島町の畑から届く<br>規格外の野菜や果物を活用。<br>おいしさで食品ロスを減らします。</p>
+    </div>
+    <div class="philosophy-card animate-in animate-in-delay-3">
+        <div class="philosophy-icon">♻️</div>
+        <h3>やさしい循環</h3>
+        <p>パンくずは堆肥に、包装は自然に還る素材。<br>今日のパンが未来の野菜になる<br>おいしい循環を。</p>
+    </div>
+</section>
+
+<div class="artisan-divider">🌿</div>
 
 <!-- Products -->
 <div class="section-header">
@@ -73,8 +44,13 @@
 
 <div class="product-grid">
     {% for product in products %}
-    <article class="product-card">
-        <img src="{{ product.image_url }}" alt="{{ product.name }}" class="card-image">
+    <article class="product-card animate-in animate-in-delay-{{ loop.index }}">
+        <div class="card-image-wrap">
+            <img src="{{ product.image_url }}" alt="{{ product.name }}" class="card-image">
+            {% if product.price >= 1000 %}
+            <span class="card-badge">人気</span>
+            {% endif %}
+        </div>
         <div class="card-body">
             <h3>{{ product.name }}</h3>
             <p class="description">{{ product.description }}</p>
@@ -82,9 +58,9 @@
         <div class="card-footer">
             <span class="price">¥{{ "%.0f"|format(product.price) }}<small>（税込）</small></span>
             {% if user %}
-                <a href="/reservations/new?product_id={{ product.id }}" class="reserve-btn">予約する</a>
+                <a href="/reservations/new?product_id={{ product.id }}" class="btn btn-primary">予約する</a>
             {% else %}
-                <a href="/auth/login" class="reserve-btn outline">ログインして予約</a>
+                <a href="/auth/login" class="btn btn-outline">ログインして予約</a>
             {% endif %}
         </div>
     </article>
@@ -92,16 +68,98 @@
 </div>
 
 {% if not products %}
-<p style="text-align:center;color:#7A6B5D;">現在、商品の準備中です。</p>
+<p style="text-align:center;color:#8A7B6B;margin:3rem 0;">
+    現在、商品の準備中です。
+</p>
 {% endif %}
 
-<div class="artisan-divider">🌿</div>
+<div class="artisan-divider">🌾</div>
 
-<!-- Info -->
-<section style="text-align:center;margin:2rem 0;">
-    <h2>お店について</h2>
-    <p>📍 広島県山県郡北広島町南方1920（旧南方小学校1階）</p>
-    <p>📅 営業日：<strong>水曜日・土曜日</strong></p>
-    <p>📷 <a href="https://www.instagram.com/petit_hermes/" target="_blank" rel="noopener">Instagram @petit_hermes</a></p>
+<!-- Story -->
+<section class="story-section animate-in">
+    <div class="story-grid">
+        <div class="story-image">
+            <svg viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg">
+                <rect fill="#F0E8D8" width="400" height="320" rx="8"/>
+                <!-- Sky -->
+                <rect fill="#E8E0D0" width="400" height="160"/>
+                <!-- Mountains -->
+                <path d="M0 160 L80 80 L160 140 L240 60 L320 120 L400 80 L400 160 Z" fill="#C8D0B0" opacity="0.5"/>
+                <path d="M0 160 L60 110 L140 150 L200 90 L280 130 L360 100 L400 120 L400 160 Z" fill="#9CAF88" opacity="0.4"/>
+                <!-- School building -->
+                <rect fill="#D4B896" x="80" y="130" width="240" height="130" rx="3"/>
+                <rect fill="#C8A880" x="95" y="115" width="210" height="22" rx="2"/>
+                <rect fill="#B8956A" x="170" y="98" width="60" height="22" rx="2"/>
+                <!-- Windows -->
+                <rect fill="#FDF6EC" x="100" y="148" width="30" height="35" rx="2"/>
+                <rect fill="#FDF6EC" x="145" y="148" width="30" height="35" rx="2"/>
+                <rect fill="#FDF6EC" x="225" y="148" width="30" height="35" rx="2"/>
+                <rect fill="#FDF6EC" x="270" y="148" width="30" height="35" rx="2"/>
+                <!-- Door with warm light -->
+                <rect fill="#8B6B4A" x="188" y="200" width="24" height="60" rx="2"/>
+                <rect fill="#F5E0C0" x="190" y="205" width="20" height="30" rx="1" opacity="0.6"/>
+                <circle fill="#C8A880" cx="208" cy="232" r="2"/>
+                <!-- Trees -->
+                <circle fill="#7A8450" cx="50" cy="180" r="28"/>
+                <circle fill="#9CAF88" cx="45" cy="175" r="22"/>
+                <rect fill="#8B6B4A" x="47" y="200" width="5" height="60"/>
+                <circle fill="#6A7A40" cx="355" cy="175" r="30"/>
+                <circle fill="#8CA070" cx="350" cy="170" r="24"/>
+                <rect fill="#8B6B4A" x="352" y="198" width="5" height="62"/>
+                <!-- Flowers -->
+                <circle fill="#D47A52" cx="70" cy="270" r="4"/>
+                <circle fill="#D47A52" cx="82" cy="275" r="3"/>
+                <circle fill="#E8A070" cx="340" cy="268" r="4"/>
+                <circle fill="#E8A070" cx="328" cy="274" r="3"/>
+                <!-- Path -->
+                <path d="M200 260 Q200 280 190 300 Q185 320 180 320" fill="none" stroke="#C8B896" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
+                <!-- Smoke from chimney -->
+                <circle fill="#E0D8C8" cx="190" cy="88" r="6" opacity="0.4"/>
+                <circle fill="#E0D8C8" cx="185" cy="75" r="5" opacity="0.3"/>
+                <circle fill="#E0D8C8" cx="188" cy="63" r="4" opacity="0.2"/>
+            </svg>
+        </div>
+        <div class="story-text">
+            <h2>旧校舎から届ける<br>やさしいパン</h2>
+            <p>
+                2013年に閉校した旧南方小学校。
+                その教室が、パンの香り漂う工房に生まれ変わりました。
+            </p>
+            <p>
+                北海道から北広島町に移り住んだ店主が、
+                地元の畑で行き場を失った野菜や果物と出会い、
+                「もったいない」を「おいしい」に変えるパン作りを始めました。
+            </p>
+            <p>
+                <em>「今日のパンが、未来の野菜に。」</em><br>
+                パンくずは堆肥に還し、やがて畑の栄養に。
+                食べることが、この土地の未来をつくる。
+                そんなおいしい循環を目指しています。
+            </p>
+            <div class="values">
+                <span class="value-tag">🌿 乳製品不使用</span>
+                <span class="value-tag">🌾 自家製酵母</span>
+                <span class="value-tag">♻️ コンポスタブル包装</span>
+                <span class="value-tag">🥕 地産地消</span>
+                <span class="value-tag">🏫 廃校リノベーション</span>
+            </div>
+        </div>
+    </div>
 </section>
+
+<!-- Info Bar -->
+<div class="info-bar animate-in">
+    <div class="info-item">
+        <span class="info-icon">📍</span>
+        <span>北広島町南方1920</span>
+    </div>
+    <div class="info-item">
+        <span class="info-icon">📅</span>
+        <span>水曜・土曜 10:00–15:00</span>
+    </div>
+    <div class="info-item">
+        <span class="info-icon">📷</span>
+        <a href="https://www.instagram.com/petit_hermes/" target="_blank" rel="noopener">@petit_hermes</a>
+    </div>
+</div>
 {% endblock %}

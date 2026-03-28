@@ -1,32 +1,34 @@
 {% extends "base.html" %}
-{% block title %}{{ "商品編集" if product else "新規商品" }} - パン屋予約{% endblock %}
+{% block title %}{{ "商品編集" if product else "新規商品" }}｜プチヘルメース{% endblock %}
 
 {% block content %}
-<h1>{{ "商品編集" if product else "新規商品追加" }}</h1>
+<div class="form-card animate-in">
+    <h2>{{ "パンの編集" if product else "新しいパンの追加" }}</h2>
 
-<form method="post" action="{{ '/admin/products/' ~ product.id ~ '/edit' if product else '/admin/products/new' }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <form method="post" action="{{ '/admin/products/' ~ product.id ~ '/edit' if product else '/admin/products/new' }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-    <label for="name">商品名</label>
-    <input type="text" id="name" name="name" required value="{{ product.name if product else '' }}">
+        <label for="name">商品名</label>
+        <input type="text" id="name" name="name" required value="{{ product.name if product else '' }}" placeholder="例: 天然酵母のカンパーニュ">
 
-    <label for="description">説明</label>
-    <textarea id="description" name="description">{{ product.description if product else '' }}</textarea>
+        <label for="description">説明</label>
+        <textarea id="description" name="description" rows="3" placeholder="パンの特徴や素材について">{{ product.description if product else '' }}</textarea>
 
-    <label for="price">価格（円）</label>
-    <input type="number" id="price" name="price" min="0" step="10" required value="{{ '%.0f'|format(product.price) if product else '' }}">
+        <label for="price">価格（円・税込）</label>
+        <input type="number" id="price" name="price" min="0" step="10" required value="{{ '%.0f'|format(product.price) if product else '' }}" placeholder="例: 680">
 
-    {% if product %}
-    <fieldset>
-        <label>
-            <input type="checkbox" name="is_active" value="true" {{ "checked" if product.is_active }}>
-            有効（商品一覧に表示）
-        </label>
-    </fieldset>
-    {% endif %}
+        {% if product %}
+        <fieldset style="border:1px solid var(--sand);border-radius:var(--radius-sm);padding:0.75rem 1rem;margin-bottom:1.25rem;">
+            <label style="display:flex;align-items:center;gap:0.5rem;margin:0;cursor:pointer;">
+                <input type="checkbox" name="is_active" value="true" {{ "checked" if product.is_active }} style="width:auto;margin:0;">
+                商品一覧に表示する
+            </label>
+        </fieldset>
+        {% endif %}
 
-    <button type="submit">{{ "更新" if product else "追加" }}</button>
-</form>
+        <button type="submit">{{ "更新する" if product else "追加する" }}</button>
+    </form>
+</div>
 
-<p><a href="/admin/products">← 商品一覧に戻る</a></p>
+<p style="text-align:center;margin-top:1.5rem;"><a href="/admin/products">← 商品一覧に戻る</a></p>
 {% endblock %}

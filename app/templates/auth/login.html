@@ -2,16 +2,17 @@
 {% block title %}ログイン｜プチヘルメース{% endblock %}
 
 {% block content %}
-<div class="form-card">
-    <h2>ログイン</h2>
+<div class="form-card animate-in">
+    <h2>おかえりなさい</h2>
+    <p class="form-subtitle">ログインしてパンを予約しましょう</p>
     <form method="post" action="/auth/login">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <label for="email">メールアドレス</label>
-        <input type="email" id="email" name="email" required placeholder="例: user@example.com">
+        <input type="email" id="email" name="email" required placeholder="例: hanako@example.com">
         <label for="password">パスワード</label>
-        <input type="password" id="password" name="password" required>
+        <input type="password" id="password" name="password" required placeholder="パスワードを入力">
         <button type="submit">ログイン</button>
     </form>
-    <p class="form-link">アカウントをお持ちでない方は <a href="/auth/register">会員登録</a></p>
+    <p class="form-link">はじめての方は <a href="/auth/register">会員登録</a> へ</p>
 </div>
 {% endblock %}

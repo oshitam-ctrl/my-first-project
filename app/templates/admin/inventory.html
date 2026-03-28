@@ -1,17 +1,24 @@
 {% extends "base.html" %}
-{% block title %}在庫管理 - パン屋予約{% endblock %}
+{% block title %}在庫管理｜プチヘルメース{% endblock %}
 
 {% block content %}
-<h1>在庫管理</h1>
-<p>各商品の日別在庫数を管理できます。</p>
+<div class="section-header animate-in">
+    <h2>在庫管理</h2>
+    <p>各パンの日別在庫数を管理できます</p>
+</div>
 
-<div style="overflow-x: auto;">
+<div style="overflow-x:auto;" class="animate-in animate-in-delay-1">
 <table>
     <thead>
         <tr>
-            <th>商品</th>
+            <th>パン</th>
             {% for date in dates %}
-            <th>{{ date.strftime('%m/%d') }}</th>
+            <th style="text-align:center;min-width:110px;">
+                {{ date.strftime('%m/%d') }}
+                {% if date.weekday() in [2, 5] %}
+                <br><small style="color:var(--olive);font-weight:400;">営業日</small>
+                {% endif %}
+            </th>
             {% endfor %}
         </tr>
     </thead>
@@ -21,17 +28,17 @@
             <td><strong>{{ product.name }}</strong></td>
             {% for date in dates %}
             {% set inv = grid[product.id][date|string] %}
-            <td>
-                <form method="post" action="/admin/inventory" style="margin:0;display:flex;gap:0.25rem;align-items:center">
+            <td style="text-align:center;">
+                <form method="post" action="/admin/inventory" style="margin:0;display:flex;gap:0.25rem;align-items:center;justify-content:center;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <input type="hidden" name="product_id" value="{{ product.id }}">
                     <input type="hidden" name="date" value="{{ date }}">
-                    <input type="number" name="total_quantity" min="0" style="width:70px;padding:0.25rem;margin:0"
+                    <input type="number" name="total_quantity" min="0" style="width:60px;padding:0.3rem;margin:0;font-size:0.85rem;text-align:center;border:1px solid var(--sand);border-radius:6px;background:var(--cream);"
                            value="{{ inv.total_quantity if inv else 0 }}">
-                    <button type="submit" style="padding:0.25rem 0.5rem;margin:0" class="outline">更新</button>
+                    <button type="submit" class="btn btn-outline" style="padding:0.25rem 0.5rem;font-size:0.75rem;">更新</button>
                 </form>
-                {% if inv %}
-                <small>予約済: {{ inv.reserved_quantity }} / 残: {{ inv.available_quantity }}</small>
+                {% if inv and inv.reserved_quantity > 0 %}
+                <small style="color:var(--terracotta);">予約 {{ inv.reserved_quantity }}</small>
                 {% endif %}
             </td>
             {% endfor %}
@@ -41,5 +48,5 @@
 </table>
 </div>
 
-<p><a href="/admin">← 管理画面に戻る</a></p>
+<p style="text-align:center;margin-top:2rem;"><a href="/admin">← 管理画面に戻る</a></p>
 {% endblock %}

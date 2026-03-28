@@ -2,17 +2,17 @@
 {% block title %}管理画面｜プチヘルメース{% endblock %}
 
 {% block content %}
-<div class="section-header">
+<div class="section-header animate-in">
     <h2>管理画面</h2>
 </div>
 
-<nav style="text-align:center;margin-bottom:2rem;">
-    <a href="/admin/products" class="reserve-btn" style="margin:0.25rem;">商品管理</a>
-    <a href="/admin/reservations" class="reserve-btn" style="margin:0.25rem;">予約一覧</a>
-    <a href="/admin/inventory" class="reserve-btn" style="margin:0.25rem;">在庫管理</a>
+<nav class="admin-nav animate-in animate-in-delay-1">
+    <a href="/admin/products" class="btn btn-outline">商品管理</a>
+    <a href="/admin/reservations" class="btn btn-outline">予約一覧</a>
+    <a href="/admin/inventory" class="btn btn-outline">在庫管理</a>
 </nav>
 
-<div class="stats-grid">
+<div class="stats-grid animate-in animate-in-delay-2">
     <article class="stat-card">
         <div class="number">{{ total_users }}</div>
         <div class="label">登録ユーザー</div>
@@ -27,8 +27,9 @@
     </article>
 </div>
 
-<h3 style="margin-top:2rem;">最近の予約</h3>
+<h3 style="margin-top:2.5rem;" class="animate-in animate-in-delay-3">最近の予約</h3>
 {% if recent_reservations %}
+<div class="animate-in animate-in-delay-3">
 <table>
     <thead>
         <tr><th>#</th><th>お客様</th><th>受取日</th><th>金額</th><th>状態</th></tr>
@@ -41,13 +42,14 @@
             <td>{{ r.pickup_date }}</td>
             <td>¥{{ "%.0f"|format(r.total_price) }}</td>
             <td><span class="badge badge-{{ r.status }}">
-                {% if r.status == 'confirmed' %}確定{% elif r.status == 'cancelled' %}キャンセル{% else %}{{ r.status }}{% endif %}
+                {% if r.status == 'confirmed' %}確定{% elif r.status == 'cancelled' %}取消{% else %}{{ r.status }}{% endif %}
             </span></td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+</div>
 {% else %}
-<p style="color:#7A6B5D;">まだ予約がありません。</p>
+<p style="color:#8A7B6B;">まだ予約がありません。</p>
 {% endif %}
 {% endblock %}

@@ -3,15 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="プチヘルメース ─ 広島県北広島町の旧南方小学校から届ける、自家製酵母と地元素材のやさしいパン">
+    <meta name="theme-color" content="#3E2723">
     <title>{% block title %}プチヘルメース｜毎日食べたい幸せ酵母{% endblock %}</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <nav class="site-nav">
-        <div class="container-fluid" style="display:flex;justify-content:space-between;align-items:center;">
-            <a href="/" class="brand">プチヘルメース</a>
-            <ul>
+        <div class="nav-inner">
+            <a href="/" class="nav-brand">
+                プチヘルメース
+                <small>PETIT HERMES ─ BAKERY</small>
+            </a>
+            <ul class="nav-links">
                 {% if user %}
                     <li><a href="/reservations">予約一覧</a></li>
                     {% if user.is_admin %}
@@ -41,10 +46,33 @@
     </main>
 
     <footer class="site-footer">
-        <div class="container">
-            <p style="margin-bottom:0.25rem;">プチヘルメース ─ 毎日食べたい幸せ酵母</p>
-            <p style="font-size:0.8rem;">〒731-1533 広島県山県郡北広島町南方1920（旧南方小学校）</p>
-            <p style="font-size:0.8rem;">営業日：水曜・土曜</p>
+        <div class="footer-inner">
+            <div>
+                <div class="footer-brand">プチヘルメース</div>
+                <p class="footer-tagline">
+                    毎日食べたい幸せ酵母。<br>
+                    今日のパンが、未来の野菜に。<br>
+                    育てる人、作る人、食べる人の循環。
+                </p>
+            </div>
+            <div>
+                <div class="footer-heading">お店について</div>
+                <p>〒731-1533</p>
+                <p>広島県山県郡北広島町<br>南方1920（旧南方小学校）</p>
+            </div>
+            <div>
+                <div class="footer-heading">営業情報</div>
+                <p>営業日：水曜・土曜</p>
+                <p>時間：10:00 - 15:00</p>
+                <p style="margin-top:0.5rem;">
+                    <a href="https://www.instagram.com/petit_hermes/" target="_blank" rel="noopener">
+                        Instagram →
+                    </a>
+                </p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 プチヘルメース All rights reserved.
         </div>
     </footer>
 </body>

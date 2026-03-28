@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}新規予約｜プチヘルメース{% endblock %}
+{% block title %}パンの予約｜プチヘルメース{% endblock %}
 
 {% block content %}
-<div class="form-card" style="max-width:560px;">
+<div class="form-card animate-in" style="max-width:540px;">
     <h2>パンの予約</h2>
-    <p style="text-align:center;color:#7A6B5D;font-size:0.9rem;margin-bottom:1.5rem;">
-        受取は水曜日・土曜日のみとなります
+    <p class="form-subtitle">
+        受取は<strong>水曜日・土曜日</strong>の 10:00〜15:00 です
     </p>
 
     <form method="post" action="/reservations/new">
@@ -13,7 +13,7 @@
 
         <label for="product_id">パンを選ぶ</label>
         <select id="product_id" name="product_id" required>
-            <option value="">-- 選択してください --</option>
+            <option value="">── 選択してください ──</option>
             {% for product in products %}
             <option value="{{ product.id }}" {% if selected_product_id == product.id %}selected{% endif %}>
                 {{ product.name }}（¥{{ "%.0f"|format(product.price) }}）
@@ -38,15 +38,23 @@
         </select>
 
         {% if availability %}
-        <details open style="margin-top:1rem;">
-            <summary style="color:var(--color-brown);font-weight:500;">在庫状況</summary>
-            <table style="margin-top:0.5rem;">
+        <details open style="margin:1rem 0 0.5rem;">
+            <summary style="color:var(--brown);font-weight:500;font-size:0.9rem;cursor:pointer;">
+                在庫状況を確認
+            </summary>
+            <table style="margin-top:0.75rem;">
                 <thead><tr><th>日付</th><th>残り</th></tr></thead>
                 <tbody>
                     {% for date, qty in availability.items() %}
                     <tr>
                         <td>{{ date }}</td>
-                        <td>{% if qty > 0 %}{{ qty }}個{% else %}<span style="color:#999;">─</span>{% endif %}</td>
+                        <td>
+                            {% if qty > 0 %}
+                                <span style="color:var(--olive);font-weight:500;">{{ qty }}個</span>
+                            {% else %}
+                                <span style="color:#bbb;">─</span>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -58,5 +66,5 @@
     </form>
 </div>
 
-<p style="text-align:center;margin-top:1.5rem;"><a href="/">← 商品一覧に戻る</a></p>
+<p style="text-align:center;margin-top:2rem;"><a href="/">← パン一覧に戻る</a></p>
 {% endblock %}
