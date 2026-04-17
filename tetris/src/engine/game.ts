@@ -20,6 +20,16 @@ import {
 
 export type MoveResult = 'ok' | 'blocked';
 
+export interface GameHooks {
+  onMove?: () => void;
+  onRotate?: () => void;
+  onSoftDrop?: () => void;
+  onHardDrop?: (cells: number) => void;
+  onLock?: (result: LastLockResult) => void;
+  onHold?: () => void;
+  onGameOver?: () => void;
+}
+
 export class Game {
   private board = new Board();
   private bag: SevenBag;
@@ -27,6 +37,7 @@ export class Game {
   private hold: PieceKind | null = null;
   private holdUsed = false;
   private phase: GamePhase = 'idle';
+  hooks: GameHooks = {};
 
   // 落下タイマー
   private gravityAccumMs = 0;
@@ -109,14 +120,21 @@ export class Game {
 
   // ---------- 入力 ----------
 
-  moveLeft(): MoveResult { return this.shift(-1); }
-  moveRight(): MoveResult { return this.shift(1); }
+  moveLeft(): MoveResult {
+    const r = this.shift(-1);
+    if (r === 'ok') this.hooks.onMove?.();
+    return r;
+  }
+  moveRight(): MoveResult {
+    const r = this.shift(1);
+    if (r === 'ok') this.hooks.onMove?.();
+    return r;
+  }
 
   softDrop(on: boolean) {
     this.softDropping = on;
   }
 
-  // ソフトドロップ1マス（ジェスチャー距離ベース用）
   softDropStep(): MoveResult {
     if (!this.active || this.phase !== 'playing') return 'blocked';
     if (this.board.canPlace(this.active.kind, this.active.rot, this.active.x, this.active.y + 1)) {
@@ -124,6 +142,7 @@ export class Game {
       this.score += CONFIG.SCORE.SOFT_DROP_PER_CELL;
       this.softDropCells += 1;
       this.resetGravityAccum();
+      this.hooks.onSoftDrop?.();
       return 'ok';
     }
     return 'blocked';
@@ -137,11 +156,20 @@ export class Game {
       dy += 1;
     }
     this.score += CONFIG.SCORE.HARD_DROP_PER_CELL * dy;
+    this.hooks.onHardDrop?.(dy);
     this.lockPiece();
   }
 
-  rotateCW(): MoveResult { return this.rotate(+1); }
-  rotateCCW(): MoveResult { return this.rotate(-1); }
+  rotateCW(): MoveResult {
+    const r = this.rotate(+1);
+    if (r === 'ok') this.hooks.onRotate?.();
+    return r;
+  }
+  rotateCCW(): MoveResult {
+    const r = this.rotate(-1);
+    if (r === 'ok') this.hooks.onRotate?.();
+    return r;
+  }
 
   holdPiece(): MoveResult {
     if (!this.active || this.phase !== 'playing' || this.holdUsed) return 'blocked';
@@ -153,6 +181,7 @@ export class Game {
     } else {
       this.spawnKind(prev);
     }
+    this.hooks.onHold?.();
     return 'ok';
   }
 
@@ -364,11 +393,13 @@ export class Game {
       piece: p.kind,
       rowColors,
     };
+    this.hooks.onLock?.(this.lastLock);
 
     this.active = null;
     this.gravityAccumMs = 0;
 
     // 次のピース湧き（ゲームオーバー判定は spawn 内）
     this.spawn();
+    if (this.phase === 'gameover') this.hooks.onGameOver?.();
   }
 }

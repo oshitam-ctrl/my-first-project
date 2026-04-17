@@ -1,22 +1,58 @@
 // エントリーポイント。
 // ロジック（固定 60Hz シミュレーション）と描画（rAF）は分離。
 
+import { Sfx } from './audio/sfx';
 import { Game } from './engine/game';
 import { TouchInput } from './input/touch';
 import { Renderer } from './render/canvas';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
+const uiLayer = document.getElementById('ui-layer') as HTMLElement;
 const renderer = new Renderer(canvas);
 
 window.addEventListener('resize', () => renderer.resize());
 window.addEventListener('orientationchange', () => renderer.resize());
 
+const sfx = new Sfx();
 const game = new Game();
 game.start();
 
 (window as unknown as { __game: Game }).__game = game;
 
-// タッチ操作（画面全体で受ける）
+// ---- サウンドフック ----
+game.hooks.onMove = () => sfx.move();
+game.hooks.onRotate = () => sfx.rotate();
+game.hooks.onSoftDrop = () => sfx.softDrop();
+game.hooks.onHardDrop = () => { /* ロック音に吸収 */ };
+game.hooks.onHold = () => sfx.hold();
+game.hooks.onGameOver = () => sfx.gameOver();
+game.hooks.onLock = (r) => {
+  sfx.lock();
+  if (r.lineCount > 0) {
+    sfx.lineClear(r.lineCount);
+    if (r.isTspin) sfx.tspin();
+    else if (r.b2b) sfx.b2b();
+  }
+};
+
+// ---- MUTE ボタン ----
+const muteBtn = document.createElement('button');
+muteBtn.className = 'mute-btn';
+muteBtn.setAttribute('aria-label', 'mute');
+muteBtn.textContent = '♪';
+uiLayer.appendChild(muteBtn);
+function updateMuteBtn() { muteBtn.textContent = sfx.isMuted() ? '♪̸' : '♪'; }
+muteBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  sfx.ensure();
+  sfx.setMuted(!sfx.isMuted());
+  updateMuteBtn();
+  try { localStorage.setItem('tetris.muted', sfx.isMuted() ? '1' : '0'); } catch {}
+});
+try { if (localStorage.getItem('tetris.muted') === '1') sfx.setMuted(true); } catch {}
+updateMuteBtn();
+
+// ---- タッチ操作 ----
 new TouchInput(document.body, {
   moveLeft: () => game.moveLeft(),
   moveRight: () => game.moveRight(),
@@ -25,12 +61,13 @@ new TouchInput(document.body, {
   rotateCW: () => game.rotateCW(),
   rotateCCW: () => game.rotateCCW(),
   hold: () => game.holdPiece(),
-  onFirstInteraction: () => {},
+  onFirstInteraction: () => sfx.ensure(),
 });
 
-// デスクトップデバッグ用キーボード
+// ---- デスクトップキーボード ----
 window.addEventListener('keydown', (e) => {
   if (e.repeat) return;
+  sfx.ensure();
   switch (e.key) {
     case 'ArrowLeft': game.moveLeft(); break;
     case 'ArrowRight': game.moveRight(); break;
@@ -53,7 +90,7 @@ window.addEventListener('keyup', (e) => {
   if (e.key === 'ArrowDown') game.softDrop(false);
 });
 
-// 固定タイムステップ 60Hz + rAF 描画
+// ---- メインループ（固定 60Hz シミュレーション + rAF 描画） ----
 const STEP_MS = 1000 / 60;
 let accMs = 0;
 let last = performance.now();
@@ -71,4 +108,4 @@ function loop(now: number) {
 }
 
 requestAnimationFrame(loop);
-console.log('[tetris] Phase 4 ready. タッチ or キーボード（←→↓↑/Z/X/Space/Shift/R）で操作');
+console.log('[tetris] ready');
