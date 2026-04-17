@@ -1,5 +1,6 @@
 // エントリーポイント。
 // ロジック（固定 60Hz シミュレーション）と描画（rAF）は分離。
+// UI オーバーレイ（スタート・ゲームオーバー）はここで管理。
 
 import { Sfx } from './audio/sfx';
 import { Game } from './engine/game';
@@ -16,17 +17,24 @@ window.addEventListener('orientationchange', () => renderer.resize());
 
 const sfx = new Sfx();
 const game = new Game();
-game.start();
 
 (window as unknown as { __game: Game }).__game = game;
 
-// ---- サウンドフック ----
+// ---- ハイスコア ----
+const HIGHSCORE_KEY = 'tetris.highscore';
+function getHighScore(): number {
+  try { return parseInt(localStorage.getItem(HIGHSCORE_KEY) ?? '0', 10) || 0; } catch { return 0; }
+}
+function setHighScore(v: number) {
+  try { localStorage.setItem(HIGHSCORE_KEY, String(v)); } catch {}
+}
+
+// ---- サウンド & 触覚フック ----
 game.hooks.onMove = () => sfx.move();
 game.hooks.onRotate = () => sfx.rotate();
 game.hooks.onSoftDrop = () => sfx.softDrop();
-game.hooks.onHardDrop = () => { /* ロック音に吸収 */ };
+game.hooks.onHardDrop = () => {};
 game.hooks.onHold = () => sfx.hold();
-game.hooks.onGameOver = () => sfx.gameOver();
 game.hooks.onLock = (r) => {
   sfx.lock();
   renderer.fx.onLock(r.pieceCells);
@@ -41,6 +49,13 @@ game.hooks.onLock = (r) => {
     if (r.lineCount === 4 || r.isTspin) Haptics.tetris();
     else Haptics.lineClear(r.lineCount);
   }
+};
+game.hooks.onGameOver = () => {
+  sfx.gameOver();
+  const hi = getHighScore();
+  const s = game.getSnapshot();
+  if (s.score > hi) setHighScore(s.score);
+  showGameOver(s.score, Math.max(hi, s.score));
 };
 
 // ---- MUTE ボタン ----
@@ -91,14 +106,76 @@ window.addEventListener('keydown', (e) => {
     case 'C':
     case 'Shift': game.holdPiece(); break;
     case 'r':
-    case 'R': game.start(); break;
+    case 'R': startGame(); break;
+    case 'Enter':
+      if (game.getSnapshot().phase === 'idle' || game.getSnapshot().phase === 'gameover') startGame();
+      break;
   }
 });
 window.addEventListener('keyup', (e) => {
   if (e.key === 'ArrowDown') game.softDrop(false);
 });
 
-// ---- メインループ（固定 60Hz シミュレーション + rAF 描画） ----
+// ---- オーバーレイ ----
+function clearOverlay() {
+  const ov = uiLayer.querySelector('.overlay');
+  if (ov) ov.remove();
+}
+
+function showStart() {
+  clearOverlay();
+  const ov = document.createElement('div');
+  ov.className = 'overlay';
+  ov.innerHTML = `
+    <div class="title">TETRIS</div>
+    <div class="subtitle">TAP TO START</div>
+    <div class="subtitle" style="opacity:0.5;margin-top:32px;font-size:11px;line-height:1.7">
+      左右スワイプ：移動 <br/>
+      下スワイプ：ソフトドロップ <br/>
+      下フリック：ハードドロップ <br/>
+      タップ：右回転 <br/>
+      長押し／2本指タップ：左回転 <br/>
+      上スワイプ：ホールド
+    </div>
+  `;
+  ov.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sfx.ensure();
+    startGame();
+  });
+  uiLayer.appendChild(ov);
+}
+
+function showGameOver(score: number, highScore: number) {
+  clearOverlay();
+  const ov = document.createElement('div');
+  ov.className = 'overlay';
+  ov.innerHTML = `
+    <div class="subtitle">GAME OVER</div>
+    <div class="score-label">SCORE</div>
+    <div class="score-big">${score}</div>
+    <div class="score-label" style="margin-top:16px">HIGH</div>
+    <div class="score-big" style="font-size:20px;opacity:0.7">${highScore}</div>
+    <button class="btn" id="retry">RETRY</button>
+  `;
+  uiLayer.appendChild(ov);
+  const retry = ov.querySelector('#retry') as HTMLButtonElement;
+  retry.addEventListener('click', (e) => {
+    e.stopPropagation();
+    startGame();
+  });
+}
+
+function startGame() {
+  clearOverlay();
+  game.start();
+}
+
+// 初期表示：スタート画面
+showStart();
+
+// ---- メインループ ----
 const STEP_MS = 1000 / 60;
 let accMs = 0;
 let last = performance.now();
@@ -116,4 +193,3 @@ function loop(now: number) {
 }
 
 requestAnimationFrame(loop);
-console.log('[tetris] ready');
