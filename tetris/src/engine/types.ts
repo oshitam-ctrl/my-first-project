@@ -38,6 +38,8 @@ export interface LastLockResult extends ClearInfo {
   piece: PieceKind;
   // パーティクル発生用に消去直前のセル色を各行ごとにキャプチャ
   rowColors: (PieceKind | null)[][];
+  // ロックされたピースの盤面絶対座標セル（演出の対象）
+  pieceCells: [number, number][];
 }
 
 export interface GameStateSnapshot {

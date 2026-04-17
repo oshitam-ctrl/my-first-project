@@ -28,8 +28,12 @@ game.hooks.onHold = () => sfx.hold();
 game.hooks.onGameOver = () => sfx.gameOver();
 game.hooks.onLock = (r) => {
   sfx.lock();
+  // FX：ピースのスクイーズ（一旦 cells 全て。見栄えはこれで十分）
+  renderer.fx.onLock(r.pieceCells);
   if (r.lineCount > 0) {
     sfx.lineClear(r.lineCount);
+    renderer.fx.onLineClear(r.rows, r.rowColors, r.lineCount === 4 || r.isTspin);
+    renderer.fx.onCombo(r.combo);
     if (r.isTspin) sfx.tspin();
     else if (r.b2b) sfx.b2b();
   }
@@ -103,7 +107,7 @@ function loop(now: number) {
     game.update(STEP_MS);
     accMs -= STEP_MS;
   }
-  renderer.drawFrame(game);
+  renderer.drawFrame(game, dt);
   requestAnimationFrame(loop);
 }
 

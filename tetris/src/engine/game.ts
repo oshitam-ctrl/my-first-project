@@ -52,6 +52,13 @@ export class Game {
   private tickCount = 0;
   private lastLock: LastLockResult | null = null;
 
+  // 消去アニメ中の保留情報（phase === 'clearing' の間だけ有効）
+  // sub: 'flash' は盤面にまだ full rows がある段階、'gravity' は既に collapse 済みで
+  //      上のブロックが下に落ちるアニメを見せる段階。
+  private pendingClear:
+    | { rows: number[]; colors: (PieceKind | null)[][]; sub: 'flash' | 'gravity'; subMs: number; subTotalMs: number }
+    | null = null;
+
   // ソフト/ハードドロップの累計（ロック時にスコアへ反映）
   private softDropCells = 0;
 
@@ -74,8 +81,24 @@ export class Game {
     this.hold = null;
     this.holdUsed = false;
     this.softDropCells = 0;
+    this.pendingClear = null;
     this.phase = 'playing';
     this.spawn();
+  }
+
+  // 消去アニメ用：現在の保留行と進捗（0..1）を返す
+  getClearAnim():
+    | { rows: number[]; colors: (PieceKind | null)[][]; sub: 'flash' | 'gravity'; subProgress: number }
+    | null {
+    if (!this.pendingClear) return null;
+    const pc = this.pendingClear;
+    const elapsed = pc.subTotalMs - pc.subMs;
+    return {
+      rows: pc.rows,
+      colors: pc.colors,
+      sub: pc.sub,
+      subProgress: Math.max(0, Math.min(1, elapsed / pc.subTotalMs)),
+    };
   }
 
   getSnapshot(): GameStateSnapshot {
@@ -188,8 +211,13 @@ export class Game {
   // ---------- ループから呼ばれる更新 ----------
 
   update(dtMs: number) {
-    if (this.phase !== 'playing' || !this.active) return;
     this.tickCount++;
+
+    if (this.phase === 'clearing') {
+      this.advanceClearing(dtMs);
+      return;
+    }
+    if (this.phase !== 'playing' || !this.active) return;
 
     const gravity = gravityMsForLevel(this.level);
     const effectiveGravity = this.softDropping
@@ -371,14 +399,6 @@ export class Game {
       this.b2b = isDifficult;
     }
 
-    // ライン消去
-    if (fullRows.length > 0) {
-      this.board.collapseRows(fullRows);
-      this.lines += fullRows.length;
-      const newLevel = Math.min(CONFIG.MAX_LEVEL, 1 + Math.floor(this.lines / CONFIG.LINES_PER_LEVEL));
-      this.level = newLevel;
-    }
-
     const clearInfo: ClearInfo = {
       rows: fullRows,
       isTspin,
@@ -388,18 +408,62 @@ export class Game {
       combo: Math.max(0, this.combo),
       scoreGained: this.score - scoreBefore,
     };
+    // ロック直前のピース絶対セル（演出用）
+    const absCells: [number, number][] = [];
+    for (const [dx, dy] of pieceCells(p.kind, p.rot)) {
+      absCells.push([p.x + dx, p.y + dy]);
+    }
+
     this.lastLock = {
       ...clearInfo,
       piece: p.kind,
       rowColors,
+      pieceCells: absCells,
     };
     this.hooks.onLock?.(this.lastLock);
 
     this.active = null;
     this.gravityAccumMs = 0;
 
-    // 次のピース湧き（ゲームオーバー判定は spawn 内）
+    if (fullRows.length > 0) {
+      // 演出のためにクリア完了を後ろ倒しする（まずは flash+collapse 段階）
+      const flashCollapse = CONFIG.LINE_FLASH_MS + CONFIG.LINE_COLLAPSE_MS;
+      this.pendingClear = {
+        rows: fullRows,
+        colors: rowColors,
+        sub: 'flash',
+        subMs: flashCollapse,
+        subTotalMs: flashCollapse,
+      };
+      this.phase = 'clearing';
+    } else {
+      this.spawn();
+      if ((this.phase as GamePhase) === 'gameover') this.hooks.onGameOver?.();
+    }
+  }
+
+  // clearing 中のサブ段階を進める。
+  // flash 段階終了で実 collapse を行い、gravity 段階へ。
+  // gravity 段階終了で次ピース湧き & playing 復帰。
+  private advanceClearing(dtMs: number) {
+    const pc = this.pendingClear;
+    if (!pc) { this.phase = 'playing'; return; }
+    pc.subMs -= dtMs;
+    if (pc.subMs > 0) return;
+    if (pc.sub === 'flash') {
+      // 盤面から行を取り除く
+      this.board.collapseRows(pc.rows);
+      this.lines += pc.rows.length;
+      this.level = Math.min(CONFIG.MAX_LEVEL, 1 + Math.floor(this.lines / CONFIG.LINES_PER_LEVEL));
+      pc.sub = 'gravity';
+      pc.subTotalMs = CONFIG.GRAVITY_DROP_MS;
+      pc.subMs = pc.subTotalMs;
+      return;
+    }
+    // gravity 段階終了
+    this.pendingClear = null;
+    this.phase = 'playing';
     this.spawn();
-    if (this.phase === 'gameover') this.hooks.onGameOver?.();
+    if ((this.phase as GamePhase) === 'gameover') this.hooks.onGameOver?.();
   }
 }
