@@ -193,3 +193,12 @@ function loop(now: number) {
 }
 
 requestAnimationFrame(loop);
+
+// ---- PWA：service worker 登録 ----
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((err) => {
+      console.warn('[tetris] sw register failed:', err);
+    });
+  });
+}
