@@ -3,6 +3,7 @@
 
 import { Sfx } from './audio/sfx';
 import { Game } from './engine/game';
+import { Haptics } from './haptics/vibrate';
 import { TouchInput } from './input/touch';
 import { Renderer } from './render/canvas';
 
@@ -28,14 +29,17 @@ game.hooks.onHold = () => sfx.hold();
 game.hooks.onGameOver = () => sfx.gameOver();
 game.hooks.onLock = (r) => {
   sfx.lock();
-  // FX：ピースのスクイーズ（一旦 cells 全て。見栄えはこれで十分）
   renderer.fx.onLock(r.pieceCells);
-  if (r.lineCount > 0) {
+  if (r.lineCount === 0) {
+    Haptics.lock();
+  } else {
     sfx.lineClear(r.lineCount);
     renderer.fx.onLineClear(r.rows, r.rowColors, r.lineCount === 4 || r.isTspin);
     renderer.fx.onCombo(r.combo);
     if (r.isTspin) sfx.tspin();
     else if (r.b2b) sfx.b2b();
+    if (r.lineCount === 4 || r.isTspin) Haptics.tetris();
+    else Haptics.lineClear(r.lineCount);
   }
 };
 
