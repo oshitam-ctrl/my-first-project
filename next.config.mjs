@@ -4,6 +4,8 @@ const nextConfig = {
     return [
       { source: '/tetris', destination: '/tetris/index.html' },
       { source: '/tetris/', destination: '/tetris/index.html' },
+      { source: '/minecraft', destination: '/minecraft/index.html' },
+      { source: '/minecraft/', destination: '/minecraft/index.html' },
     ];
   },
 };
