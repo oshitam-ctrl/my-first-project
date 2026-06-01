@@ -15,6 +15,18 @@ const idx = (x, y, z) => x + z * CHUNK + y * AREA;
 // Block ids
 const AIR = 0, GRASS = 1, DIRT = 2, STONE = 3, SAND = 4, WOOD = 5,
   LEAVES = 6, WATER = 7, BEDROCK = 8, SNOW = 11;
+const COAL_ORE = 15, IRON_ORE = 16, GOLD_ORE = 17, DIAMOND_ORE = 18, REDSTONE_ORE = 19;
+
+// Deterministic per-voxel hash in [0,1) for ore placement.
+function oreRoll(wx, y, wz, seed) {
+  let h = Math.imul(wx | 0, 0x1f1f1f1f) ^ Math.imul(y | 0, 0x85ebca6b) ^
+    Math.imul(wz | 0, 0xc2b2ae35) ^ Math.imul(seed | 0, 0x27d4eb2f);
+  h = Math.imul(h ^ (h >>> 15), 0x2c1b3c6d);
+  h ^= h >>> 12;
+  h = Math.imul(h, 0x297a2d39);
+  h ^= h >>> 15;
+  return (h >>> 0) / 4294967296;
+}
 
 // Only true see-through blocks go in the alpha-blended pass. Leaves render
 // in the opaque pass (solid look) but still don't cull neighbour faces.
@@ -99,6 +111,15 @@ export class World {
           if (id === STONE || id === DIRT) {
             const cv = this.caveNoise.noise3(wx * 0.07, y * 0.09, wz * 0.07);
             if (cv > 0.45 && y > 2 && y < h - 1) id = AIR;
+          }
+          // ore generation inside stone (rarer + deeper-gated for valuables)
+          if (id === STONE) {
+            const r = oreRoll(wx, y, wz, this.seed);
+            if (y <= 12 && r < 0.006) id = DIAMOND_ORE;
+            else if (y <= 14 && r < 0.012) id = REDSTONE_ORE;
+            else if (y <= 18 && r < 0.020) id = GOLD_ORE;
+            else if (y <= 40 && r < 0.045) id = IRON_ORE;
+            else if (r < 0.075) id = COAL_ORE;
           }
           if (id !== AIR) data[idx(lx, y, lz)] = id;
         }
