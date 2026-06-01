@@ -76,6 +76,12 @@ const _defs = [
   block('crafting_table', '作業台', 20, 0x9a6b3f),
   block('furnace', 'かまど', 21, 0x707070),
   block('torch', 'たいまつ', 22, 0xffcc55),
+  block('birch_log', 'シラカバの原木', 23, 0xdfded6),
+  block('birch_leaves', 'シラカバの葉', 24, 0x7aaa50),
+  block('spruce_log', 'トウヒの原木', 25, 0x4e3822),
+  block('spruce_leaves', 'トウヒの葉', 26, 0x284e2e),
+  block('dry_grass', '枯れ草ブロック', 27, 0x969c4e),
+  block('cactus', 'サボテン', 28, 0x3a7836),
 
   // --- Materials ---
   material('stick', '棒', 0x9c7a4d),
