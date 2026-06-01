@@ -59,7 +59,14 @@ assert.strictEqual(isFood('apple'), true, 'apple is food');
 // Counts
 assert.strictEqual(toolCount, 16, 'exactly 16 tools (16 base)');
 assert.strictEqual(blockCount, 52, 'exactly 52 block items');
-assert.strictEqual(foodCount, 11, 'exactly 11 food items');
+assert.strictEqual(foodCount, 20, 'exactly 20 food items');
+
+// Petit Hermès signature items
+assert.strictEqual(ITEMS.campagne.food.hunger, 9, 'campagne hunger 9');
+assert.strictEqual(ITEMS.toast.food.hunger, 6, 'toast hunger 6');
+assert.strictEqual(isFood('baguette'), true, 'baguette is food');
+assert.strictEqual(isFood('rosemary'), false, 'rosemary is not food (ingredient)');
+assert.strictEqual(ITEMS.rosemary.color, 0x5f8a5a, 'rosemary color');
 
 // Spot-check stats
 assert.strictEqual(ITEMS.diamond_sword.tool.damage, 7, 'diamond sword damage 7');

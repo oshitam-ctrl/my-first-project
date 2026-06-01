@@ -85,11 +85,30 @@ export const RECIPES = [
   // 小麦から小麦粉: wheat x3 -> flour
   shapeless(['wheat', 'wheat', 'wheat'], { id: 'flour', count: 1 }),
 
-  // 小麦粉と発酵液でもパン: flour + levain -> bread x2
-  shapeless(['flour', 'levain'], { id: 'bread', count: 2 }),
+  // 小麦粉と発酵液でバゲット: flour + levain -> baguette x1
+  shapeless(['flour', 'levain'], { id: 'baguette', count: 1 }),
 
   // 野菜たっぷりでたくさんの発酵液: surplus_veg x3 -> levain x2
   shapeless(['surplus_veg', 'surplus_veg', 'surplus_veg'], { id: 'levain', count: 2 }),
+
+  // --- Petit Hermès signature breads (天然酵母ハードパン) ---
+  // 天然酵母カンパーニュ (hero hard loaf): levain + flour + flour -> campagne
+  shapeless(['levain', 'flour', 'flour'], { id: 'campagne', count: 1 }),
+
+  // 食パン: levain + flour + wheat -> pain_de_mie
+  shapeless(['levain', 'flour', 'wheat'], { id: 'pain_de_mie', count: 1 }),
+
+  // ローズマリーのハードパン: campagne + rosemary -> rosemary_bread
+  shapeless(['campagne', 'rosemary'], { id: 'rosemary_bread', count: 1 }),
+
+  // 摘果りんごパン: campagne + thinned_apple -> apple_bread
+  shapeless(['campagne', 'thinned_apple'], { id: 'apple_bread', count: 1 }),
+
+  // 完熟フルーツパン: campagne + ripe_fruit -> fruit_bread
+  shapeless(['campagne', 'ripe_fruit'], { id: 'fruit_bread', count: 1 }),
+
+  // トースト: 食パンを焼く: pain_de_mie -> toast x2
+  shapeless(['pain_de_mie'], { id: 'toast', count: 2 }),
 ];
 
 // Tools for each material tier.
