@@ -141,6 +141,20 @@ const _defs = [
   food('surplus_veg', '規格外野菜', 1, 0x86b94f),
   material('levain', '発酵液', 0xd9c98a),
   material('flour', '小麦粉', 0xeee6d0),
+
+  // --- Petit Hermès signature ingredients ---
+  material('rosemary', 'ローズマリー', 0x5f8a5a),
+  food('thinned_apple', '摘果りんご', 2, 0x8fbf4a),
+  food('ripe_fruit', '完熟フルーツ', 3, 0xd8732a),
+
+  // --- Petit Hermès signature breads (天然酵母ハードパン) ---
+  food('campagne', '天然酵母カンパーニュ', 9, 0xc79a5b),
+  food('baguette', 'バゲット', 7, 0xddb877),
+  food('pain_de_mie', '食パン', 8, 0xeaddc0),
+  food('rosemary_bread', 'ローズマリーのハードパン', 9, 0xb89150),
+  food('apple_bread', '摘果りんごパン', 9, 0xd2a85e),
+  food('fruit_bread', '完熟フルーツパン', 9, 0xcf8f4a),
+  food('toast', 'トースト', 6, 0xc88a44),
 ];
 
 // Tools: classes × tiers

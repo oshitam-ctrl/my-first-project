@@ -143,10 +143,10 @@ check(
   { id: 'flour', count: 1 }
 );
 
-// flour + levain -> bread x2
-check('flour+levain->bread x2', craftResult(['flour', 'levain', N, N]), {
-  id: 'bread',
-  count: 2,
+// flour + levain -> baguette x1 (signature: levain hard bread, not generic bread)
+check('flour+levain->baguette', craftResult(['flour', 'levain', N, N]), {
+  id: 'baguette',
+  count: 1,
 });
 
 // 3 surplus_veg -> levain x2, scattered positions
@@ -155,6 +155,46 @@ check(
   craftResult([N, 'surplus_veg', N, 'surplus_veg', N, N, N, N, 'surplus_veg']),
   { id: 'levain', count: 2 }
 );
+
+// --- Petit Hermès signature breads ---
+
+// levain + flour + flour -> campagne (hero hard loaf); scattered & swapped
+check(
+  'levain+flour+flour->campagne',
+  craftResult(['flour', N, 'levain', N, N, N, 'flour', N, N]),
+  { id: 'campagne', count: 1 }
+);
+
+// levain + flour + wheat -> pain_de_mie
+check(
+  'levain+flour+wheat->pain_de_mie',
+  craftResult(['levain', 'flour', 'wheat', N]),
+  { id: 'pain_de_mie', count: 1 }
+);
+
+// campagne + rosemary -> rosemary_bread
+check('campagne+rosemary->rosemary_bread', craftResult(['campagne', 'rosemary', N, N]), {
+  id: 'rosemary_bread',
+  count: 1,
+});
+
+// campagne + thinned_apple -> apple_bread (swapped order)
+check('campagne+thinned_apple->apple_bread', craftResult(['thinned_apple', 'campagne', N, N]), {
+  id: 'apple_bread',
+  count: 1,
+});
+
+// campagne + ripe_fruit -> fruit_bread
+check('campagne+ripe_fruit->fruit_bread', craftResult(['campagne', 'ripe_fruit', N, N]), {
+  id: 'fruit_bread',
+  count: 1,
+});
+
+// pain_de_mie -> toast x2 (single-input toasting), offset position
+check('pain_de_mie->toast x2', craftResult([N, N, N, N, 'pain_de_mie', N, N, N, N]), {
+  id: 'toast',
+  count: 2,
+});
 
 // empty grid -> null
 check('empty', craftResult([N, N, N, N, N, N, N, N, N]), null);
