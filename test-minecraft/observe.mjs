@@ -32,15 +32,16 @@ await page.click('#overlay');
 await page.waitForTimeout(800);
 
 // visit different biomes and screenshot a horizon view of each
-await page.evaluate(() => { window.__time && window.__time(0.5); window.__view && window.__view(128, 40, -2, -1.4, -0.5); });
-await page.waitForTimeout(11000);
-await page.screenshot({ path: `/tmp/mc-village-${TAG}.png` });
-await page.evaluate(() => window.__view && window.__view(133, 42, -19, 0, -1.5)); // straight down on a hut
-await page.waitForTimeout(2500);
-await page.screenshot({ path: `/tmp/mc-village2-${TAG}.png` });
-await page.evaluate(() => window.__view && window.__view(140, 28, -19, 1.4, -0.12)); // ground level toward huts
-await page.waitForTimeout(2000);
-await page.screenshot({ path: `/tmp/mc-village3-${TAG}.png` });
+// night: spawn hostile mobs nearby, then sweep the view to catch their faces
+await page.evaluate(() => { window.__time && window.__time(0.0); window.__view && window.__view(8, 34, 8, 0, -0.05); });
+await page.waitForTimeout(9000);
+for (let i = 0; i < 6; i++) {
+  await page.evaluate((y) => window.__view && window.__view(8, 34, 8, y, -0.08), i * 1.05);
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: `/tmp/mc-mobface-${TAG}-${i}.png` });
+}
+const mc = await page.evaluate(() => (window.__mobCount ? window.__mobCount() : -1));
+console.log('mobs near:', mc);
 
 const hud = await page.evaluate(() => document.getElementById('hud').textContent);
 console.log(`[${TAG}] hud: ${hud} | pageerrors: ${errs.length}`);

@@ -341,6 +341,17 @@ export function createInventory(opts) {
     setSelected, scroll, get selected() { return selected; },
     toggleScreen, isOpen: () => screenVisible(),
     give(itemId, count) { add(itemId, count); },
+    selectedDef() { const c = main[selected]; return c ? itemDef(c.item) : null; },
+    holdingShield() { const d = this.selectedDef(); return !!(d && d.shield); },
+    armorPoints() {
+      let head = 0, chest = 0;
+      for (const c of main) {
+        if (!c) continue;
+        const d = itemDef(c.item);
+        if (d && d.armor) { if (d.slot === 'chest') chest = Math.max(chest, d.armor); else head = Math.max(head, d.armor); }
+      }
+      return head + chest;
+    },
     // test-only hooks
     _debug: { main, craft, takeResult, clickSlot, getCursor: () => cursor },
   };
