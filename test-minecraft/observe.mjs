@@ -32,14 +32,17 @@ await page.click('#overlay');
 await page.waitForTimeout(800);
 
 // visit different biomes and screenshot a horizon view of each
-const spots = { forest: [60, 30, 0], savanna: [-11, 33, 59], desert: [-59, 30, 54] };
-for (const [name, [x, y, z]] of Object.entries(spots)) {
-  await page.evaluate(([x, y, z]) => window.__view && window.__view(x, y + 4, z, 0.7, -0.06), [x, y, z]);
-  await page.waitForTimeout(11000); // full chunk stream at the new location
-  await page.screenshot({ path: `/tmp/mc-${name}-${TAG}.png` });
-  const c = await page.evaluate(() => document.getElementById('hud').textContent);
-  console.log(`${name}:`, c.replace(/\s+/g, ' '));
+await page.evaluate(() => window.__view && window.__view(40, 40, 40, 0.6, 0.12)); // look slightly up
+await page.waitForTimeout(9000);
+const shots = { day: 0.5, sunset: 0.74, night: 0.02 };
+for (const [name, t] of Object.entries(shots)) {
+  await page.evaluate((t) => window.__time && window.__time(t), t);
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: `/tmp/mc-sky-${name}-${TAG}.png` });
 }
+await page.evaluate(() => { window.__time && window.__time(0.5); window.__weather && window.__weather('rain'); });
+await page.waitForTimeout(1500);
+await page.screenshot({ path: `/tmp/mc-sky-rain-${TAG}.png` });
 
 const hud = await page.evaluate(() => document.getElementById('hud').textContent);
 console.log(`[${TAG}] hud: ${hud} | pageerrors: ${errs.length}`);
