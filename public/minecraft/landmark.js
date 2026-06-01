@@ -7,7 +7,7 @@
 //   y=0 is the solid ground/platform layer; structures sit at y>=1.
 // stamp(x, y, z, id) places a block; the host clamps out-of-range writes.
 
-export const LANDMARK = { w: 40, d: 44, clearH: 26 };
+export const LANDMARK = { w: 40, d: 48, clearH: 26 };
 
 export function buildPetitHermes(stamp, B) {
   const { w, d, clearH } = LANDMARK;
@@ -241,4 +241,78 @@ export function buildPetitHermes(stamp, B) {
   };
   bush(fx1 + 3, fz0 + 1);
   bush(fx1 + 3, fz1 - 2);
+
+  // ==========================================================================
+  // 9) SATOYAMA — 棚田 (terraced rice paddies). A few small flooded basins set
+  //    in the open central/front yard, away from the building, entrance path,
+  //    tree, tires, vegetable field and river. Each paddy is a 1-block-high
+  //    frame: an earthen bund (畦) ringing the plot at y=1, the interior at y=1
+  //    flooded with WATER, and rows of WHEAT_CROP standing up out of the water
+  //    to read as green/gold rice (稲). Laid in a gentle stepped arrangement.
+  // ==========================================================================
+  const ricePaddy = (x0, z0, x1, z1) => {
+    // bund (畦): one-block-high earthen ring around the plot
+    wallRing(x0, z0, x1, 1, 1, z1, B.DIRT);
+    // grass crowning the outer rim of the bund so it reads as a green ridge
+    for (let x = x0; x <= x1; x++) {
+      stamp(x, 1, z0, B.GRASS);
+      stamp(x, 1, z1, B.GRASS);
+    }
+    for (let z = z0; z <= z1; z++) {
+      stamp(x0, 1, z, B.GRASS);
+      stamp(x1, 1, z, B.GRASS);
+    }
+    // flooded interior: WATER sitting at y=1 inside the bund
+    fillBox(x0 + 1, 1, z0 + 1, x1 - 1, 1, z1 - 1, B.WATER);
+    // rice plants: WHEAT_CROP poking up out of the water, in tidy rows
+    for (let z = z0 + 1; z <= z1 - 1; z++) {
+      for (let x = x0 + 1; x <= x1 - 1; x++) {
+        // skip every 3rd row to leave thin water lanes between rice clumps
+        if ((z - (z0 + 1)) % 3 === 2) continue;
+        stamp(x, 1, z, B.WHEAT_CROP);
+      }
+    }
+  };
+  // Three small paddies stepped down the open yard (中央 → 前庭, west of river).
+  ricePaddy(14, 18, 22, 24); // upper paddy
+  ricePaddy(14, 26, 23, 33); // middle paddy (largest)
+  ricePaddy(15, 35, 23, 41); // lower paddy (toward the front)
+
+  // ==========================================================================
+  // 10) FOREST EDGE — a short stand of trees along the front (high-z) west
+  //     corner, suggesting the cedar/broadleaf hillside ringing the hamlet.
+  // ==========================================================================
+  const forestTree = (tx, tz, h) => {
+    fillBox(tx, 1, tz, tx, h, tz, B.OAK_LOG); // trunk
+    // layered canopy
+    fillBox(tx - 2, h - 1, tz - 2, tx + 2, h, tz + 2, B.OAK_LEAVES);
+    fillBox(tx - 1, h + 1, tz - 1, tx + 1, h + 1, tz + 1, B.OAK_LEAVES);
+    stamp(tx, h + 2, tz, B.OAK_LEAVES);
+    // keep the upper trunk visible through the canopy
+    stamp(tx, h - 1, tz, B.OAK_LOG);
+    stamp(tx, h, tz, B.OAK_LOG);
+    // a little leaf litter / undergrowth at the base
+    stamp(tx, 1, tz + 2, B.GRASS);
+  };
+  forestTree(4, 44, 6);
+  forestTree(9, 46, 5);
+  forestTree(14, 45, 6);
+  forestTree(2, 39, 4);
+
+  // ==========================================================================
+  // 11) FARMSTEAD EXTRAS — a couple more crop patches so the satoyama reads as
+  //     lived-in, tucked between the paddies and the river bank.
+  // ==========================================================================
+  fillBox(26, 0, 28, 30, 0, 32, B.DIRT); // tilled bed by the river
+  for (let z = 28; z <= 32; z++) {
+    if ((z - 28) % 2 !== 0) continue;
+    const crop = (((z - 28) / 2) % 2 === 0) ? B.VEG_CROP : B.WHEAT_CROP;
+    for (let x = 26; x <= 30; x++) stamp(x, 1, z, crop);
+  }
+  // a small green vegetable strip near the upper paddy
+  fillBox(25, 0, 18, 28, 0, 21, B.DIRT);
+  for (let x = 25; x <= 28; x++) {
+    stamp(x, 1, 18, B.VEG_CROP);
+    stamp(x, 1, 20, B.VEG_CROP);
+  }
 }
