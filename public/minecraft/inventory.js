@@ -25,7 +25,11 @@ export function createInventory(opts) {
     const kit = ['grass', 'dirt', 'stone', 'cobblestone', 'oak_planks', 'oak_log', 'glass', 'sand', 'crafting_table'];
     kit.forEach((id, i) => { if (ITEMS[id]) main[i] = { item: id, count: 1 }; });
   }
-  function creativePick(id) { cursor = { item: id, count: MAXSTACK(id) }; sfx && sfx.select(); renderAll(); }
+  function creativePick(id) {
+    // creative: one tap drops the item straight into the selected hotbar slot
+    if (creative) { main[selected] = { item: id, count: 1 }; sfx && sfx.select(); renderAll(); return; }
+    cursor = { item: id, count: MAXSTACK(id) }; sfx && sfx.select(); renderAll();
+  }
 
   // --- icon drawing ------------------------------------------------------
   function drawIcon(ctx, id) {
@@ -182,7 +186,15 @@ export function createInventory(opts) {
   function scroll(dir) { setSelected(selected + (dir > 0 ? 1 : -1)); }
 
   // --- inventory screen --------------------------------------------------
-  let screen = null, storageSlots = [], craftSlots = [], resultSlot = null, cursorEl = null, paletteSlots = [];
+  let screen = null, storageSlots = [], craftSlots = [], resultSlot = null, cursorEl = null, paletteSlots = [], hotRowSlots = [];
+  function filterPalette(q) {
+    q = (q || '').trim().toLowerCase();
+    for (const [id, s] of paletteSlots) {
+      const d = itemDef(id);
+      const hay = (id + ' ' + (d && d.name || '')).toLowerCase();
+      s.style.display = (!q || hay.includes(q)) ? 'flex' : 'none';
+    }
+  }
   function buildScreen() {
     screen = document.createElement('div');
     screen.id = 'inv-screen';
@@ -215,11 +227,27 @@ export function createInventory(opts) {
     panel.appendChild(craftRow);
     grid._el = grid; screen._grid = grid; screen._craftRow = craftRow;
 
-    // creative palette: every item, scrollable; click puts a full stack on the cursor
+    // creative: search box + full item palette. One tap on an item fills the
+    // currently selected hotbar slot (tap a hotbar slot below to choose which).
+    const search = document.createElement('input');
+    search.type = 'search'; search.placeholder = '🔍 アイテム検索（例: 木 / 鉱石 / ツルハシ / 羊毛）';
+    Object.assign(search.style, {
+      display: 'none', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,.25)',
+      background: 'rgba(255,255,255,.1)', color: '#fff', fontSize: '14px', outline: 'none',
+    });
+    search.addEventListener('input', () => filterPalette(search.value));
+    search.addEventListener('pointerdown', (e) => e.stopPropagation());
+    panel.appendChild(search); screen._search = search;
+
     const palette = document.createElement('div');
     Object.assign(palette.style, { display: 'none', gridTemplateColumns: 'repeat(9, 44px)', gap: '3px', maxHeight: '46vh', overflowY: 'auto', padding: '2px' });
     paletteSlots = [];
-    CREATIVE_LIST.forEach((id) => { const s = makeSlot(() => creativePick(id)); paintSlot(s, { item: id, count: 1 }); palette.appendChild(s); paletteSlots.push([id, s]); });
+    CREATIVE_LIST.forEach((id) => {
+      const s = makeSlot(() => creativePick(id));
+      s.title = (itemDef(id) && itemDef(id).name) || id; // hover tooltip
+      paintSlot(s, { item: id, count: 1 });
+      palette.appendChild(s); paletteSlots.push([id, s]);
+    });
     panel.appendChild(palette); screen._palette = palette;
 
     // storage (rows 9..35) then hotbar (0..8)
@@ -230,12 +258,19 @@ export function createInventory(opts) {
     panel.appendChild(store); screen._store = store;
     const hotRow = document.createElement('div');
     hotRow.style.display = 'grid'; hotRow.style.gridTemplateColumns = 'repeat(9, 1fr)'; hotRow.style.gap = '3px'; hotRow.style.marginTop = '6px';
-    for (let i = 0; i < 9; i++) { const s = makeSlot(() => clickSlot('main', i)); storageSlots.push([i, s]); hotRow.appendChild(s); }
+    hotRowSlots = [];
+    for (let i = 0; i < 9; i++) {
+      // creative: tap a hotbar slot to SELECT it; survival: normal move
+      const s = makeSlot(() => { if (creative) { selected = i; renderAll(); sfx && sfx.select(); } else clickSlot('main', i); });
+      storageSlots.push([i, s]); hotRowSlots.push([i, s]); hotRow.appendChild(s);
+    }
     panel.appendChild(hotRow);
 
     const hint = document.createElement('div');
     Object.assign(hint.style, { color: 'rgba(255,255,255,.6)', fontSize: '11px', textAlign: 'center', marginTop: '4px' });
-    hint.textContent = 'タップでアイテム移動 ／ E か ✕ で閉じる';
+    hint.textContent = creative
+      ? '下の枠をタップで選択 → アイテムをタップで装填 ／ 検索で絞り込み ／ E・✕ で閉じる'
+      : 'タップでアイテム移動 ／ E か ✕ で閉じる';
     panel.appendChild(hint);
     const close = document.createElement('div');
     Object.assign(close.style, { position: 'absolute', top: '14px', right: '18px', color: '#fff', fontSize: '22px', cursor: 'pointer' });
@@ -263,6 +298,7 @@ export function createInventory(opts) {
   function renderScreen() {
     // creative shows the full item palette instead of crafting + storage
     screen._palette.style.display = creative ? 'grid' : 'none';
+    screen._search.style.display = creative ? 'block' : 'none';
     screen._craftRow.style.display = creative ? 'none' : 'flex';
     screen._store.style.display = creative ? 'none' : 'grid';
     // crafting grid layout for size
@@ -274,6 +310,10 @@ export function createInventory(opts) {
       paintSlot(s, craft[i]);
     });
     storageSlots.forEach(([idx, s]) => paintSlot(s, main[idx]));
+    if (creative) hotRowSlots.forEach(([i, s]) => {
+      s.style.borderColor = i === selected ? '#fff' : 'rgba(255,255,255,.18)';
+      s.style.background = i === selected ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.08)';
+    });
     refreshCraftResult();
     if (cursorEl) { if (!cursor) cursorEl.style.display = 'none'; }
   }

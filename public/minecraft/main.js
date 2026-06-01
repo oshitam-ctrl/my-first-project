@@ -14,7 +14,7 @@ import { itemDef, blockToItem } from './items.js';
 // ---------------------------------------------------------------------------
 // Settings (persisted)
 // ---------------------------------------------------------------------------
-const DEFAULTS = { sens: 1.0, dist: 8, sound: true, shake: true, creative: true, mobs: true };
+const DEFAULTS = { sens: 1.0, dist: 8, sound: true, shake: true, creative: true, mobs: true, music: true };
 function loadSettings() {
   try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem('mc_settings') || '{}') }; }
   catch (e) { return { ...DEFAULTS }; }
@@ -75,6 +75,7 @@ const matTrans = new THREE.MeshBasicMaterial({
 // ---------------------------------------------------------------------------
 const sfx = createAudio();
 sfx.setEnabled(settings.sound);
+sfx.setMusicEnabled(settings.music !== false); // generative BGM (starts on first gesture)
 const particles = createParticles(scene, THREE, 160);
 
 // representative colour of a block, sampled once from the atlas (for debris)
@@ -314,6 +315,7 @@ const hurtEl = document.getElementById('hurt');
 function applyDamage(n) {
   if (creative || player.dead || n <= 0) return;
   player.health = Math.max(0, player.health - n);
+  sfx.hurt();
   hurtEl.style.opacity = '0.85';
   setTimeout(() => { hurtEl.style.opacity = '0'; }, 110);
   if (settings.shake) shakeMag = Math.max(shakeMag, 0.22);
@@ -757,6 +759,7 @@ function openSettings() {
   $('set-shake').checked = settings.shake;
   $('set-creative').checked = settings.creative;
   $('set-mobs').checked = settings.mobs !== false;
+  $('set-music').checked = settings.music !== false;
   $('seed-code').textContent = seedToCode(seed) + '  (#' + seed + ')';
   panel.style.display = 'block';
 }
@@ -780,6 +783,7 @@ $('set-sound').addEventListener('change', (e) => {
   saveSettings();
 });
 $('set-shake').addEventListener('change', (e) => { settings.shake = e.target.checked; saveSettings(); });
+$('set-music').addEventListener('change', (e) => { settings.music = e.target.checked; sfx.setMusicEnabled(settings.music); saveSettings(); });
 $('set-creative').addEventListener('change', (e) => {
   settings.creative = e.target.checked; saveSettings();
   toast(settings.creative ? 'クリエイティブ：リロードで反映' : 'サバイバル：リロードで反映');
