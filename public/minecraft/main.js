@@ -9,6 +9,7 @@ import { isTouchDevice, createTouchControls } from './touch.js';
 import { getSeed, setSeedInURL, seedToCode, shareSeed } from './share.js';
 import { createInventory } from './inventory.js';
 import { createMobs } from './mobs.js';
+import { createSky } from './sky.js';
 import { itemDef, blockToItem } from './items.js';
 
 // ---------------------------------------------------------------------------
@@ -52,6 +53,8 @@ function applyRenderDist() {
 applyRenderDist();
 
 const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 1000);
+const sky = createSky({ THREE, scene, camera, renderDist: RENDER_DIST });
+let curSun = 1; // latest sun level (0 night .. 1 noon), updated in updateDayNight
 
 // ---------------------------------------------------------------------------
 // World + materials  (seed may come from a shared URL)
@@ -203,6 +206,8 @@ const player = {
 window.__view = (x, y, z, yaw = 0, pitch = -0.85) => {
   player.pos.set(x, y, z); player.yaw = yaw; player.pitch = pitch; player.fly = true; player.vel.set(0, 0, 0);
 };
+window.__time = (t) => { dayTime = t; }; // debug: set time of day [0,1) (0.25=morning,0.5=noon,0.0/1.0=midnight)
+window.__weather = (w) => sky.setWeather(w);
 
 const GRAVITY = 28;
 const WALK = 5.2, SPRINT = 8.5, FLY = 11, JUMP = 9.2;
@@ -804,12 +809,13 @@ const NIGHT = new THREE.Color(0x0a1430);
 function updateDayNight(dt) {
   dayTime = (dayTime + dt / 120) % 1;
   const sun = Math.max(0, Math.sin(dayTime * Math.PI * 2 - Math.PI / 2));
+  curSun = sun;
   const light = 0.18 + 0.82 * sun;
   matOpaque.color.setRGB(light, light, light);
   matTrans.color.setRGB(light, light, light);
-  const sky = NIGHT.clone().lerp(SKY_DAY, sun);
-  scene.background.copy(sky);
-  scene.fog.color.copy(sky);
+  const skyColor = NIGHT.clone().lerp(SKY_DAY, sun);
+  scene.background.copy(skyColor);
+  scene.fog.color.copy(skyColor);
 }
 
 // ---------------------------------------------------------------------------
@@ -854,6 +860,7 @@ function loop() {
   shakeMag *= 0.82;
   updateChunks();
   updateDayNight(dt);
+  sky.update(dt, curSun, dayTime);
   updateMining(dt);
   particles.update(dt);
   if (playing) mobs.update(dt);
