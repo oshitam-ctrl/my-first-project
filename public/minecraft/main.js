@@ -708,7 +708,7 @@ const mobs = createMobs({
   onHurtPlayer: (dmg) => { applyDamage(dmg || 1); }, // real damage in survival; no-op in creative
   addDrop: (itemId, n) => { if (itemId) inv.add(itemId, n); },
   sfx,
-  isNight: () => Math.sin(dayTime * Math.PI * 2 - Math.PI / 2) < 0.12,
+  isNight: () => false, // bakery game: only peaceful animals spawn, never hostiles
   enabled: settings.mobs !== false,
 });
 window.__mobCount = () => mobs.count(); // debug/verification hook

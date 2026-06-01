@@ -50,63 +50,6 @@ function tool(id, name, klass, tier, color) {
   };
 }
 
-// A legendary sword with custom tool stats (still a real tool: isTool() true).
-function legendarySword(id, name, tier, durability, speed, damage, color) {
-  return {
-    id,
-    name,
-    stack: 1,
-    block: undefined,
-    tool: { class: 'sword', tier, durability, speed, damage },
-    food: undefined,
-    color,
-  };
-}
-
-// Armor piece. Custom `armor` (defense points) + `slot` ('head'|'chest').
-// Not a tool, not a block, not food.
-function armor(id, name, armorPoints, slot, color) {
-  return {
-    id,
-    name,
-    stack: 1,
-    block: undefined,
-    tool: undefined,
-    food: undefined,
-    armor: armorPoints,
-    slot,
-    color,
-  };
-}
-
-// Shield. Custom `shield:true` flag.
-function shield(id, name, color) {
-  return {
-    id,
-    name,
-    stack: 1,
-    block: undefined,
-    tool: undefined,
-    food: undefined,
-    shield: true,
-    color,
-  };
-}
-
-// Magic item (wand/staff). Custom `magic` string id.
-function magic(id, name, magicId, color) {
-  return {
-    id,
-    name,
-    stack: 1,
-    block: undefined,
-    tool: undefined,
-    food: undefined,
-    magic: magicId,
-    color,
-  };
-}
-
 // ---------------------------------------------------------------------------
 // Registry assembly
 // ---------------------------------------------------------------------------
@@ -180,25 +123,22 @@ const _defs = [
   food('apple', 'リンゴ', 4, 0xd83232),
   food('bread', 'パン', 5, 0xc89a4a),
 
-  // --- Legendary swords (custom tool stats) ---
-  legendarySword('dragonbone_sword', '竜骨の剣', 'diamond', 2000, 8, 12, 0xb9e4e8),
-  legendarySword('inferno_blade', '業火の剣', 'diamond', 1800, 8, 11, 0xff6a2a),
-  legendarySword('frost_edge', '氷雪の剣', 'diamond', 1800, 8, 10, 0x8fd4ff),
+  // --- Meat / food ---
+  food('raw_chicken', '生の鶏肉', 2, 0xe7b3a0),
+  food('cooked_chicken', '焼き鳥', 6, 0xb5793f),
+  food('raw_porkchop', '生の豚肉', 3, 0xe89a9a),
+  food('cooked_porkchop', '焼き豚肉', 8, 0xc06a3a),
+  food('raw_beef', '生の牛肉', 3, 0xc05a5a),
+  food('steak', 'ステーキ', 8, 0x7a3d2a),
+  food('raw_mutton', '生の羊肉', 2, 0xd98a8a),
+  food('cooked_mutton', '焼き羊肉', 6, 0xb0603a),
 
-  // --- Armor ---
-  armor('dragon_helm', '竜の兜', 3, 'head', 0x6f7bd6),
-  armor('dragon_chestplate', '竜の鎧', 8, 'chest', 0x6f7bd6),
-  armor('mythril_helm', 'ミスリルの兜', 2, 'head', 0x9fe6c9),
-  armor('mythril_chestplate', 'ミスリルの鎧', 6, 'chest', 0x9fe6c9),
-
-  // --- Shield ---
-  shield('aegis_shield', '聖盾アイギス', 0xd9c66a),
-
-  // --- Magic ---
-  magic('fire_wand', '業火の杖', 'fire', 0xff7a1a),
-  magic('frost_wand', '氷結の杖', 'frost', 0x7ad0ff),
-  magic('heal_staff', '癒しの杖', 'heal', 0x8aff9a),
-  magic('bolt_wand', '雷光の杖', 'bolt', 0xffe65a),
+  // --- Bakery / ingredients ---
+  material('leather', '革', 0x9a6b3f),
+  material('empty_jar', '空き瓶', 0xbfe0e6),
+  food('surplus_veg', '規格外野菜', 1, 0x86b94f),
+  material('levain', '発酵液', 0xd9c98a),
+  material('flour', '小麦粉', 0xeee6d0),
 ];
 
 // Tools: classes × tiers

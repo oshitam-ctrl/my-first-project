@@ -57,9 +57,9 @@ assert.strictEqual(isTool('diamond_sword'), true, 'diamond_sword is a tool');
 assert.strictEqual(isFood('apple'), true, 'apple is food');
 
 // Counts
-assert.strictEqual(toolCount, 19, 'exactly 19 tools (16 base + 3 legendary swords)');
+assert.strictEqual(toolCount, 16, 'exactly 16 tools (16 base)');
 assert.strictEqual(blockCount, 50, 'exactly 50 block items');
-assert.strictEqual(foodCount, 2, 'exactly 2 food items');
+assert.strictEqual(foodCount, 11, 'exactly 11 food items');
 
 // Spot-check stats
 assert.strictEqual(ITEMS.diamond_sword.tool.damage, 7, 'diamond sword damage 7');
