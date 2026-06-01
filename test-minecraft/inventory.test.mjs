@@ -52,4 +52,13 @@ const before = D.main[0] ? D.main[0].count : 0;
 ok('consumeSelected succeeds', inv.consumeSelected(1) === true);
 ok('count decreased by 1', (D.main[0] ? D.main[0].count : 0) === before - 1);
 
+// creative mode: prefilled hotbar, infinite place, no pickup
+const cinv = createInventory({ texture: { image: { width: 128 } }, cols: 8, sfx: null, creative: true, onSelect() {} });
+cinv.mountHotbar(document.getElementById('hotbar'));
+cinv.setSelected(0);
+ok('creative prefills hotbar slot 0 = grass', cinv.selectedItem() === 'grass');
+const c0 = cinv._debug.main[0].count;
+ok('creative place does not consume', cinv.consumeSelected(1) === true && cinv._debug.main[0].count === c0);
+ok('creative add is a no-op', cinv.add('dirt', 5) === 0);
+
 console.log(`\nAll ${n} inventory assertions passed.`);

@@ -72,10 +72,16 @@ async function scenario(name, contextOpts, tapOrClick, initScript, setupContext)
     await page.keyboard.press('KeyE');
     await page.waitForTimeout(300);
     const opened = await page.evaluate(() => { const s = document.getElementById('inv-screen'); return s ? getComputedStyle(s).display : 'none'; });
+    await page.screenshot({ path: '/tmp/mc-creative-palette.png' });
     await page.keyboard.press('KeyE');
     await page.waitForTimeout(300);
     const closed = await page.evaluate(() => { const s = document.getElementById('inv-screen'); return s ? getComputedStyle(s).display : 'none'; });
     console.log(`inventory: openedDisplay=${opened} closedDisplay=${closed}  -> ${opened === 'flex' && closed === 'none' ? 'OK' : 'FAIL'}`);
+    // let mobs spawn, then count + screenshot
+    await page.waitForTimeout(6000);
+    const mobCount = await page.evaluate(() => (window.__mobCount ? window.__mobCount() : -1));
+    console.log(`mobs spawned after ~6s: ${mobCount}`);
+    await page.screenshot({ path: '/tmp/mc-mobs.png' });
   }
 
   const after = await page.evaluate(() => ({
