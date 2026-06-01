@@ -42,6 +42,30 @@ const T = {
   spruce_leaves: 31,
   dry_grass: 32,
   cactus: 33,
+  stone_bricks: 34,
+  mossy_cobble: 35,
+  wool_white: 36,
+  wool_red: 37,
+  wool_blue: 38,
+  wool_yellow: 39,
+  wool_green: 40,
+  wool_black: 41,
+  gravel: 42,
+  clay: 43,
+  sandstone: 44,
+  red_sandstone: 45,
+  smooth_stone: 46,
+  granite: 47,
+  diorite: 48,
+  andesite: 49,
+  deepslate: 50,
+  calcite: 51,
+  bookshelf: 52,
+  hay_bale: 53,
+  obsidian: 54,
+  packed_ice: 55,
+  spruce_planks: 56,
+  birch_planks: 57,
 };
 
 // Block definitions. `faces` = [top, bottom, side] tile indices.
@@ -77,6 +101,30 @@ export const BLOCKS = {
   26: { name: 'Spruce Leaves', faces: [T.spruce_leaves, T.spruce_leaves, T.spruce_leaves], solid: true, opaque: false, hardness: 0.2, tool: null, tier: null, drop: null },
   27: { name: 'Dry Grass', faces: [T.dry_grass, T.dirt, T.grass_side], solid: true, opaque: true, hardness: 0.6, tool: 'shovel', tier: null, drop: 'dirt' },
   28: { name: 'Cactus', faces: [T.cactus, T.cactus, T.cactus], solid: true, opaque: true, hardness: 0.4, tool: null, tier: null },
+  29: { name: 'Stone Bricks', faces: [T.stone_bricks, T.stone_bricks, T.stone_bricks], solid: true, opaque: true, hardness: 2.0, tool: 'pickaxe', tier: 'wood' },
+  30: { name: 'Mossy Cobblestone', faces: [T.mossy_cobble, T.mossy_cobble, T.mossy_cobble], solid: true, opaque: true, hardness: 2.0, tool: 'pickaxe', tier: 'wood' },
+  31: { name: 'White Wool', faces: [T.wool_white, T.wool_white, T.wool_white], solid: true, opaque: true, hardness: 0.8, tool: null, tier: null },
+  32: { name: 'Red Wool', faces: [T.wool_red, T.wool_red, T.wool_red], solid: true, opaque: true, hardness: 0.8, tool: null, tier: null },
+  33: { name: 'Blue Wool', faces: [T.wool_blue, T.wool_blue, T.wool_blue], solid: true, opaque: true, hardness: 0.8, tool: null, tier: null },
+  34: { name: 'Yellow Wool', faces: [T.wool_yellow, T.wool_yellow, T.wool_yellow], solid: true, opaque: true, hardness: 0.8, tool: null, tier: null },
+  35: { name: 'Green Wool', faces: [T.wool_green, T.wool_green, T.wool_green], solid: true, opaque: true, hardness: 0.8, tool: null, tier: null },
+  36: { name: 'Black Wool', faces: [T.wool_black, T.wool_black, T.wool_black], solid: true, opaque: true, hardness: 0.8, tool: null, tier: null },
+  37: { name: 'Gravel', faces: [T.gravel, T.gravel, T.gravel], solid: true, opaque: true, hardness: 0.6, tool: 'shovel', tier: null },
+  38: { name: 'Clay', faces: [T.clay, T.clay, T.clay], solid: true, opaque: true, hardness: 0.6, tool: 'shovel', tier: null },
+  39: { name: 'Sandstone', faces: [T.sandstone, T.sandstone, T.sandstone], solid: true, opaque: true, hardness: 2.0, tool: 'pickaxe', tier: 'wood' },
+  40: { name: 'Red Sandstone', faces: [T.red_sandstone, T.red_sandstone, T.red_sandstone], solid: true, opaque: true, hardness: 2.0, tool: 'pickaxe', tier: 'wood' },
+  41: { name: 'Smooth Stone', faces: [T.smooth_stone, T.smooth_stone, T.smooth_stone], solid: true, opaque: true, hardness: 2.0, tool: 'pickaxe', tier: 'wood' },
+  42: { name: 'Granite', faces: [T.granite, T.granite, T.granite], solid: true, opaque: true, hardness: 2.0, tool: 'pickaxe', tier: 'wood' },
+  43: { name: 'Diorite', faces: [T.diorite, T.diorite, T.diorite], solid: true, opaque: true, hardness: 2.0, tool: 'pickaxe', tier: 'wood' },
+  44: { name: 'Andesite', faces: [T.andesite, T.andesite, T.andesite], solid: true, opaque: true, hardness: 2.0, tool: 'pickaxe', tier: 'wood' },
+  45: { name: 'Deepslate', faces: [T.deepslate, T.deepslate, T.deepslate], solid: true, opaque: true, hardness: 3.0, tool: 'pickaxe', tier: 'wood' },
+  46: { name: 'Calcite', faces: [T.calcite, T.calcite, T.calcite], solid: true, opaque: true, hardness: 2.0, tool: 'pickaxe', tier: 'wood' },
+  47: { name: 'Obsidian', faces: [T.obsidian, T.obsidian, T.obsidian], solid: true, opaque: true, hardness: 8.0, tool: 'pickaxe', tier: 'wood' },
+  48: { name: 'Packed Ice', faces: [T.packed_ice, T.packed_ice, T.packed_ice], solid: true, opaque: true, hardness: 0.6, tool: 'pickaxe', tier: 'wood' },
+  49: { name: 'Bookshelf', faces: [T.bookshelf, T.bookshelf, T.bookshelf], solid: true, opaque: true, hardness: 1.5, tool: 'axe', tier: null },
+  50: { name: 'Hay Bale', faces: [T.hay_bale, T.hay_bale, T.hay_bale], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  51: { name: 'Spruce Planks', faces: [T.spruce_planks, T.spruce_planks, T.spruce_planks], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
+  52: { name: 'Birch Planks', faces: [T.birch_planks, T.birch_planks, T.birch_planks], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
 };
 
 export function isOpaque(id) {
@@ -287,6 +335,151 @@ const painters = {
     c.fillStyle = 'rgba(34,82,34,0.85)';
     c.fillRect(0, 0, 2, TILE);
     c.fillRect(TILE - 2, 0, 2, TILE);
+  },
+  [T.stone_bricks]: (c) => {
+    noisePx(c, [122, 122, 125], 16);
+    c.strokeStyle = 'rgba(86,86,90,0.85)';
+    // horizontal mortar lines every 8px
+    for (let y = 0; y < TILE; y += 8) {
+      c.beginPath();
+      c.moveTo(0, y + 0.5);
+      c.lineTo(TILE, y + 0.5);
+      c.stroke();
+    }
+    // vertical mortar lines, offset every other row for a brick bond
+    for (let y = 0; y < TILE; y += 8) {
+      const off = (y / 8) % 2 ? 0 : 8;
+      for (let x = off; x < TILE; x += 16) {
+        c.beginPath();
+        c.moveTo(x + 0.5, y);
+        c.lineTo(x + 0.5, y + 8);
+        c.stroke();
+      }
+    }
+  },
+  [T.mossy_cobble]: (c) => {
+    noisePx(c, [115, 115, 118], 24);
+    c.strokeStyle = 'rgba(60,60,62,0.7)';
+    c.strokeRect(0.5, 0.5, 7, 7);
+    c.strokeRect(8.5, 4.5, 6, 6);
+    c.strokeRect(2.5, 9.5, 6, 5);
+    // green moss patches
+    c.fillStyle = 'rgba(70,110,55,0.7)';
+    for (let i = 0; i < 22; i++) {
+      c.fillRect((Math.random() * TILE) | 0, (Math.random() * TILE) | 0, 2, 2);
+    }
+  },
+  [T.wool_white]: (c) => noisePx(c, [235, 235, 235], 10),
+  [T.wool_red]: (c) => noisePx(c, [170, 55, 50], 10),
+  [T.wool_blue]: (c) => noisePx(c, [55, 75, 180], 10),
+  [T.wool_yellow]: (c) => noisePx(c, [200, 180, 40], 10),
+  [T.wool_green]: (c) => noisePx(c, [70, 140, 55], 10),
+  [T.wool_black]: (c) => noisePx(c, [40, 40, 44], 10),
+  [T.gravel]: (c) => {
+    noisePx(c, [124, 120, 118], 34);
+    c.fillStyle = 'rgba(80,76,74,0.6)';
+    for (let i = 0; i < 18; i++) {
+      c.fillRect((Math.random() * TILE) | 0, (Math.random() * TILE) | 0, 2, 2);
+    }
+  },
+  [T.clay]: (c) => noisePx(c, [166, 172, 182], 10),
+  [T.sandstone]: (c) => {
+    noisePx(c, [222, 210, 160], 12);
+    c.strokeStyle = 'rgba(190,176,128,0.7)';
+    for (let y = 3; y < TILE; y += 4) {
+      c.beginPath();
+      c.moveTo(0, y + 0.5);
+      c.lineTo(TILE, y + 0.5);
+      c.stroke();
+    }
+  },
+  [T.red_sandstone]: (c) => {
+    noisePx(c, [190, 110, 55], 14);
+    c.strokeStyle = 'rgba(150,82,40,0.7)';
+    for (let y = 3; y < TILE; y += 4) {
+      c.beginPath();
+      c.moveTo(0, y + 0.5);
+      c.lineTo(TILE, y + 0.5);
+      c.stroke();
+    }
+  },
+  [T.smooth_stone]: (c) => noisePx(c, [160, 160, 163], 8),
+  [T.granite]: (c) => {
+    noisePx(c, [150, 100, 85], 18);
+    c.fillStyle = 'rgba(200,160,150,0.6)';
+    for (let i = 0; i < 16; i++) c.fillRect((Math.random() * TILE) | 0, (Math.random() * TILE) | 0, 2, 2);
+  },
+  [T.diorite]: (c) => {
+    noisePx(c, [225, 225, 228], 14);
+    c.fillStyle = 'rgba(150,150,155,0.6)';
+    for (let i = 0; i < 16; i++) c.fillRect((Math.random() * TILE) | 0, (Math.random() * TILE) | 0, 2, 2);
+  },
+  [T.andesite]: (c) => {
+    noisePx(c, [136, 138, 140], 16);
+    c.fillStyle = 'rgba(110,112,114,0.6)';
+    for (let i = 0; i < 16; i++) c.fillRect((Math.random() * TILE) | 0, (Math.random() * TILE) | 0, 2, 2);
+  },
+  [T.deepslate]: (c) => noisePx(c, [70, 70, 76], 20),
+  [T.calcite]: (c) => noisePx(c, [225, 226, 222], 10),
+  [T.bookshelf]: (c) => {
+    noisePx(c, [160, 120, 70], 14);
+    // top and bottom plank rims
+    c.fillStyle = 'rgba(110,82,46,0.9)';
+    c.fillRect(0, 0, TILE, 2);
+    c.fillRect(0, TILE - 2, TILE, 2);
+    c.fillRect(0, 7, TILE, 2);
+    // coloured book spines on two shelves
+    const spines = ['#a83232', '#3258a8', '#3a9a3a', '#c8b428', '#7a3aa8', '#c87a28'];
+    for (const yTop of [2, 9]) {
+      let x = 1;
+      while (x < TILE - 1) {
+        const w = 2 + ((Math.random() * 2) | 0);
+        c.fillStyle = spines[(Math.random() * spines.length) | 0];
+        c.fillRect(x, yTop, Math.min(w, TILE - 1 - x), 5);
+        x += w + 1;
+      }
+    }
+  },
+  [T.hay_bale]: (c) => {
+    noisePx(c, [180, 150, 40], 16);
+    c.strokeStyle = 'rgba(140,112,28,0.8)';
+    for (let y = 0; y < TILE; y += 3) {
+      c.beginPath();
+      c.moveTo(0, y + 0.5);
+      c.lineTo(TILE, y + 0.5);
+      c.stroke();
+    }
+  },
+  [T.obsidian]: (c) => {
+    noisePx(c, [30, 24, 44], 12);
+    c.fillStyle = 'rgba(110,90,150,0.4)';
+    for (let i = 0; i < 6; i++) c.fillRect((Math.random() * TILE) | 0, (Math.random() * TILE) | 0, 1, 1);
+  },
+  [T.packed_ice]: (c) => {
+    noisePx(c, [150, 190, 235], 12);
+    c.strokeStyle = 'rgba(200,225,250,0.6)';
+    c.beginPath(); c.moveTo(0, 4); c.lineTo(TILE, 8); c.stroke();
+    c.beginPath(); c.moveTo(0, 11); c.lineTo(TILE, 14); c.stroke();
+  },
+  [T.spruce_planks]: (c) => {
+    noisePx(c, [110, 82, 50], 14);
+    c.strokeStyle = 'rgba(72,52,30,0.8)';
+    for (let y = 0; y < TILE; y += 5) {
+      c.beginPath();
+      c.moveTo(0, y + 0.5);
+      c.lineTo(TILE, y + 0.5);
+      c.stroke();
+    }
+  },
+  [T.birch_planks]: (c) => {
+    noisePx(c, [200, 182, 135], 14);
+    c.strokeStyle = 'rgba(160,144,100,0.8)';
+    for (let y = 0; y < TILE; y += 5) {
+      c.beginPath();
+      c.moveTo(0, y + 0.5);
+      c.lineTo(TILE, y + 0.5);
+      c.stroke();
+    }
   },
 };
 

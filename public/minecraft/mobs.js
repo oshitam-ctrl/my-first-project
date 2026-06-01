@@ -389,14 +389,15 @@ export function createMobs(opts) {
     // vertical move + ground collision
     let ny = mob.pos.y + mob.vel.y * dt;
     if (mob.vel.y <= 0) {
-      // landing: if the cell below the new feet is solid, snap to its top
-      const cellY = Math.floor(ny);
-      if (solidAt(Math.floor(mob.pos.x), cellY, Math.floor(mob.pos.z)) && (ny - cellY) < 0.6) {
-        ny = cellY + 1;
+      // landing: snap feet to the top of the solid cell they're entering
+      // (previously a narrow 0.6 window caused a sink->snap vertical jitter)
+      const groundY = Math.floor(ny - 0.02);
+      if (solidAt(Math.floor(mob.pos.x), groundY, Math.floor(mob.pos.z))) {
+        ny = groundY + 1;
         mob.vel.y = 0;
         mob.onGround = true;
       } else {
-        mob.onGround = groundUnder(mob.pos.x, ny, mob.pos.z);
+        mob.onGround = false;
       }
     } else {
       // moving up: check head
