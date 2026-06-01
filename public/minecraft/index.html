@@ -36,6 +36,12 @@
     }
     #game { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-action: none; }
 
+    /* On-screen diagnostic banner (temporary) */
+    #diag { position: fixed; top: 8px; left: 50%; transform: translateX(-50%);
+      z-index: 999; max-width: 92vw; padding: 10px 14px; border-radius: 10px;
+      background: rgba(0,0,0,.8); color: #fff; font-size: 13px; line-height: 1.45;
+      text-align: center; box-shadow: 0 4px 18px rgba(0,0,0,.5); }
+
     /* Crosshair */
     #crosshair { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
       width: 22px; height: 22px; pointer-events: none; z-index: 5; mix-blend-mode: difference; }
@@ -138,6 +144,7 @@
 </head>
 <body>
   <canvas id="game"></canvas>
+  <div id="diag">診断 v7：JS が動けばこの表示は変わります</div>
   <div id="crosshair"></div>
   <div id="hud"></div>
   <div id="hotbar"></div>
@@ -189,6 +196,7 @@
        (including import maps), which would prevent the game from loading. The
        module below uses direct relative imports for three.js and registers the
        service worker itself, so an external same-origin module is all we need. -->
+  <script type="module" src="./diag.js"></script>
   <script type="module" src="./main.js"></script>
 </body>
 </html>
