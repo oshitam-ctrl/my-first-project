@@ -32,16 +32,15 @@ await page.click('#overlay');
 await page.waitForTimeout(800);
 
 // visit different biomes and screenshot a horizon view of each
-// night: spawn hostile mobs nearby, then sweep the view to catch their faces
-await page.evaluate(() => { window.__time && window.__time(0.0); window.__view && window.__view(8, 34, 8, 0, -0.05); });
-await page.waitForTimeout(9000);
-for (let i = 0; i < 6; i++) {
-  await page.evaluate((y) => window.__view && window.__view(8, 34, 8, y, -0.08), i * 1.05);
-  await page.waitForTimeout(600);
-  await page.screenshot({ path: `/tmp/mc-mobface-${TAG}-${i}.png` });
-}
-const mc = await page.evaluate(() => (window.__mobCount ? window.__mobCount() : -1));
-console.log('mobs near:', mc);
+await page.evaluate(() => { window.__time && window.__time(0.5); window.__view && window.__view(8, 41, 30, 0, -0.32); });
+await page.waitForTimeout(11000);
+await page.screenshot({ path: `/tmp/mc-hermes-front-${TAG}.png` });
+await page.evaluate(() => window.__view && window.__view(8, 70, 22, 0, -1.0));
+await page.waitForTimeout(6000);
+await page.screenshot({ path: `/tmp/mc-hermes-aerial-${TAG}.png` });
+await page.evaluate(() => window.__view && window.__view(8, 32, -16, 0, -0.04));
+await page.waitForTimeout(4000);
+await page.screenshot({ path: `/tmp/mc-hermes-inside-${TAG}.png` });
 
 const hud = await page.evaluate(() => document.getElementById('hud').textContent);
 console.log(`[${TAG}] hud: ${hud} | pageerrors: ${errs.length}`);

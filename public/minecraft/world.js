@@ -2,6 +2,17 @@
 // DDA raycasting, and a persistent player-edit overlay.
 import * as THREE from './vendor/three.module.js';
 import { Noise, hash2 } from './noise.js';
+import { buildPetitHermes, LANDMARK } from './landmark.js';
+
+// Block-id palette handed to the landmark builder.
+const LB = {
+  AIR: 0, GRASS: 1, DIRT: 2, STONE: 3, SAND: 4, OAK_LOG: 5, OAK_LEAVES: 6, OAK_PLANKS: 9,
+  COBBLE: 10, GLASS: 12, BRICK: 13, BIRCH_LOG: 23, SPRUCE_LOG: 25, SPRUCE_PLANKS: 51,
+  BIRCH_PLANKS: 52, DRY_GRASS: 27, SANDSTONE: 39, SMOOTH_STONE: 41, CALCITE: 46,
+  WHITE_WOOL: 31, BLUE_WOOL: 33, GREEN_WOOL: 35, BLACK_WOOL: 36, GRAVEL: 37, HAY: 50, STONE_BRICKS: 29,
+};
+// Fixed world placement of the Petit Hermès landmark (centred in front of spawn).
+const LM_X = -12, LM_Y = 29, LM_Z = -36;
 import { BLOCKS, isOpaque, isSolid, tileUV } from './blocks.js';
 
 export const CHUNK = 16;
@@ -230,6 +241,9 @@ export class World {
       }
     }
 
+    // Petit Hermès landmark (school + bakery), if it overlaps this chunk
+    this._stampLandmark(data, ox, oz);
+
     // apply persisted edits within this chunk
     for (const [k, id] of this.edits) {
       const [ex, ey, ez] = k.split(',').map(Number);
@@ -244,6 +258,14 @@ export class World {
     const i = idx(lx, y, lz);
     if (!force && data[i] !== AIR) return;
     data[i] = id;
+  }
+
+  // Stamp the Petit Hermès landmark into this chunk (only the overlapping part).
+  _stampLandmark(data, ox, oz) {
+    const x0 = LM_X, x1 = LM_X + LANDMARK.w, z0 = LM_Z, z1 = LM_Z + LANDMARK.d;
+    if (ox + CHUNK <= x0 || ox >= x1 || oz + CHUNK <= z0 || oz >= z1) return; // no overlap
+    const stamp = (x, y, z, id) => this._stamp(data, LM_X + x - ox, LM_Y + y, LM_Z + z - oz, id, true);
+    buildPetitHermes(stamp, LB);
   }
 
   // A small 5x5 hut at world (hx,hz): cobble floor, plank walls, glass windows,
