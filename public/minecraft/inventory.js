@@ -19,6 +19,14 @@ export function createInventory(opts) {
   let craftSize = 2;                         // 2 or 3
   let open = false;
 
+  // creative: prefill the hotbar with a handy kit; full palette available in the screen
+  const CREATIVE_LIST = Object.keys(ITEMS);
+  if (creative) {
+    const kit = ['grass', 'dirt', 'stone', 'cobblestone', 'oak_planks', 'oak_log', 'glass', 'sand', 'crafting_table'];
+    kit.forEach((id, i) => { if (ITEMS[id]) main[i] = { item: id, count: 1 }; });
+  }
+  function creativePick(id) { cursor = { item: id, count: MAXSTACK(id) }; sfx && sfx.select(); renderAll(); }
+
   // --- icon drawing ------------------------------------------------------
   function drawIcon(ctx, id) {
     ctx.clearRect(0, 0, 32, 32);
@@ -174,7 +182,7 @@ export function createInventory(opts) {
   function scroll(dir) { setSelected(selected + (dir > 0 ? 1 : -1)); }
 
   // --- inventory screen --------------------------------------------------
-  let screen = null, storageSlots = [], craftSlots = [], resultSlot = null, cursorEl = null;
+  let screen = null, storageSlots = [], craftSlots = [], resultSlot = null, cursorEl = null, paletteSlots = [];
   function buildScreen() {
     screen = document.createElement('div');
     screen.id = 'inv-screen';
@@ -205,14 +213,21 @@ export function createInventory(opts) {
     resultSlot.style.borderColor = 'rgba(255,220,120,.6)';
     craftRow.appendChild(resultSlot);
     panel.appendChild(craftRow);
-    grid._el = grid; screen._grid = grid;
+    grid._el = grid; screen._grid = grid; screen._craftRow = craftRow;
+
+    // creative palette: every item, scrollable; click puts a full stack on the cursor
+    const palette = document.createElement('div');
+    Object.assign(palette.style, { display: 'none', gridTemplateColumns: 'repeat(9, 44px)', gap: '3px', maxHeight: '46vh', overflowY: 'auto', padding: '2px' });
+    paletteSlots = [];
+    CREATIVE_LIST.forEach((id) => { const s = makeSlot(() => creativePick(id)); paintSlot(s, { item: id, count: 1 }); palette.appendChild(s); paletteSlots.push([id, s]); });
+    panel.appendChild(palette); screen._palette = palette;
 
     // storage (rows 9..35) then hotbar (0..8)
     const store = document.createElement('div');
     store.style.display = 'grid'; store.style.gridTemplateColumns = 'repeat(9, 1fr)'; store.style.gap = '3px';
     storageSlots = [];
     for (let i = 9; i < MAIN; i++) { const s = makeSlot(() => clickSlot('main', i)); storageSlots.push([i, s]); store.appendChild(s); }
-    panel.appendChild(store);
+    panel.appendChild(store); screen._store = store;
     const hotRow = document.createElement('div');
     hotRow.style.display = 'grid'; hotRow.style.gridTemplateColumns = 'repeat(9, 1fr)'; hotRow.style.gap = '3px'; hotRow.style.marginTop = '6px';
     for (let i = 0; i < 9; i++) { const s = makeSlot(() => clickSlot('main', i)); storageSlots.push([i, s]); hotRow.appendChild(s); }
@@ -246,6 +261,10 @@ export function createInventory(opts) {
     paintSlot(resultSlot, r ? { item: r.id, count: r.count } : null);
   }
   function renderScreen() {
+    // creative shows the full item palette instead of crafting + storage
+    screen._palette.style.display = creative ? 'grid' : 'none';
+    screen._craftRow.style.display = creative ? 'none' : 'flex';
+    screen._store.style.display = creative ? 'none' : 'grid';
     // crafting grid layout for size
     const grid = screen._grid;
     grid.style.gridTemplateColumns = `repeat(${craftSize}, 44px)`;

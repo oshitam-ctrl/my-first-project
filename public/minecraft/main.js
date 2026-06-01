@@ -8,12 +8,13 @@ import { createParticles } from './particles.js';
 import { isTouchDevice, createTouchControls } from './touch.js';
 import { getSeed, setSeedInURL, seedToCode, shareSeed } from './share.js';
 import { createInventory } from './inventory.js';
+import { createMobs } from './mobs.js';
 import { itemDef, blockToItem } from './items.js';
 
 // ---------------------------------------------------------------------------
 // Settings (persisted)
 // ---------------------------------------------------------------------------
-const DEFAULTS = { sens: 1.0, dist: 6, sound: true, shake: true };
+const DEFAULTS = { sens: 1.0, dist: 8, sound: true, shake: true, creative: true, mobs: true };
 function loadSettings() {
   try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem('mc_settings') || '{}') }; }
   catch (e) { return { ...DEFAULTS }; }
@@ -22,6 +23,7 @@ function saveSettings() {
   try { localStorage.setItem('mc_settings', JSON.stringify(settings)); } catch (e) {}
 }
 const settings = loadSettings();
+const creative = settings.creative;   // creative: fly, instant break, infinite blocks, full palette
 
 // ---------------------------------------------------------------------------
 // Renderer / scene / camera
@@ -361,6 +363,7 @@ function canHarvest(id) {
 
 let breakTarget = null;
 let breakProgress = 0;
+let creativeBreakCD = 0;   // throttle for creative instant-break while held
 
 function sameBlock(a, b) { return b && a[0] === b[0] && a[1] === b[1] && a[2] === b[2]; }
 
@@ -429,6 +432,12 @@ function updateMining(dt) {
     const id = world.getBlock(x, y, z);
     const hard = breakTimeFor(id);
     if (!isFinite(hard)) { breakProgress = 0; crackMesh.visible = false; return; } // bedrock
+    if (creative) { // instant break with a small throttle while held
+      creativeBreakCD -= dt;
+      if (creativeBreakCD <= 0) { doBreak(x, y, z, id); creativeBreakCD = 0.18; }
+      crackMesh.visible = false;
+      return;
+    }
     if (!sameBlock(hit.block, breakTarget)) { breakTarget = hit.block.slice(); breakProgress = 0; }
     breakProgress += dt / hard;
     const s = Math.min(CRACK_STAGES - 1, Math.floor(breakProgress * CRACK_STAGES));
@@ -437,7 +446,7 @@ function updateMining(dt) {
     crackMesh.visible = true;
     if (breakProgress >= 1) { doBreak(x, y, z, id); breakProgress = 0; breakTarget = null; crackMesh.visible = false; }
   } else {
-    breakProgress = 0; breakTarget = null; crackMesh.visible = false;
+    breakProgress = 0; breakTarget = null; crackMesh.visible = false; creativeBreakCD = 0;
   }
 }
 
@@ -512,6 +521,7 @@ document.addEventListener('mousemove', (e) => {
 document.addEventListener('mousedown', (e) => {
   if (!playing || isTouch || inv.isOpen()) return;
   if (e.button === 0) {
+    if (tryAttackMob()) return;
     breakHeld = true;
     if (!locked) { dragging = true; dragMoved = 0; }
   } else if (e.button === 2) {
@@ -554,7 +564,7 @@ if (isTouch) {
     isFlying: () => player.fly,
     onLook: (dx, dy) => { if (playing) applyLook(dx, dy, 0.004 * settings.sens); },
     onPlace: () => { if (playing) placeBlock(); },
-    onBreakStart: () => { if (playing) breakHeld = true; },
+    onBreakStart: () => { if (playing && !tryAttackMob()) breakHeld = true; },
     onBreakEnd: () => { breakHeld = false; },
     onJump: (down) => { touchJump = down; },
     onToggleFly: () => { player.fly = !player.fly; },
@@ -565,7 +575,7 @@ if (isTouch) {
 // ---------------------------------------------------------------------------
 // Hotbar UI
 // ---------------------------------------------------------------------------
-const inv = createInventory({ texture, cols, sfx, creative: false, onSelect: () => {} });
+const inv = createInventory({ texture, cols, sfx, creative, onSelect: () => {} });
 inv.mountHotbar(document.getElementById('hotbar'));
 
 // Open/close the inventory, freeing the mouse cursor (desktop) for slot clicks.
@@ -585,6 +595,34 @@ function toggleInv(size = 2) {
   b.addEventListener('click', (e) => { e.stopPropagation(); sfx.resume(); if (playing) toggleInv(2); });
   const tb = document.getElementById('topbar');
   if (tb) tb.insertBefore(b, tb.firstChild);
+}
+
+// Mobs / entities (passive animals by day, hostiles at night)
+const mobs = createMobs({
+  THREE, scene,
+  solidAt: (x, y, z) => { const b = BLOCKS[world.getBlock(Math.floor(x), Math.floor(y), Math.floor(z))]; return !!(b && b.solid); },
+  groundKind: (x, y, z) => {
+    const id = world.getBlock(Math.floor(x), Math.floor(y), Math.floor(z));
+    if (id === 1) return 'grass';
+    const b = BLOCKS[id];
+    return b && b.solid ? 'solid' : 'air';
+  },
+  player,
+  onHurtPlayer: () => { if (settings.shake) shakeMag = 0.2; }, // hurt feedback (full health system: later wave)
+  addDrop: (itemId, n) => { if (itemId) inv.add(itemId, n); },
+  sfx,
+  isNight: () => Math.sin(dayTime * Math.PI * 2 - Math.PI / 2) < 0.12,
+  enabled: settings.mobs !== false,
+});
+window.__mobCount = () => mobs.count(); // debug/verification hook
+
+// Player melee: if a mob is under the crosshair, hit it instead of mining.
+function tryAttackMob() {
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+  const t = inv.heldTool();
+  const dmg = creative ? 1000 : (t && t.damage ? t.damage : 2);
+  return !!mobs.attack(camera.position.clone(), dir, 3.4, dmg);
 }
 
 // ---------------------------------------------------------------------------
@@ -632,6 +670,8 @@ function openSettings() {
   $('dist-val').textContent = settings.dist;
   $('set-sound').checked = settings.sound;
   $('set-shake').checked = settings.shake;
+  $('set-creative').checked = settings.creative;
+  $('set-mobs').checked = settings.mobs !== false;
   $('seed-code').textContent = seedToCode(seed) + '  (#' + seed + ')';
   panel.style.display = 'block';
 }
@@ -655,6 +695,17 @@ $('set-sound').addEventListener('change', (e) => {
   saveSettings();
 });
 $('set-shake').addEventListener('change', (e) => { settings.shake = e.target.checked; saveSettings(); });
+$('set-creative').addEventListener('change', (e) => {
+  settings.creative = e.target.checked; saveSettings();
+  toast(settings.creative ? 'クリエイティブ：リロードで反映' : 'サバイバル：リロードで反映');
+  setTimeout(() => location.reload(), 700);
+});
+$('set-mobs').addEventListener('change', (e) => {
+  settings.mobs = e.target.checked;
+  mobs.setEnabled(settings.mobs);
+  if (!settings.mobs) mobs.clear();
+  saveSettings();
+});
 
 // ---------------------------------------------------------------------------
 // Day / night cycle
@@ -714,6 +765,7 @@ function loop() {
   updateDayNight(dt);
   updateMining(dt);
   particles.update(dt);
+  if (playing) mobs.update(dt);
 
   renderer.render(scene, camera);
   updateHud(dt);
