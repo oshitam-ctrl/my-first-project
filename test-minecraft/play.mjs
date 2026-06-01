@@ -30,7 +30,7 @@ const server = http.createServer(async (req, res) => {
 
 await new Promise((r) => server.listen(0, r));
 const port = server.address().port;
-const URL = `http://localhost:${port}/minecraft/index.html`;
+const URL = `http://localhost:${port}/minecraft`; // production-style URL (no trailing slash)
 console.log('Serving at', URL);
 
 const browser = await chromium.launch({
