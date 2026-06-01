@@ -32,17 +32,15 @@ await page.click('#overlay');
 await page.waitForTimeout(800);
 
 // visit different biomes and screenshot a horizon view of each
-await page.evaluate(() => window.__view && window.__view(40, 40, 40, 0.6, 0.12)); // look slightly up
-await page.waitForTimeout(9000);
-const shots = { day: 0.5, sunset: 0.74, night: 0.02 };
-for (const [name, t] of Object.entries(shots)) {
-  await page.evaluate((t) => window.__time && window.__time(t), t);
-  await page.waitForTimeout(1500);
-  await page.screenshot({ path: `/tmp/mc-sky-${name}-${TAG}.png` });
-}
-await page.evaluate(() => { window.__time && window.__time(0.5); window.__weather && window.__weather('rain'); });
-await page.waitForTimeout(1500);
-await page.screenshot({ path: `/tmp/mc-sky-rain-${TAG}.png` });
+await page.evaluate(() => { window.__time && window.__time(0.5); window.__view && window.__view(128, 40, -2, -1.4, -0.5); });
+await page.waitForTimeout(11000);
+await page.screenshot({ path: `/tmp/mc-village-${TAG}.png` });
+await page.evaluate(() => window.__view && window.__view(133, 42, -19, 0, -1.5)); // straight down on a hut
+await page.waitForTimeout(2500);
+await page.screenshot({ path: `/tmp/mc-village2-${TAG}.png` });
+await page.evaluate(() => window.__view && window.__view(140, 28, -19, 1.4, -0.12)); // ground level toward huts
+await page.waitForTimeout(2000);
+await page.screenshot({ path: `/tmp/mc-village3-${TAG}.png` });
 
 const hud = await page.evaluate(() => document.getElementById('hud').textContent);
 console.log(`[${TAG}] hud: ${hud} | pageerrors: ${errs.length}`);

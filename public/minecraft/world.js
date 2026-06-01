@@ -214,6 +214,22 @@ export class World {
       }
     }
 
+    // Villages: clusters of small huts on flat grassy ground (deterministic per region)
+    const R = 80;
+    for (let rx = Math.floor((ox - 8) / R); rx <= Math.floor((ox + CHUNK + 8) / R); rx++) {
+      for (let rz = Math.floor((oz - 8) / R); rz <= Math.floor((oz + CHUNK + 8) / R); rz++) {
+        if (hash2(rx, rz, this.seed ^ 0xabcdef) >= 0.38) continue; // no village in this region
+        const ax = rx * R + 18 + Math.floor(hash2(rx, rz, this.seed ^ 1) * (R - 36));
+        const az = rz * R + 18 + Math.floor(hash2(rx, rz, this.seed ^ 2) * (R - 36));
+        const nHuts = 2 + Math.floor(hash2(rx, rz, this.seed ^ 3) * 4); // 2-5
+        for (let hi = 0; hi < nHuts; hi++) {
+          const hx = ax + Math.round((hash2(rx * 7 + hi, rz, this.seed ^ 4) - 0.5) * 30);
+          const hz = az + Math.round((hash2(rx, rz * 7 + hi, this.seed ^ 5) - 0.5) * 30);
+          this._stampHut(data, ox, oz, hx, hz);
+        }
+      }
+    }
+
     // apply persisted edits within this chunk
     for (const [k, id] of this.edits) {
       const [ex, ey, ez] = k.split(',').map(Number);
@@ -228,6 +244,34 @@ export class World {
     const i = idx(lx, y, lz);
     if (!force && data[i] !== AIR) return;
     data[i] = id;
+  }
+
+  // A small 5x5 hut at world (hx,hz): cobble floor, plank walls, glass windows,
+  // a doorway, plank roof. Stamps only cells that fall inside this chunk.
+  _stampHut(data, ox, oz, hx, hz) {
+    const PLANK = 9, COBBLE = 10, GLASS = 12;
+    const g = this.heightAt(hx, hz);
+    if (g <= SEA_LEVEL + 1) return; // not on water/beach
+    const biome = this.biomeAt(hx, hz, g);
+    if (biome === 'desert' || biome === 'mountain' || biome === 'snowy') return;
+    // require flattish ground so huts don't float or bury
+    if (Math.abs(this.heightAt(hx - 2, hz) - g) > 2 || Math.abs(this.heightAt(hx + 2, hz) - g) > 2 ||
+        Math.abs(this.heightAt(hx, hz - 2) - g) > 2 || Math.abs(this.heightAt(hx, hz + 2) - g) > 2) return;
+    for (let dz = -2; dz <= 2; dz++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        const lx = hx + dx - ox, lz = hz + dz - oz;
+        this._stamp(data, lx, g, lz, COBBLE, true); // floor
+        const edge = Math.abs(dx) === 2 || Math.abs(dz) === 2;
+        for (let wy = 1; wy <= 3; wy++) {
+          if (!edge) { this._stamp(data, lx, g + wy, lz, AIR, true); continue; } // clear interior
+          const isDoor = dz === 2 && dx === 0 && wy <= 2;
+          if (isDoor) { this._stamp(data, lx, g + wy, lz, AIR, true); continue; } // doorway
+          const isWindow = wy === 2 && ((Math.abs(dx) === 2 && dz === 0) || (Math.abs(dz) === 2 && dx === 0));
+          this._stamp(data, lx, g + wy, lz, isWindow ? GLASS : PLANK, true);
+        }
+        this._stamp(data, lx, g + 4, lz, PLANK, true); // roof
+      }
+    }
   }
 
   // --- block access ------------------------------------------------------
