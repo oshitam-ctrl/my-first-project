@@ -108,10 +108,13 @@ function buildChunkMeshes(cx, cz) {
   const key = cx + ',' + cz;
   removeChunkMeshes(key);
   const entry = {};
+  // NOTE: buildGeometry emits vertices in WORLD coordinates, so the mesh must
+  // sit at the origin. (Offsetting by cx*CHUNK here double-counts the position
+  // and tears the world into a grid of gaps that worsens with distance.)
   const og = world.makeMesh(groups.opaque);
   if (og) {
     const m = new THREE.Mesh(og, matOpaque);
-    m.position.set(cx * CHUNK, 0, cz * CHUNK);
+    m.position.set(0, 0, 0);
     m.frustumCulled = true;
     scene.add(m);
     entry.opaque = m;
@@ -119,7 +122,7 @@ function buildChunkMeshes(cx, cz) {
   const tg = world.makeMesh(groups.trans);
   if (tg) {
     const m = new THREE.Mesh(tg, matTrans);
-    m.position.set(cx * CHUNK, 0, cz * CHUNK);
+    m.position.set(0, 0, 0);
     m.renderOrder = 1;
     scene.add(m);
     entry.trans = m;
@@ -154,7 +157,7 @@ function updateChunks() {
     }
   }
 
-  let budget = 2;
+  let budget = 3; // chunk meshes built per frame (smoother streaming while flying)
   const ring = [];
   for (let dz = -RENDER_DIST; dz <= RENDER_DIST; dz++) {
     for (let dx = -RENDER_DIST; dx <= RENDER_DIST; dx++) {
@@ -194,6 +197,10 @@ const player = {
   const h = world.heightAt(8, 8);
   player.pos.y = Math.max(h, SEA_LEVEL) + 2;
 }
+// debug/verification: reposition the camera (e.g. aerial view) from tests
+window.__view = (x, y, z, yaw = 0, pitch = -0.85) => {
+  player.pos.set(x, y, z); player.yaw = yaw; player.pitch = pitch; player.fly = true; player.vel.set(0, 0, 0);
+};
 
 const GRAVITY = 28;
 const WALK = 5.2, SPRINT = 8.5, FLY = 11, JUMP = 9.2;

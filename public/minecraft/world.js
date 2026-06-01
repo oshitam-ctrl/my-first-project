@@ -59,14 +59,41 @@ export class World {
 
   // --- terrain -----------------------------------------------------------
   heightAt(wx, wz) {
-    const continent = this.noise.fbm2(wx * 0.0055, wz * 0.0055, 4);
-    const hills = this.noise.fbm2(wx * 0.021, wz * 0.021, 4);
-    let h = SEA_LEVEL + 5 + continent * 17 + hills * 6;
-    return Math.max(1, Math.min(HEIGHT - 6, Math.floor(h)));
+    // Continentalness picks broad land vs ocean regions (big, contiguous), so
+    // land sits clearly above sea level instead of flooding into scattered isles.
+    const cont = this.noise.fbm2(wx * 0.0034, wz * 0.0034, 4);          // [-1,1] continents
+    const hills = this.noise.fbm2(wx * 0.014 + 40, wz * 0.014 + 40, 3);
+    const mtn = this.noise.fbm2(wx * 0.0055 + 90, wz * 0.0055 + 90, 3); // mountain mask
+    let h;
+    if (cont < -0.25) {
+      // ocean basin: deeper the more negative (down to ~sea-22)
+      h = SEA_LEVEL - 2 + (cont + 0.25) * 26;
+    } else {
+      // land: base safely above water, rising inland, plus hills
+      h = SEA_LEVEL + 4 + (cont + 0.25) * 11 + hills * 5;
+      if (mtn > 0.22) h += (mtn - 0.22) * 105; // mountains rise sharply (more frequent + taller)
+    }
+    return Math.max(1, Math.min(HEIGHT - 3, Math.floor(h)));
   }
 
-  biomeAt(wx, wz) {
-    return this.biomeNoise.fbm2(wx * 0.004, wz * 0.004, 3); // ~[-1,1]
+  // climate -> [temperature, humidity] in [0,1] (contrast-stretched for variety)
+  climate(wx, wz) {
+    const cl = (v) => Math.max(0, Math.min(1, (v * 1.5 + 1) * 0.5));
+    const t = cl(this.biomeNoise.fbm2(wx * 0.0028 + 11, wz * 0.0028 + 11, 3));
+    const m = cl(this.biomeNoise.fbm2(wx * 0.0032 + 71, wz * 0.0032 + 71, 3));
+    return [t, m];
+  }
+
+  // biome id from climate + elevation
+  biomeAt(wx, wz, h) {
+    if (h == null) h = this.heightAt(wx, wz);
+    if (h >= SEA_LEVEL + 22) return 'mountain';
+    const [t, m] = this.climate(wx, wz);
+    if (t < 0.32) return 'snowy';
+    if (t > 0.64 && m < 0.42) return 'desert';
+    if (t > 0.54 && m < 0.50) return 'savanna';
+    if (m > 0.55) return 'forest';
+    return 'plains';
   }
 
   ensureData(cx, cz) {
@@ -89,9 +116,16 @@ export class World {
         const wx = ox + lx;
         const wz = oz + lz;
         const h = this.heightAt(wx, wz);
-        const biome = this.biomeAt(wx, wz);
+        const biome = this.biomeAt(wx, wz, h);
         const beach = h <= SEA_LEVEL + 1;
-        const snowy = biome > 0.35 && h > SEA_LEVEL + 12;
+        // surface (top) + subsurface (sub) blocks vary by biome
+        let top, sub;
+        if (beach || biome === 'desert') { top = SAND; sub = SAND; }
+        else if (biome === 'snowy') { top = SNOW; sub = DIRT; }
+        else if (biome === 'mountain') {
+          top = h >= SEA_LEVEL + 34 ? SNOW : h >= SEA_LEVEL + 30 ? STONE : GRASS;
+          sub = top === GRASS ? DIRT : STONE;
+        } else { top = GRASS; sub = DIRT; } // plains / forest / savanna
 
         for (let y = 0; y <= Math.max(h, SEA_LEVEL); y++) {
           let id = AIR;
@@ -100,9 +134,9 @@ export class World {
           } else if (y < h - 4) {
             id = STONE;
           } else if (y < h) {
-            id = beach ? SAND : DIRT;
+            id = sub;
           } else if (y === h) {
-            id = beach ? SAND : snowy ? SNOW : GRASS;
+            id = top;
           } else if (y <= SEA_LEVEL) {
             id = WATER;
           }
@@ -126,22 +160,29 @@ export class World {
       }
     }
 
-    // Trees: stamp from any origin whose canopy can reach this chunk.
+    // Trees: density, height and shape vary by biome.
     for (let lz = -3; lz < CHUNK + 3; lz++) {
       for (let lx = -3; lx < CHUNK + 3; lx++) {
         const wx = ox + lx;
         const wz = oz + lz;
-        if (hash2(wx, wz, this.seed) >= 0.018) continue;
         const h = this.heightAt(wx, wz);
-        const biome = this.biomeAt(wx, wz);
-        if (h <= SEA_LEVEL + 1) continue; // no trees on beach/water
-        if (biome > 0.35 && h > SEA_LEVEL + 12) continue; // skip snowy peaks
-        const th = 4 + (Math.floor(hash2(wx, wz, this.seed ^ 99) * 3));
+        if (h <= SEA_LEVEL + 1) continue; // none on beach/water
+        const biome = this.biomeAt(wx, wz, h);
+        let density = 0, baseH = 5;
+        if (biome === 'forest') density = 0.045;
+        else if (biome === 'plains') density = 0.008;
+        else if (biome === 'savanna') density = 0.005;
+        else if (biome === 'snowy') { density = 0.025; baseH = 6; } // taller conifers
+        else if (biome === 'mountain') density = 0.004;
+        // desert: no trees
+        if (density === 0 || hash2(wx, wz, this.seed) >= density) continue;
+        const conifer = biome === 'snowy';
+        const th = baseH + Math.floor(hash2(wx, wz, this.seed ^ 99) * 3);
         const topY = h + th;
         // canopy
         for (let dy = -2; dy <= 1; dy++) {
           const ly = topY + dy;
-          const r = dy >= 0 ? 1 : 2;
+          const r = conifer ? (dy >= 0 ? 1 : dy === -1 ? 1 : 2) : (dy >= 0 ? 1 : 2);
           for (let dz = -r; dz <= r; dz++) {
             for (let dx = -r; dx <= r; dx++) {
               if (dx === 0 && dz === 0 && dy < 1) continue;
