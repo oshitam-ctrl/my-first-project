@@ -7,11 +7,8 @@ import { createAudio } from './audio.js';
 import { createParticles } from './particles.js';
 import { isTouchDevice, createTouchControls } from './touch.js';
 import { getSeed, setSeedInURL, seedToCode, shareSeed } from './share.js';
-
-// Startup beacon for the on-screen diagnostic (diag.js). If main.js fails to
-// load/evaluate this never runs and diag.js reports the failure on screen.
-window.__mcLoaded = true;
-{ const d = document.getElementById('diag'); if (d) { d.style.background = 'rgba(0,130,0,.85)'; d.textContent = '✓ 起動OK (v7)'; setTimeout(() => { d.style.display = 'none'; }, 1200); } }
+import { createInventory } from './inventory.js';
+import { itemDef, blockToItem } from './items.js';
 
 // ---------------------------------------------------------------------------
 // Settings (persisted)
@@ -342,8 +339,25 @@ function currentTarget() {
   return world.raycast(origin, dir, 7);
 }
 
-const HARDNESS = { 3: 0.62, 8: Infinity, 10: 0.62, 13: 0.7, 5: 0.45 }; // stone/bedrock/cobble/brick/wood
-function hardnessOf(id) { return HARDNESS[id] != null ? HARDNESS[id] : 0.32; }
+// Mining time depends on block hardness and the held tool; harvesting (getting
+// a drop) requires a tool of the right class and tier.
+const TIER_RANK = { hand: 0, wood: 1, stone: 2, iron: 3, diamond: 4 };
+function breakTimeFor(id) {
+  const b = BLOCKS[id];
+  if (!b) return 0.3;
+  const hard = b.hardness == null ? 0.3 : b.hardness;
+  if (!isFinite(hard)) return Infinity; // bedrock
+  const tool = inv.heldTool();
+  const speed = (tool && b.tool && tool.class === b.tool) ? tool.speed : 1;
+  return Math.max(0.12, (hard * 0.6) / speed);
+}
+function canHarvest(id) {
+  const b = BLOCKS[id];
+  if (!b) return false;
+  if (b.tier == null) return true;
+  const tool = inv.heldTool();
+  return !!(tool && b.tool && tool.class === b.tool && TIER_RANK[tool.tier] >= TIER_RANK[b.tier]);
+}
 
 let breakTarget = null;
 let breakProgress = 0;
@@ -367,11 +381,21 @@ function doBreak(x, y, z, id) {
   sfx.break(id);
   freezeUntil = performance.now() + 55;            // hit-pause
   if (settings.shake) shakeMag = 0.12;             // screen kick (toggleable)
+  // drops -> inventory (only with the right tool/tier), then wear the tool
+  const b = BLOCKS[id];
+  if (b && b.drop !== null && canHarvest(id)) {
+    const dropId = b.drop !== undefined ? b.drop : blockToItem(id);
+    if (dropId) inv.add(dropId, b.dropCount || 1);
+  }
+  inv.damageHeldTool(1);
 }
 
 function placeBlock() {
   const hit = currentTarget();
   if (!hit) return;
+  // right-click / tap on an interactive block opens it instead of placing
+  const targetId = world.getBlock(hit.block[0], hit.block[1], hit.block[2]);
+  if (targetId === 20) { toggleInv(3); return; }   // crafting table -> 3x3
   const [x, y, z] = hit.place;
   if (y < 1 || y >= HEIGHT) return;
   const hw = player.width / 2 + 0.02;
@@ -380,7 +404,11 @@ function placeBlock() {
       y + 1 > p.y && y < p.y + player.height &&
       z + 1 > p.z - hw && z < p.z + hw) return;
   if (world.getBlock(x, y, z) !== 0) return;
-  const id = hotbar[selected];
+  const itemId = inv.selectedItem();
+  const def = itemId && itemDef(itemId);
+  if (!def || def.block == null || !BLOCKS[def.block]) return; // not a placeable block
+  if (!inv.consumeSelected(1)) return;
+  const id = def.block;
   world.setBlock(x, y, z, id);
   applyEdit(Math.floor(x / CHUNK), Math.floor(z / CHUNK), x, y, z);
   particles.burst(x + 0.5, y + 0.5, z + 0.5, blockColorHex(id), 6, 1.6);
@@ -396,10 +424,10 @@ function updateMining(dt) {
     hlEdges.visible = false;
   }
 
-  if (breakHeld && hit && playing) {
+  if (breakHeld && hit && playing && !inv.isOpen()) {
     const [x, y, z] = hit.block;
     const id = world.getBlock(x, y, z);
-    const hard = hardnessOf(id);
+    const hard = breakTimeFor(id);
     if (!isFinite(hard)) { breakProgress = 0; crackMesh.visible = false; return; } // bedrock
     if (!sameBlock(hit.block, breakTarget)) { breakTarget = hit.block.slice(); breakProgress = 0; }
     breakProgress += dt / hard;
@@ -428,6 +456,8 @@ let dragMoved = 0;
 
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Space' && e.target === document.body) e.preventDefault();
+  if (inv.isOpen()) { if (e.code === 'Escape' || e.code === 'KeyE') toggleInv(); return; }
+  if (e.code === 'KeyE' && playing) { toggleInv(2); return; }
   if (e.code === 'Escape' && playing && !locked) { // pause when not using pointer lock
     playing = false; breakHeld = false; overlay.style.display = 'flex'; return;
   }
@@ -439,8 +469,7 @@ window.addEventListener('keydown', (e) => {
     lastSpace = now;
   }
   if (/^Digit[1-9]$/.test(e.code)) {
-    const n = parseInt(e.code.slice(5), 10) - 1;
-    if (n < hotbar.length) selectSlot(n);
+    inv.setSelected(parseInt(e.code.slice(5), 10) - 1);
   }
 });
 window.addEventListener('keyup', (e) => { keys[e.code] = false; });
@@ -464,13 +493,13 @@ document.addEventListener('pointerlockchange', () => {
   const wasLocked = locked;
   locked = document.pointerLockElement === canvas;
   if (!locked) breakHeld = false;
-  if (!locked && wasLocked) {            // user pressed Esc out of pointer lock -> pause
+  if (!locked && wasLocked && !inv.isOpen()) { // Esc out of lock -> pause (unless opening inventory)
     playing = false;
     overlay.style.display = 'flex';
   }
 });
 document.addEventListener('mousemove', (e) => {
-  if (!playing || isTouch) return;
+  if (!playing || isTouch || inv.isOpen()) return;
   // Locked: smooth FPS look. Not locked: rotate only while dragging the mouse.
   if (locked || dragging) {
     applyLook(e.movementX, e.movementY, 0.0022 * settings.sens);
@@ -481,7 +510,7 @@ document.addEventListener('mousemove', (e) => {
   }
 });
 document.addEventListener('mousedown', (e) => {
-  if (!playing || isTouch) return;
+  if (!playing || isTouch || inv.isOpen()) return;
   if (e.button === 0) {
     breakHeld = true;
     if (!locked) { dragging = true; dragMoved = 0; }
@@ -494,8 +523,8 @@ document.addEventListener('mouseup', (e) => {
 });
 window.addEventListener('contextmenu', (e) => e.preventDefault());
 window.addEventListener('wheel', (e) => {
-  if (!playing) return;
-  selectSlot((selected + (e.deltaY > 0 ? 1 : -1) + hotbar.length) % hotbar.length);
+  if (!playing || inv.isOpen()) return;
+  inv.scroll(e.deltaY > 0 ? 1 : -1);
 });
 
 function onResize() {
@@ -536,48 +565,27 @@ if (isTouch) {
 // ---------------------------------------------------------------------------
 // Hotbar UI
 // ---------------------------------------------------------------------------
-const hotbar = [1, 2, 3, 4, 5, 9, 10, 13, 14];
-let selected = 0;
-const hotbarEl = document.getElementById('hotbar');
+const inv = createInventory({ texture, cols, sfx, creative: false, onSelect: () => {} });
+inv.mountHotbar(document.getElementById('hotbar'));
 
-function buildHotbar() {
-  hotbarEl.innerHTML = '';
-  hotbar.forEach((id, i) => {
-    const slot = document.createElement('div');
-    slot.className = 'slot';
-    const sw = document.createElement('canvas');
-    sw.width = sw.height = 32;
-    drawSwatch(sw.getContext('2d'), id);
-    slot.appendChild(sw);
-    const num = document.createElement('span');
-    num.className = 'num';
-    num.textContent = i + 1;
-    slot.appendChild(num);
-    const name = document.createElement('span');
-    name.className = 'name';
-    name.textContent = BLOCKS[id].name;
-    slot.appendChild(name);
-    slot.addEventListener('pointerdown', (e) => { e.stopPropagation(); selectSlot(i); sfx.resume(); });
-    hotbarEl.appendChild(slot);
-  });
-  selectSlot(0);
+// Open/close the inventory, freeing the mouse cursor (desktop) for slot clicks.
+function toggleInv(size = 2) {
+  inv.toggleScreen(size);
+  if (inv.isOpen()) {
+    if (!isTouch && document.pointerLockElement) document.exitPointerLock();
+  } else if (!isTouch && playing) {
+    canvas.requestPointerLock();
+  }
 }
-function drawSwatch(ctx, id) {
-  const tile = BLOCKS[id].faces[2];
-  const tw = texture.image.width / cols;
-  const tx = (tile % cols) * tw;
-  const ty = Math.floor(tile / cols) * tw;
-  ctx.imageSmoothingEnabled = false;
-  ctx.fillStyle = '#222';
-  ctx.fillRect(0, 0, 32, 32);
-  ctx.drawImage(texture.image, tx, ty, tw, tw, 0, 0, 32, 32);
+
+// Inventory button in the top bar (works for touch + desktop).
+{
+  const b = document.createElement('button');
+  b.textContent = '🎒'; b.title = 'インベントリ (E)';
+  b.addEventListener('click', (e) => { e.stopPropagation(); sfx.resume(); if (playing) toggleInv(2); });
+  const tb = document.getElementById('topbar');
+  if (tb) tb.insertBefore(b, tb.firstChild);
 }
-function selectSlot(n) {
-  selected = n;
-  [...hotbarEl.children].forEach((c, i) => c.classList.toggle('active', i === n));
-  sfx.select();
-}
-buildHotbar();
 
 // ---------------------------------------------------------------------------
 // Top bar: sound / share / settings / reset
@@ -699,7 +707,7 @@ function loop() {
   if (dt > 0.05) dt = 0.05; // clamp (also covers tab-resume spikes)
 
   const frozen = now < freezeUntil;
-  if (playing && !frozen) movePlayer(dt);
+  if (playing && !frozen && !inv.isOpen()) movePlayer(dt);
   syncCamera();
   shakeMag *= 0.82;
   updateChunks();

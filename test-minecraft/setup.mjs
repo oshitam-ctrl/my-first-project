@@ -16,6 +16,7 @@ function fakeEl(tag = 'div') {
     width: 128, height: 64, children: [],
     classList: { toggle() {}, add() {}, remove() {} },
     addEventListener() {}, removeEventListener() {}, appendChild(c) { e.children.push(c); return c; },
+    insertBefore(c) { e.children.unshift(c); return c; }, get firstChild() { return e.children[0] || null; },
     remove() {}, focus() {}, setPointerCapture() {}, releasePointerCapture() {},
     requestPointerLock() {}, getContext() { return fakeCtx(); },
     setAttribute() {}, getBoundingClientRect() { return { left: 0, top: 0, width: 128, height: 64 }; },

@@ -41,12 +41,6 @@
     }
     #game { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-action: none; }
 
-    /* On-screen diagnostic banner (temporary) */
-    #diag { position: fixed; top: 8px; left: 50%; transform: translateX(-50%);
-      z-index: 999; max-width: 92vw; padding: 10px 14px; border-radius: 10px;
-      background: rgba(0,0,0,.8); color: #fff; font-size: 13px; line-height: 1.45;
-      text-align: center; box-shadow: 0 4px 18px rgba(0,0,0,.5); }
-
     /* Crosshair */
     #crosshair { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
       width: 22px; height: 22px; pointer-events: none; z-index: 5; mix-blend-mode: difference; }
@@ -149,7 +143,6 @@
 </head>
 <body>
   <canvas id="game"></canvas>
-  <div id="diag">診断 v7：JS が動けばこの表示は変わります</div>
   <div id="crosshair"></div>
   <div id="hud"></div>
   <div id="hotbar"></div>
@@ -184,6 +177,7 @@
       <span><b>スペース</b> ジャンプ</span><span><b>左クリック長押し</b> 壊す</span>
       <span><b>右クリック</b> 置く</span><span><b>1-9 / ホイール</b> ブロック選択</span>
       <span><b>スペース2回</b> 飛行切替</span><span><b>Shift</b> ダッシュ / 降下</span>
+      <span><b>E</b> インベントリ/クラフト</span><span><b>作業台を右クリック</b> 3x3クラフト</span>
     </div>
     <div class="controls ctrl-touch">
       <span><b>左スティック</b> 移動</span><span><b>右ドラッグ</b> 視点</span>
@@ -191,7 +185,7 @@
       <span><b>⤒ ボタン</b> ジャンプ</span><span><b>⤒ 2回</b> 飛行切替</span>
       <span><b>下のバー</b> ブロック選択</span><span><b>▲▼</b> 飛行中の上下</span>
     </div>
-    <div class="hint">地形・洞窟・木・水・昼夜サイクルを自動生成。編集内容は自動保存され、🔗からワールドを共有できます。</div>
+    <div class="hint">サバイバル：まず<b>木を壊して</b>素材を集め、<b>E / 🎒</b> でインベントリを開いてクラフト。木材→棒→作業台→ツールで鉱石も掘れます。鉱石(石炭/鉄/金/ダイヤ/レッドストーン)は地下深くに。編集は自動保存、🔗で共有。</div>
   </div>
 
   <div id="rotate">📱 横向きにすると遊びやすいです</div>
@@ -201,7 +195,6 @@
        (including import maps), which would prevent the game from loading. The
        module below uses direct relative imports for three.js and registers the
        service worker itself, so an external same-origin module is all we need. -->
-  <script type="module" src="./diag.js"></script>
   <script type="module" src="./main.js"></script>
 </body>
 </html>

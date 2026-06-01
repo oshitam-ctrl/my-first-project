@@ -67,6 +67,17 @@ async function scenario(name, contextOpts, tapOrClick, initScript, setupContext)
   try { await tapOrClick(page); } catch (e) { console.log('start action error:', String(e.message).split('\n')[0]); }
   await page.waitForTimeout(1500);
 
+  // inventory open/close check (desktop keyboard only)
+  if (name === 'desktop') {
+    await page.keyboard.press('KeyE');
+    await page.waitForTimeout(300);
+    const opened = await page.evaluate(() => { const s = document.getElementById('inv-screen'); return s ? getComputedStyle(s).display : 'none'; });
+    await page.keyboard.press('KeyE');
+    await page.waitForTimeout(300);
+    const closed = await page.evaluate(() => { const s = document.getElementById('inv-screen'); return s ? getComputedStyle(s).display : 'none'; });
+    console.log(`inventory: openedDisplay=${opened} closedDisplay=${closed}  -> ${opened === 'flex' && closed === 'none' ? 'OK' : 'FAIL'}`);
+  }
+
   const after = await page.evaluate(() => ({
     overlay: getComputedStyle(document.getElementById('overlay')).display,
     hud: document.getElementById('hud').textContent,
