@@ -417,9 +417,15 @@ let breakHeld = false;
 let touchJump = false;
 let touchVert = 0;
 let lastSpace = 0;
+let locked = false;      // desktop pointer lock active
+let dragging = false;    // desktop drag-to-look fallback (when pointer lock is unavailable)
+let dragMoved = 0;
 
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Space' && e.target === document.body) e.preventDefault();
+  if (e.code === 'Escape' && playing && !locked) { // pause when not using pointer lock
+    playing = false; breakHeld = false; overlay.style.display = 'flex'; return;
+  }
   if (keys[e.code]) return;
   keys[e.code] = true;
   if (e.code === 'Space') {
@@ -437,12 +443,9 @@ window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 const overlay = document.getElementById('overlay');
 function startPlay() {
   sfx.resume();
-  if (isTouch) {
-    playing = true;
-    overlay.style.display = 'none';
-  } else {
-    canvas.requestPointerLock();
-  }
+  playing = true;                 // start regardless of pointer lock support
+  overlay.style.display = 'none';
+  if (!isTouch) { try { canvas.requestPointerLock(); } catch (e) {} } // mouse-look enhancement only
 }
 overlay.addEventListener('click', startPlay);
 // iOS Safari may not synthesize a `click` on a non-interactive <div> when
@@ -451,23 +454,39 @@ overlay.addEventListener('click', startPlay);
 // duplicate synthesized click.
 overlay.addEventListener('touchend', (e) => { e.preventDefault(); startPlay(); }, { passive: false });
 
-// desktop pointer lock
+// desktop pointer lock (optional — game runs with or without it)
 document.addEventListener('pointerlockchange', () => {
-  const locked = document.pointerLockElement === canvas;
-  playing = locked;
-  if (!locked) { breakHeld = false; }
-  overlay.style.display = locked ? 'none' : 'flex';
+  const wasLocked = locked;
+  locked = document.pointerLockElement === canvas;
+  if (!locked) breakHeld = false;
+  if (!locked && wasLocked) {            // user pressed Esc out of pointer lock -> pause
+    playing = false;
+    overlay.style.display = 'flex';
+  }
 });
 document.addEventListener('mousemove', (e) => {
   if (!playing || isTouch) return;
-  applyLook(e.movementX, e.movementY, 0.0022 * settings.sens);
+  // Locked: smooth FPS look. Not locked: rotate only while dragging the mouse.
+  if (locked || dragging) {
+    applyLook(e.movementX, e.movementY, 0.0022 * settings.sens);
+    if (!locked) {
+      dragMoved += Math.abs(e.movementX) + Math.abs(e.movementY);
+      if (dragMoved > 6) breakHeld = false; // a look-drag, not mining
+    }
+  }
 });
 document.addEventListener('mousedown', (e) => {
   if (!playing || isTouch) return;
-  if (e.button === 0) breakHeld = true;
-  else if (e.button === 2) placeBlock();
+  if (e.button === 0) {
+    breakHeld = true;
+    if (!locked) { dragging = true; dragMoved = 0; }
+  } else if (e.button === 2) {
+    placeBlock();
+  }
 });
-document.addEventListener('mouseup', (e) => { if (e.button === 0) breakHeld = false; });
+document.addEventListener('mouseup', (e) => {
+  if (e.button === 0) { breakHeld = false; dragging = false; }
+});
 window.addEventListener('contextmenu', (e) => e.preventDefault());
 window.addEventListener('wheel', (e) => {
   if (!playing) return;
