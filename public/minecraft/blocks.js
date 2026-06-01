@@ -25,25 +25,46 @@ const T = {
   brick: 14,
   pumpkin_side: 15,
   pumpkin_top: 16,
+  coal_ore: 17,
+  iron_ore: 18,
+  gold_ore: 19,
+  diamond_ore: 20,
+  redstone_ore: 21,
+  table_top: 22,
+  table_side: 23,
+  furnace_front: 24,
+  furnace_side: 25,
+  furnace_top: 26,
+  torch: 27,
 };
 
 // Block definitions. `faces` = [top, bottom, side] tile indices.
 // solid: participates in collision. opaque: culls neighbour faces.
+// Mining metadata: hardness (base break time), tool (class that mines it fast),
+// tier (min tool tier required to DROP anything; null = hand is enough),
+// drop (item id; undefined = drops itself, null = drops nothing), dropCount.
 export const BLOCKS = {
-  1: { name: 'Grass', faces: [T.grass_top, T.dirt, T.grass_side], solid: true, opaque: true },
-  2: { name: 'Dirt', faces: [T.dirt, T.dirt, T.dirt], solid: true, opaque: true },
-  3: { name: 'Stone', faces: [T.stone, T.stone, T.stone], solid: true, opaque: true },
-  4: { name: 'Sand', faces: [T.sand, T.sand, T.sand], solid: true, opaque: true },
-  5: { name: 'Wood', faces: [T.log_top, T.log_top, T.log_side], solid: true, opaque: true },
-  6: { name: 'Leaves', faces: [T.leaves, T.leaves, T.leaves], solid: true, opaque: false },
+  1: { name: 'Grass', faces: [T.grass_top, T.dirt, T.grass_side], solid: true, opaque: true, hardness: 0.6, tool: 'shovel', tier: null, drop: 'dirt' },
+  2: { name: 'Dirt', faces: [T.dirt, T.dirt, T.dirt], solid: true, opaque: true, hardness: 0.5, tool: 'shovel', tier: null },
+  3: { name: 'Stone', faces: [T.stone, T.stone, T.stone], solid: true, opaque: true, hardness: 1.5, tool: 'pickaxe', tier: 'wood', drop: 'cobblestone' },
+  4: { name: 'Sand', faces: [T.sand, T.sand, T.sand], solid: true, opaque: true, hardness: 0.5, tool: 'shovel', tier: null },
+  5: { name: 'Wood', faces: [T.log_top, T.log_top, T.log_side], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
+  6: { name: 'Leaves', faces: [T.leaves, T.leaves, T.leaves], solid: true, opaque: false, hardness: 0.2, tool: null, tier: null, drop: null },
   7: { name: 'Water', faces: [T.water, T.water, T.water], solid: false, opaque: false, liquid: true },
-  8: { name: 'Bedrock', faces: [T.bedrock, T.bedrock, T.bedrock], solid: true, opaque: true },
-  9: { name: 'Planks', faces: [T.plank, T.plank, T.plank], solid: true, opaque: true },
-  10: { name: 'Cobble', faces: [T.cobble, T.cobble, T.cobble], solid: true, opaque: true },
-  11: { name: 'Snow', faces: [T.snow, T.dirt, T.snow], solid: true, opaque: true },
-  12: { name: 'Glass', faces: [T.glass, T.glass, T.glass], solid: true, opaque: false },
-  13: { name: 'Brick', faces: [T.brick, T.brick, T.brick], solid: true, opaque: true },
-  14: { name: 'Pumpkin', faces: [T.pumpkin_top, T.pumpkin_top, T.pumpkin_side], solid: true, opaque: true },
+  8: { name: 'Bedrock', faces: [T.bedrock, T.bedrock, T.bedrock], solid: true, opaque: true, hardness: Infinity },
+  9: { name: 'Planks', faces: [T.plank, T.plank, T.plank], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
+  10: { name: 'Cobble', faces: [T.cobble, T.cobble, T.cobble], solid: true, opaque: true, hardness: 2.0, tool: 'pickaxe', tier: 'wood' },
+  11: { name: 'Snow', faces: [T.snow, T.dirt, T.snow], solid: true, opaque: true, hardness: 0.5, tool: 'shovel', tier: null },
+  12: { name: 'Glass', faces: [T.glass, T.glass, T.glass], solid: true, opaque: false, hardness: 0.3, tool: null, tier: null, drop: null },
+  13: { name: 'Brick', faces: [T.brick, T.brick, T.brick], solid: true, opaque: true, hardness: 2.0, tool: 'pickaxe', tier: 'wood' },
+  14: { name: 'Pumpkin', faces: [T.pumpkin_top, T.pumpkin_top, T.pumpkin_side], solid: true, opaque: true, hardness: 1.0, tool: 'axe', tier: null },
+  15: { name: 'Coal Ore', faces: [T.coal_ore, T.coal_ore, T.coal_ore], solid: true, opaque: true, hardness: 3.0, tool: 'pickaxe', tier: 'wood', drop: 'coal' },
+  16: { name: 'Iron Ore', faces: [T.iron_ore, T.iron_ore, T.iron_ore], solid: true, opaque: true, hardness: 3.0, tool: 'pickaxe', tier: 'stone', drop: 'raw_iron' },
+  17: { name: 'Gold Ore', faces: [T.gold_ore, T.gold_ore, T.gold_ore], solid: true, opaque: true, hardness: 3.0, tool: 'pickaxe', tier: 'iron', drop: 'raw_gold' },
+  18: { name: 'Diamond Ore', faces: [T.diamond_ore, T.diamond_ore, T.diamond_ore], solid: true, opaque: true, hardness: 3.0, tool: 'pickaxe', tier: 'iron', drop: 'diamond' },
+  19: { name: 'Redstone Ore', faces: [T.redstone_ore, T.redstone_ore, T.redstone_ore], solid: true, opaque: true, hardness: 3.0, tool: 'pickaxe', tier: 'iron', drop: 'redstone', dropCount: 4 },
+  20: { name: 'Crafting Table', faces: [T.table_top, T.plank, T.table_side], solid: true, opaque: true, hardness: 2.5, tool: 'axe', tier: null },
+  21: { name: 'Furnace', faces: [T.furnace_top, T.furnace_top, T.furnace_front], solid: true, opaque: true, hardness: 3.5, tool: 'pickaxe', tier: 'wood' },
 };
 
 export function isOpaque(id) {
@@ -72,6 +93,17 @@ function noisePx(ctx, base, vary) {
 }
 function clamp(v) {
   return Math.max(0, Math.min(255, Math.round(v)));
+}
+
+// Stone tile with coloured ore speckles.
+function oreTile(c, speck) {
+  noisePx(c, [128, 128, 130], 22);
+  for (let i = 0; i < 11; i++) {
+    const x = (Math.random() * 13) | 0;
+    const y = (Math.random() * 13) | 0;
+    c.fillStyle = `rgb(${speck[0]},${speck[1]},${speck[2]})`;
+    c.fillRect(x, y, 2, 2);
+  }
 }
 
 const painters = {
@@ -175,6 +207,39 @@ const painters = {
     noisePx(c, [196, 116, 26], 14);
     c.fillStyle = '#6b4a1e';
     c.fillRect(7, 6, 2, 4);
+  },
+  [T.coal_ore]: (c) => oreTile(c, [32, 32, 34]),
+  [T.iron_ore]: (c) => oreTile(c, [198, 162, 122]),
+  [T.gold_ore]: (c) => oreTile(c, [240, 205, 70]),
+  [T.diamond_ore]: (c) => oreTile(c, [110, 220, 225]),
+  [T.redstone_ore]: (c) => oreTile(c, [205, 40, 40]),
+  [T.table_top]: (c) => {
+    noisePx(c, [167, 130, 78], 14);
+    c.strokeStyle = 'rgba(80,55,30,0.9)';
+    c.strokeRect(0.5, 0.5, 15, 15);
+    c.beginPath(); c.moveTo(8, 0); c.lineTo(8, 16); c.moveTo(0, 8); c.lineTo(16, 8); c.stroke();
+  },
+  [T.table_side]: (c) => {
+    noisePx(c, [150, 116, 72], 14);
+    c.strokeStyle = 'rgba(80,55,30,0.85)';
+    c.strokeRect(1.5, 1.5, 13, 13);
+    c.beginPath(); c.moveTo(4, 4); c.lineTo(12, 12); c.moveTo(12, 4); c.lineTo(4, 12); c.stroke();
+  },
+  [T.furnace_top]: (c) => {
+    noisePx(c, [112, 112, 115], 22);
+    c.fillStyle = 'rgba(60,60,62,0.85)'; c.fillRect(4, 4, 8, 8);
+  },
+  [T.furnace_side]: (c) => noisePx(c, [112, 112, 115], 22),
+  [T.furnace_front]: (c) => {
+    noisePx(c, [112, 112, 115], 22);
+    c.fillStyle = '#222'; c.fillRect(3, 5, 10, 8);
+    c.fillStyle = '#e08a30'; c.fillRect(5, 9, 6, 3);
+  },
+  [T.torch]: (c) => {
+    c.clearRect(0, 0, 16, 16);
+    c.fillStyle = '#6b4a1e'; c.fillRect(7, 8, 2, 8);
+    c.fillStyle = '#ffd24a'; c.fillRect(6, 4, 4, 4);
+    c.fillStyle = '#ff8a1e'; c.fillRect(7, 5, 2, 2);
   },
 };
 
