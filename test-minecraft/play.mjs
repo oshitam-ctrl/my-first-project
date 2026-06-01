@@ -37,10 +37,11 @@ const browser = await chromium.launch({
   args: ['--enable-unsafe-swiftshader', '--use-gl=angle', '--use-angle=swiftshader', '--ignore-gpu-blocklist'],
 });
 
-async function scenario(name, contextOpts, tapOrClick, initScript) {
+async function scenario(name, contextOpts, tapOrClick, initScript, setupContext) {
   const logs = [], errors = [];
   const context = await browser.newContext(contextOpts);
   if (initScript) await context.addInitScript(initScript);
+  if (setupContext) await setupContext(context);
   const page = await context.newPage();
   page.on('console', (m) => logs.push(`[${m.type()}] ${m.text()}`));
   page.on('pageerror', (e) => errors.push('PAGEERROR: ' + (e.stack || e.message)));
@@ -96,13 +97,29 @@ const r2 = await scenario('desktop', { viewport: { width: 1280, height: 720 } },
 const r3 = await scenario('desktop-nolock', { viewport: { width: 1280, height: 720 } },
   (page) => page.click('#overlay'),
   () => { Element.prototype.requestPointerLock = function () { throw new Error('pointer lock blocked by policy'); }; });
+// Simulate a managed/enterprise browser that injects a strict CSP blocking inline
+// <script> (incl. import maps). With inline scripts/import map removed, the game
+// must still load and start.
+const r4 = await scenario('desktop-strict-csp', { viewport: { width: 1280, height: 720 } },
+  (page) => page.click('#overlay'), null,
+  async (context) => {
+    await context.route('**/*', async (route) => {
+      try {
+        const resp = await route.fetch();
+        const headers = resp.headers();
+        headers['content-security-policy'] = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:";
+        await route.fulfill({ response: resp, headers });
+      } catch (e) { await route.continue(); }
+    });
+  });
 
 await browser.close();
 await new Promise((r) => server.close(r));
 
 console.log('\n==== SUMMARY ====');
-console.log('iPhone portrait      started:', r1.started, '| load errors:', r1.errors.length);
-console.log('iPhone landscape     started:', r1b.started, '| load errors:', r1b.errors.length);
-console.log('desktop              started:', r2.started, '| load errors:', r2.errors.length);
+console.log('iPhone portrait        started:', r1.started, '| load errors:', r1.errors.length);
+console.log('iPhone landscape       started:', r1b.started, '| load errors:', r1b.errors.length);
+console.log('desktop                started:', r2.started, '| load errors:', r2.errors.length);
 console.log('desktop (lock blocked) started:', r3.started, '| load errors:', r3.errors.length);
-process.exitCode = ([r1, r1b, r2, r3].some((r) => !r.started || r.errors.length)) ? 2 : 0;
+console.log('desktop (strict CSP)   started:', r4.started, '| load errors:', r4.errors.length);
+process.exitCode = ([r1, r1b, r2, r3, r4].some((r) => !r.started || r.errors.length)) ? 2 : 0;

@@ -1,6 +1,6 @@
 // Bootstrap: renderer, chunk streaming, player physics, desktop + touch input,
 // UI, day/night, audio, particles, progressive mining, sharing, and PWA wiring.
-import * as THREE from 'three';
+import * as THREE from './vendor/three.module.js';
 import { World, CHUNK, HEIGHT, SEA_LEVEL } from './world.js';
 import { buildAtlas, BLOCKS } from './blocks.js';
 import { createAudio } from './audio.js';
@@ -706,3 +706,11 @@ function loop() {
   updateHud(dt);
 }
 loop();
+
+// Register the service worker (offline + installable PWA) from the module rather
+// than an inline <script>, so a strict Content-Security-Policy can't block it.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {});
+  });
+}
