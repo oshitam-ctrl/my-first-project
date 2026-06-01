@@ -267,6 +267,24 @@ export class World {
 
     const occ = (x, y, z) => (isOpaque(this.getBlock(x, y, z)) ? 1 : 0);
 
+    // sky-exposure heightmap: highest opaque block per column. A face that opens
+    // into an air cell with no opaque block above it is sky-lit; otherwise it's
+    // inside a cave/overhang and gets darkened. (Cheap fake lighting.)
+    const CAVE_DARK = 0.34;
+    const skyH = new Int16Array(CHUNK * CHUNK).fill(-1);
+    for (let lz = 0; lz < CHUNK; lz++) {
+      for (let lx = 0; lx < CHUNK; lx++) {
+        for (let y = HEIGHT - 1; y >= 0; y--) {
+          if (isOpaque(data[idx(lx, y, lz)])) { skyH[lx + lz * CHUNK] = y; break; }
+        }
+      }
+    }
+    const litMul = (nlx, ny, nlz) => {
+      const lx2 = nlx < 0 ? 0 : nlx >= CHUNK ? CHUNK - 1 : nlx; // clamp at chunk border
+      const lz2 = nlz < 0 ? 0 : nlz >= CHUNK ? CHUNK - 1 : nlz;
+      return ny > skyH[lx2 + lz2 * CHUNK] ? 1 : CAVE_DARK;
+    };
+
     for (let y = 0; y < HEIGHT; y++) {
       for (let lz = 0; lz < CHUNK; lz++) {
         for (let lx = 0; lx < CHUNK; lx++) {
@@ -284,7 +302,7 @@ export class World {
             if (isOpaque(nId) || nId === id) continue; // face hidden
 
             const tile = def.faces[dir.face];
-            this._emitFace(g, wx, y, wz, dir, tile, occ);
+            this._emitFace(g, wx, y, wz, dir, tile, occ, litMul(lx + dx, y + dy, lz + dz));
           }
         }
       }
@@ -292,7 +310,7 @@ export class World {
     return groups;
   }
 
-  _emitFace(g, x, y, z, dir, tile, occ) {
+  _emitFace(g, x, y, z, dir, tile, occ, lightMul = 1) {
     const [nx, ny, nz] = dir.d;
     // choose axis layout
     let uAxis, vAxis, nAxis, ncoord;
@@ -339,7 +357,7 @@ export class World {
       g.pos.push(v.p[0], v.p[1], v.p[2]);
       g.norm.push(nx, ny, nz);
       g.uv.push(v.uv[0], v.uv[1]);
-      const b = dir.shade * AO_BRIGHT[v.ao];
+      const b = dir.shade * AO_BRIGHT[v.ao] * lightMul;
       g.col.push(b, b, b);
     }
   }
