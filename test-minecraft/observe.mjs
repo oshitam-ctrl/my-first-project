@@ -32,9 +32,9 @@ await page.click('#overlay');
 await page.waitForTimeout(800);
 
 // visit different biomes and screenshot a horizon view of each
-const spots = { desert: [-59, 30, 54], snowy: [-76, 34, 327], mountain: [-143, 54, 20] };
+const spots = { forest: [60, 30, 0], savanna: [-11, 33, 59], desert: [-59, 30, 54] };
 for (const [name, [x, y, z]] of Object.entries(spots)) {
-  await page.evaluate(([x, y, z]) => window.__view && window.__view(x, y + 6, z, 0.7, -0.12), [x, y, z]);
+  await page.evaluate(([x, y, z]) => window.__view && window.__view(x, y + 4, z, 0.7, -0.06), [x, y, z]);
   await page.waitForTimeout(11000); // full chunk stream at the new location
   await page.screenshot({ path: `/tmp/mc-${name}-${TAG}.png` });
   const c = await page.evaluate(() => document.getElementById('hud').textContent);

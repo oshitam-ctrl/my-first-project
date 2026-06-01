@@ -16,6 +16,7 @@ const idx = (x, y, z) => x + z * CHUNK + y * AREA;
 const AIR = 0, GRASS = 1, DIRT = 2, STONE = 3, SAND = 4, WOOD = 5,
   LEAVES = 6, WATER = 7, BEDROCK = 8, SNOW = 11;
 const COAL_ORE = 15, IRON_ORE = 16, GOLD_ORE = 17, DIAMOND_ORE = 18, REDSTONE_ORE = 19;
+const BIRCH_LOG = 23, BIRCH_LEAVES = 24, SPRUCE_LOG = 25, SPRUCE_LEAVES = 26, DRY_GRASS = 27, CACTUS = 28;
 
 // Deterministic per-voxel hash in [0,1) for ore placement.
 function oreRoll(wx, y, wz, seed) {
@@ -125,7 +126,8 @@ export class World {
         else if (biome === 'mountain') {
           top = h >= SEA_LEVEL + 34 ? SNOW : h >= SEA_LEVEL + 30 ? STONE : GRASS;
           sub = top === GRASS ? DIRT : STONE;
-        } else { top = GRASS; sub = DIRT; } // plains / forest / savanna
+        } else if (biome === 'savanna') { top = DRY_GRASS; sub = DIRT; }
+        else { top = GRASS; sub = DIRT; } // plains / forest
 
         for (let y = 0; y <= Math.max(h, SEA_LEVEL); y++) {
           let id = AIR;
@@ -177,6 +179,10 @@ export class World {
         // desert: no trees
         if (density === 0 || hash2(wx, wz, this.seed) >= density) continue;
         const conifer = biome === 'snowy';
+        // species by biome: spruce in snowy, birch ~half of forest, oak otherwise
+        let log = WOOD, leaf = LEAVES;
+        if (conifer) { log = SPRUCE_LOG; leaf = SPRUCE_LEAVES; }
+        else if (biome === 'forest' && hash2(wx, wz, this.seed ^ 7) < 0.45) { log = BIRCH_LOG; leaf = BIRCH_LEAVES; }
         const th = baseH + Math.floor(hash2(wx, wz, this.seed ^ 99) * 3);
         const topY = h + th;
         // canopy
@@ -187,12 +193,24 @@ export class World {
             for (let dx = -r; dx <= r; dx++) {
               if (dx === 0 && dz === 0 && dy < 1) continue;
               if (Math.abs(dx) === r && Math.abs(dz) === r && (dy < 0)) continue;
-              this._stamp(data, lx + dx, ly, lz + dz, LEAVES, false);
+              this._stamp(data, lx + dx, ly, lz + dz, leaf, false);
             }
           }
         }
         // trunk
-        for (let t = 1; t <= th; t++) this._stamp(data, lx, h + t, lz, WOOD, true);
+        for (let t = 1; t <= th; t++) this._stamp(data, lx, h + t, lz, log, true);
+      }
+    }
+
+    // Cacti in deserts (1-3 tall, within-chunk columns)
+    for (let lz = 0; lz < CHUNK; lz++) {
+      for (let lx = 0; lx < CHUNK; lx++) {
+        const wx = ox + lx, wz = oz + lz;
+        const hh = this.heightAt(wx, wz);
+        if (hh <= SEA_LEVEL + 1 || this.biomeAt(wx, wz, hh) !== 'desert') continue;
+        if (hash2(wx, wz, this.seed ^ 555) >= 0.010) continue;
+        const ch = 1 + Math.floor(hash2(wx, wz, this.seed ^ 556) * 3);
+        for (let t = 1; t <= ch; t++) this._stamp(data, lx, hh + t, lz, CACTUS, true);
       }
     }
 

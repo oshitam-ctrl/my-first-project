@@ -36,6 +36,12 @@ const T = {
   furnace_side: 25,
   furnace_top: 26,
   torch: 27,
+  birch_log: 28,
+  birch_leaves: 29,
+  spruce_log: 30,
+  spruce_leaves: 31,
+  dry_grass: 32,
+  cactus: 33,
 };
 
 // Block definitions. `faces` = [top, bottom, side] tile indices.
@@ -65,6 +71,12 @@ export const BLOCKS = {
   19: { name: 'Redstone Ore', faces: [T.redstone_ore, T.redstone_ore, T.redstone_ore], solid: true, opaque: true, hardness: 3.0, tool: 'pickaxe', tier: 'iron', drop: 'redstone', dropCount: 4 },
   20: { name: 'Crafting Table', faces: [T.table_top, T.plank, T.table_side], solid: true, opaque: true, hardness: 2.5, tool: 'axe', tier: null },
   21: { name: 'Furnace', faces: [T.furnace_top, T.furnace_top, T.furnace_front], solid: true, opaque: true, hardness: 3.5, tool: 'pickaxe', tier: 'wood' },
+  23: { name: 'Birch Log', faces: [T.birch_log, T.birch_log, T.birch_log], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
+  24: { name: 'Birch Leaves', faces: [T.birch_leaves, T.birch_leaves, T.birch_leaves], solid: true, opaque: false, hardness: 0.2, tool: null, tier: null, drop: null },
+  25: { name: 'Spruce Log', faces: [T.spruce_log, T.spruce_log, T.spruce_log], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
+  26: { name: 'Spruce Leaves', faces: [T.spruce_leaves, T.spruce_leaves, T.spruce_leaves], solid: true, opaque: false, hardness: 0.2, tool: null, tier: null, drop: null },
+  27: { name: 'Dry Grass', faces: [T.dry_grass, T.dirt, T.grass_side], solid: true, opaque: true, hardness: 0.6, tool: 'shovel', tier: null, drop: 'dirt' },
+  28: { name: 'Cactus', faces: [T.cactus, T.cactus, T.cactus], solid: true, opaque: true, hardness: 0.4, tool: null, tier: null },
 };
 
 export function isOpaque(id) {
@@ -240,6 +252,41 @@ const painters = {
     c.fillStyle = '#6b4a1e'; c.fillRect(7, 8, 2, 8);
     c.fillStyle = '#ffd24a'; c.fillRect(6, 4, 4, 4);
     c.fillStyle = '#ff8a1e'; c.fillRect(7, 5, 2, 2);
+  },
+  [T.birch_log]: (c) => {
+    noisePx(c, [223, 222, 214], 12);
+    c.fillStyle = 'rgba(60,52,42,0.8)';
+    c.fillRect(2, 3, 3, 1);
+    c.fillRect(10, 6, 4, 1);
+    c.fillRect(4, 11, 3, 1);
+    c.fillRect(11, 13, 2, 1);
+  },
+  [T.birch_leaves]: (c) => {
+    noisePx(c, [122, 170, 80], 30);
+    c.fillStyle = 'rgba(90,135,55,0.6)';
+    for (let i = 0; i < 14; i++) c.fillRect((Math.random() * TILE) | 0, (Math.random() * TILE) | 0, 1, 1);
+  },
+  [T.spruce_log]: (c) => {
+    noisePx(c, [78, 56, 34], 14);
+    c.strokeStyle = 'rgba(50,34,20,0.7)';
+    for (let x = 1; x < TILE; x += 3) {
+      c.beginPath();
+      c.moveTo(x + 0.5, 0);
+      c.lineTo(x + 0.5, TILE);
+      c.stroke();
+    }
+  },
+  [T.spruce_leaves]: (c) => {
+    noisePx(c, [40, 78, 46], 28);
+    c.fillStyle = 'rgba(24,52,30,0.6)';
+    for (let i = 0; i < 14; i++) c.fillRect((Math.random() * TILE) | 0, (Math.random() * TILE) | 0, 1, 1);
+  },
+  [T.dry_grass]: (c) => noisePx(c, [150, 156, 78], 18),
+  [T.cactus]: (c) => {
+    noisePx(c, [58, 120, 54], 16);
+    c.fillStyle = 'rgba(34,82,34,0.85)';
+    c.fillRect(0, 0, 2, TILE);
+    c.fillRect(TILE - 2, 0, 2, TILE);
   },
 };
 
