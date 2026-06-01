@@ -192,6 +192,7 @@ const player = {
   yaw: 0, pitch: 0,
   onGround: false, fly: false,
   width: 0.6, height: 1.8, eye: 1.62,
+  health: 20, hunger: 20, air: 10, _peakY: 0, dead: false, // survival stats
 };
 {
   const h = world.heightAt(8, 8);
@@ -253,16 +254,25 @@ function movePlayer(dt) {
   if (collidesAt(p.x, p.y, p.z)) { p.z -= player.vel.z * dt; player.vel.z = 0; }
 
   player.onGround = false;
+  const vyBefore = player.vel.y;
   p.y += player.vel.y * dt;
   if (collidesAt(p.x, p.y, p.z)) {
     if (player.vel.y <= 0) player.onGround = true;
     p.y -= player.vel.y * dt;
     player.vel.y = 0;
   }
+  // fall damage on landing (survival; applyDamage no-ops in creative/fly)
+  if (player.onGround) {
+    if (vyBefore < -0.1 && !player.fly) applyDamage(Math.max(0, Math.floor((player._peakY || p.y) - p.y) - 3));
+    player._peakY = p.y;
+  } else {
+    player._peakY = Math.max(player._peakY || p.y, p.y);
+  }
 
   if (p.y < -20) {
     p.set(8, Math.max(world.heightAt(8, 8), SEA_LEVEL) + 2, 8);
     player.vel.set(0, 0, 0);
+    player._peakY = p.y;
   }
 
   // footsteps
@@ -294,6 +304,74 @@ function applyLook(dx, dy, scale) {
   player.pitch -= dy * scale;
   const lim = Math.PI / 2 - 0.01;
   player.pitch = Math.max(-lim, Math.min(lim, player.pitch));
+}
+
+// --- survival: health / hunger / damage (no effect in creative) ----------
+const statsCanvas = document.getElementById('stats');
+const sctx = statsCanvas.getContext('2d');
+const hurtEl = document.getElementById('hurt');
+
+function applyDamage(n) {
+  if (creative || player.dead || n <= 0) return;
+  player.health = Math.max(0, player.health - n);
+  hurtEl.style.opacity = '0.85';
+  setTimeout(() => { hurtEl.style.opacity = '0'; }, 110);
+  if (settings.shake) shakeMag = Math.max(shakeMag, 0.22);
+  if (player.health <= 0) die();
+}
+function die() {
+  player.dead = true;
+  toast('やられた… リスポーンします');
+  setTimeout(() => {
+    player.pos.set(8, Math.max(world.heightAt(8, 8), SEA_LEVEL) + 2, 8);
+    player.vel.set(0, 0, 0);
+    player.health = 20; player.hunger = 20; player.air = 10; player._peakY = player.pos.y;
+    player.dead = false;
+  }, 900);
+}
+function updateSurvival(dt) {
+  if (creative || player.dead) return;
+  player.hunger = Math.max(0, player.hunger - dt * 0.05); // slow drain
+  if (player.hunger >= 18 && player.health < 20) {        // natural regen
+    player.health = Math.min(20, player.health + dt * 0.6);
+    player.hunger = Math.max(0, player.hunger - dt * 0.1);
+  } else if (player.hunger <= 0 && player.health > 1) {   // starve (floors at 1)
+    player.health = Math.max(1, player.health - dt * 0.4);
+  }
+  const headId = world.getBlock(Math.floor(player.pos.x), Math.floor(player.pos.y + player.eye), Math.floor(player.pos.z));
+  if (headId === 7) { player.air -= dt; if (player.air <= 0) applyDamage(dt * 2); } // drowning
+  else player.air = 10;
+}
+function heartPath(c, x, y, s) {
+  const r = s * 0.29;
+  c.beginPath();
+  c.arc(x + s * 0.3, y + s * 0.32, r, Math.PI, 0);
+  c.arc(x + s * 0.7, y + s * 0.32, r, Math.PI, 0);
+  c.lineTo(x + s * 0.5, y + s * 0.95);
+  c.closePath();
+}
+function icon(c, x, y, fill, color) {
+  c.fillStyle = 'rgba(0,0,0,0.45)'; heartPath(c, x, y, 11); c.fill();
+  if (fill > 0) {
+    c.save();
+    if (fill < 1) { c.beginPath(); c.rect(x, y, 5.5, 11); c.clip(); }
+    c.fillStyle = color; heartPath(c, x, y, 11); c.fill();
+    c.restore();
+  }
+}
+window.__player = () => ({ health: player.health, hunger: player.hunger, air: player.air });
+window.__hurt = (n) => applyDamage(n); // debug/verification
+function drawStats() {
+  if (creative) { if (statsCanvas.style.display !== 'none') statsCanvas.style.display = 'none'; return; }
+  statsCanvas.style.display = 'block';
+  sctx.clearRect(0, 0, 220, 44);
+  for (let i = 0; i < 10; i++) {
+    const x = 4 + i * 21;
+    const hp = player.health - i * 2;
+    icon(sctx, x, 2, hp >= 2 ? 1 : hp >= 1 ? 0.5 : 0, '#e23b3b');
+    const f = player.hunger - i * 2;
+    icon(sctx, x, 24, f >= 2 ? 1 : f >= 1 ? 0.5 : 0, '#c98a3a');
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -615,7 +693,7 @@ const mobs = createMobs({
     return b && b.solid ? 'solid' : 'air';
   },
   player,
-  onHurtPlayer: () => { if (settings.shake) shakeMag = 0.2; }, // hurt feedback (full health system: later wave)
+  onHurtPlayer: (dmg) => { applyDamage(dmg || 1); }, // real damage in survival; no-op in creative
   addDrop: (itemId, n) => { if (itemId) inv.add(itemId, n); },
   sfx,
   isNight: () => Math.sin(dayTime * Math.PI * 2 - Math.PI / 2) < 0.12,
@@ -749,6 +827,7 @@ function updateHud(dt) {
   hud.textContent =
     `FPS ${fps}  |  XYZ ${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)}` +
     `  |  ${player.fly ? 'FLY' : 'WALK'}  |  chunks ${meshes.size}`;
+  drawStats();
 }
 
 // ---------------------------------------------------------------------------
@@ -766,6 +845,7 @@ function loop() {
 
   const frozen = now < freezeUntil;
   if (playing && !frozen && !inv.isOpen()) movePlayer(dt);
+  if (playing) updateSurvival(dt);
   syncCamera();
   shakeMag *= 0.82;
   updateChunks();

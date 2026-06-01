@@ -77,6 +77,13 @@ async function scenario(name, contextOpts, tapOrClick, initScript, setupContext)
     await page.waitForTimeout(300);
     const closed = await page.evaluate(() => { const s = document.getElementById('inv-screen'); return s ? getComputedStyle(s).display : 'none'; });
     console.log(`inventory: openedDisplay=${opened} closedDisplay=${closed}  -> ${opened === 'flex' && closed === 'none' ? 'OK' : 'FAIL'}`);
+  }
+  if (name === 'survival') {
+    const stats = await page.evaluate(() => getComputedStyle(document.getElementById('stats')).display);
+    const before = await page.evaluate(() => (window.__player ? window.__player().health : -1));
+    await page.evaluate(() => window.__hurt && window.__hurt(6));
+    const after = await page.evaluate(() => (window.__player ? window.__player().health : -1));
+    console.log(`survival: stats=${stats} health ${before.toFixed(1)}->${after.toFixed(1)}  -> ${stats === 'block' && Math.abs(after - (before - 6)) < 0.3 ? 'OK' : 'FAIL'}`);
     // let mobs spawn, then count + screenshot
     await page.waitForTimeout(6000);
     const mobCount = await page.evaluate(() => (window.__mobCount ? window.__mobCount() : -1));
@@ -117,6 +124,9 @@ const r3 = await scenario('desktop-nolock', { viewport: { width: 1280, height: 7
 // Simulate a managed/enterprise browser that injects a strict CSP blocking inline
 // <script> (incl. import maps). With inline scripts/import map removed, the game
 // must still load and start.
+const r5 = await scenario('survival', { viewport: { width: 1280, height: 720 } },
+  (page) => page.click('#overlay'),
+  () => { localStorage.setItem('mc_settings', JSON.stringify({ creative: false, mobs: false })); });
 const r4 = await scenario('desktop-strict-csp', { viewport: { width: 1280, height: 720 } },
   (page) => page.click('#overlay'), null,
   async (context) => {
@@ -139,4 +149,4 @@ console.log('iPhone landscape       started:', r1b.started, '| load errors:', r1
 console.log('desktop                started:', r2.started, '| load errors:', r2.errors.length);
 console.log('desktop (lock blocked) started:', r3.started, '| load errors:', r3.errors.length);
 console.log('desktop (strict CSP)   started:', r4.started, '| load errors:', r4.errors.length);
-process.exitCode = ([r1, r1b, r2, r3, r4].some((r) => !r.started || r.errors.length)) ? 2 : 0;
+process.exitCode = ([r1, r1b, r2, r3, r4, r5].some((r) => !r.started || r.errors.length)) ? 2 : 0;
