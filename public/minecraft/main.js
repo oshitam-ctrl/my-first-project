@@ -1,29 +1,60 @@
-// Bootstrap: renderer, chunk streaming, player physics, input, UI, day/night.
+// Bootstrap: renderer, chunk streaming, player physics, desktop + touch input,
+// UI, day/night, audio, particles, progressive mining, sharing, and PWA wiring.
 import * as THREE from 'three';
 import { World, CHUNK, HEIGHT, SEA_LEVEL } from './world.js';
-import { buildAtlas, BLOCKS, isSolid } from './blocks.js';
+import { buildAtlas, BLOCKS } from './blocks.js';
+import { createAudio } from './audio.js';
+import { createParticles } from './particles.js';
+import { isTouchDevice, createTouchControls } from './touch.js';
+import { getSeed, setSeedInURL, seedToCode, shareSeed } from './share.js';
+
+// ---------------------------------------------------------------------------
+// Settings (persisted)
+// ---------------------------------------------------------------------------
+const DEFAULTS = { sens: 1.0, dist: 6, sound: true, shake: true };
+function loadSettings() {
+  try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem('mc_settings') || '{}') }; }
+  catch (e) { return { ...DEFAULTS }; }
+}
+function saveSettings() {
+  try { localStorage.setItem('mc_settings', JSON.stringify(settings)); } catch (e) {}
+}
+const settings = loadSettings();
 
 // ---------------------------------------------------------------------------
 // Renderer / scene / camera
 // ---------------------------------------------------------------------------
 const canvas = document.getElementById('game');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-renderer.setSize(window.innerWidth, window.innerHeight);
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+const PR_CAP = Math.min(window.devicePixelRatio || 1, 1.5);
+let curPR = PR_CAP;
+function applyPR() {
+  renderer.setPixelRatio(curPR);
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+}
+applyPR();
 
 const scene = new THREE.Scene();
 const SKY_DAY = new THREE.Color(0x8fc8ff);
 scene.background = SKY_DAY.clone();
-const RENDER_DIST = 6; // chunks
-const fogFar = RENDER_DIST * CHUNK;
-scene.fog = new THREE.Fog(SKY_DAY.clone(), fogFar * 0.45, fogFar);
+let RENDER_DIST = settings.dist;
+scene.fog = new THREE.Fog(SKY_DAY.clone(), 1, 100);
+function applyRenderDist() {
+  RENDER_DIST = settings.dist;
+  const fogFar = RENDER_DIST * CHUNK;
+  scene.fog.near = fogFar * 0.45;
+  scene.fog.far = fogFar;
+}
+applyRenderDist();
 
 const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 1000);
 
 // ---------------------------------------------------------------------------
-// World + materials
+// World + materials  (seed may come from a shared URL)
 // ---------------------------------------------------------------------------
-const world = new World();
+const seed = getSeed(20260530);
+setSeedInURL(seed);
+const world = new World(seed);
 const { texture, cols, rows } = buildAtlas();
 world.texture = texture;
 world.atlasCols = cols;
@@ -34,6 +65,33 @@ const matTrans = new THREE.MeshBasicMaterial({
   map: texture, vertexColors: true, side: THREE.DoubleSide,
   transparent: true, opacity: 0.78, depthWrite: false,
 });
+
+// ---------------------------------------------------------------------------
+// Audio + particles
+// ---------------------------------------------------------------------------
+const sfx = createAudio();
+sfx.setEnabled(settings.sound);
+const particles = createParticles(scene, THREE, 160);
+
+// representative colour of a block, sampled once from the atlas (for debris)
+const colorCache = {};
+function blockColorHex(id) {
+  if (colorCache[id] != null) return colorCache[id];
+  let hex = 0x888888;
+  const def = BLOCKS[id];
+  if (def) {
+    const tw = texture.image.width / cols;
+    const tile = def.faces[2];
+    const sx = (tile % cols) * tw + (tw >> 1);
+    const sy = Math.floor(tile / cols) * tw + (tw >> 1);
+    try {
+      const d = texture.image.getContext('2d').getImageData(sx, sy, 1, 1).data;
+      hex = (d[0] << 16) | (d[1] << 8) | d[2];
+    } catch (e) {}
+  }
+  colorCache[id] = hex;
+  return hex;
+}
 
 // ---------------------------------------------------------------------------
 // Chunk streaming
@@ -84,7 +142,7 @@ function updateChunks() {
   const pcx = Math.floor(player.pos.x / CHUNK);
   const pcz = Math.floor(player.pos.z / CHUNK);
 
-  // unload far chunks
+  // unload far chunks (frees GPU memory — critical on mobile)
   for (const key of meshes.keys()) {
     const [cx, cz] = key.split(',').map(Number);
     if (Math.abs(cx - pcx) > RENDER_DIST + 1 || Math.abs(cz - pcz) > RENDER_DIST + 1) {
@@ -92,7 +150,6 @@ function updateChunks() {
     }
   }
 
-  // build nearest missing chunk, budgeted
   let budget = 2;
   const ring = [];
   for (let dz = -RENDER_DIST; dz <= RENDER_DIST; dz++) {
@@ -110,7 +167,6 @@ function updateChunks() {
     }
   }
 
-  // process dirty re-meshes
   let db = 4;
   for (const key of dirty) {
     if (db-- <= 0) break;
@@ -126,15 +182,10 @@ function updateChunks() {
 const player = {
   pos: new THREE.Vector3(8, 0, 8),
   vel: new THREE.Vector3(),
-  yaw: 0,
-  pitch: 0,
-  onGround: false,
-  fly: false,
-  width: 0.6,
-  height: 1.8,
-  eye: 1.62,
+  yaw: 0, pitch: 0,
+  onGround: false, fly: false,
+  width: 0.6, height: 1.8, eye: 1.62,
 };
-// spawn on top of terrain
 {
   const h = world.heightAt(8, 8);
   player.pos.y = Math.max(h, SEA_LEVEL) + 2;
@@ -155,34 +206,35 @@ function collidesAt(px, py, pz) {
   return false;
 }
 
+let stepTimer = 0;
 function movePlayer(dt) {
+  // unified input: keyboard + touch joystick
+  let moveF = (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0);
+  let moveR = (keys['KeyD'] ? 1 : 0) - (keys['KeyA'] ? 1 : 0);
+  if (touch) { moveF += -touch.move.z; moveR += touch.move.x; }
+
   const input = new THREE.Vector3();
   const f = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
   const r = new THREE.Vector3(Math.cos(player.yaw), 0, -Math.sin(player.yaw));
-  if (keys['KeyW']) input.add(f);
-  if (keys['KeyS']) input.sub(f);
-  if (keys['KeyD']) input.add(r);
-  if (keys['KeyA']) input.sub(r);
-  if (input.lengthSq() > 0) input.normalize();
+  input.addScaledVector(f, moveF);
+  input.addScaledVector(r, moveR);
+  if (input.lengthSq() > 1) input.normalize();
 
   const speed = player.fly ? FLY : keys['ShiftLeft'] ? SPRINT : WALK;
   player.vel.x = input.x * speed;
   player.vel.z = input.z * speed;
 
+  const jumpHeld = keys['Space'] || touchJump;
   if (player.fly) {
     let vy = 0;
-    if (keys['Space']) vy += FLY;
-    if (keys['ShiftLeft']) vy -= FLY;
+    if (jumpHeld || touchVert > 0) vy += FLY;
+    if (keys['ShiftLeft'] || touchVert < 0) vy -= FLY;
     player.vel.y = vy;
   } else {
     player.vel.y -= GRAVITY * dt;
-    if (keys['Space'] && player.onGround) {
-      player.vel.y = JUMP;
-      player.onGround = false;
-    }
+    if (jumpHeld && player.onGround) { player.vel.y = JUMP; player.onGround = false; }
   }
 
-  // resolve per axis
   const p = player.pos;
   p.x += player.vel.x * dt;
   if (collidesAt(p.x, p.y, p.z)) { p.x -= player.vel.x * dt; player.vel.x = 0; }
@@ -197,14 +249,27 @@ function movePlayer(dt) {
     player.vel.y = 0;
   }
 
-  if (p.y < -20) { // fell out of world — respawn
+  if (p.y < -20) {
     p.set(8, Math.max(world.heightAt(8, 8), SEA_LEVEL) + 2, 8);
     player.vel.set(0, 0, 0);
   }
+
+  // footsteps
+  const movingGround = !player.fly && player.onGround && (player.vel.x !== 0 || player.vel.z !== 0);
+  if (movingGround) {
+    stepTimer += dt;
+    if (stepTimer > 0.34) { sfx.step(); stepTimer = 0; }
+  } else stepTimer = 0.34;
 }
 
+let shakeMag = 0;
 function syncCamera() {
   camera.position.set(player.pos.x, player.pos.y + player.eye, player.pos.z);
+  if (shakeMag > 0.001) {
+    camera.position.x += (Math.random() - 0.5) * shakeMag;
+    camera.position.y += (Math.random() - 0.5) * shakeMag;
+    camera.position.z += (Math.random() - 0.5) * shakeMag;
+  }
   const dir = new THREE.Vector3(
     -Math.sin(player.yaw) * Math.cos(player.pitch),
     Math.sin(player.pitch),
@@ -213,16 +278,57 @@ function syncCamera() {
   camera.lookAt(camera.position.clone().add(dir));
 }
 
+function applyLook(dx, dy, scale) {
+  player.yaw -= dx * scale;
+  player.pitch -= dy * scale;
+  const lim = Math.PI / 2 - 0.01;
+  player.pitch = Math.max(-lim, Math.min(lim, player.pitch));
+}
+
 // ---------------------------------------------------------------------------
-// Block targeting + highlight
+// Block targeting + highlight + progressive mining (crack stages)
 // ---------------------------------------------------------------------------
-const hlGeo = new THREE.BoxGeometry(1.002, 1.002, 1.002);
 const hlEdges = new THREE.LineSegments(
-  new THREE.EdgesGeometry(hlGeo),
+  new THREE.EdgesGeometry(new THREE.BoxGeometry(1.002, 1.002, 1.002)),
   new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 })
 );
 hlEdges.visible = false;
 scene.add(hlEdges);
+
+// crack overlay
+const CRACK_STAGES = 6;
+const crackTex = [];
+for (let s = 0; s < CRACK_STAGES; s++) crackTex.push(makeCrackTexture(s, CRACK_STAGES));
+const crackMat = new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, map: crackTex[0] });
+const crackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.006, 1.006, 1.006), crackMat);
+crackMesh.visible = false;
+scene.add(crackMesh);
+
+function makeCrackTexture(stage, stages) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 16;
+  const x = c.getContext('2d');
+  x.clearRect(0, 0, 16, 16);
+  x.strokeStyle = 'rgba(0,0,0,0.6)';
+  x.lineWidth = 1;
+  const segs = Math.round(((stage + 1) / stages) * 9);
+  for (let i = 0; i < segs; i++) {
+    let px = 8, py = 8;
+    x.beginPath();
+    x.moveTo(px, py);
+    const steps = 2 + ((i * 7 + stage) % 3);
+    for (let k = 0; k < steps; k++) {
+      px += ((i * 53 + k * 29 + stage * 7) % 11) - 5;
+      py += ((i * 31 + k * 17 + stage * 13) % 11) - 5;
+      x.lineTo(px, py);
+    }
+    x.stroke();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.magFilter = THREE.NearestFilter;
+  t.minFilter = THREE.NearestFilter;
+  return t;
+}
 
 function currentTarget() {
   const origin = camera.position.clone();
@@ -231,9 +337,16 @@ function currentTarget() {
   return world.raycast(origin, dir, 7);
 }
 
+const HARDNESS = { 3: 0.62, 8: Infinity, 10: 0.62, 13: 0.7, 5: 0.45 }; // stone/bedrock/cobble/brick/wood
+function hardnessOf(id) { return HARDNESS[id] != null ? HARDNESS[id] : 0.32; }
+
+let breakTarget = null;
+let breakProgress = 0;
+
+function sameBlock(a, b) { return b && a[0] === b[0] && a[1] === b[1] && a[2] === b[2]; }
+
 function applyEdit(cx, cz, wx, wy, wz) {
   markDirty(cx, cz);
-  // re-mesh neighbours when editing a chunk border
   const lx = wx - cx * CHUNK, lz = wz - cz * CHUNK;
   if (lx === 0) markDirty(cx - 1, cz);
   if (lx === CHUNK - 1) markDirty(cx + 1, cz);
@@ -241,13 +354,14 @@ function applyEdit(cx, cz, wx, wy, wz) {
   if (lz === CHUNK - 1) markDirty(cx, cz + 1);
 }
 
-function breakBlock() {
-  const hit = currentTarget();
-  if (!hit) return;
-  const [x, y, z] = hit.block;
-  if (world.getBlock(x, y, z) === 8) return; // bedrock unbreakable
+let freezeUntil = 0;
+function doBreak(x, y, z, id) {
   world.setBlock(x, y, z, 0);
   applyEdit(Math.floor(x / CHUNK), Math.floor(z / CHUNK), x, y, z);
+  particles.burst(x + 0.5, y + 0.5, z + 0.5, blockColorHex(id), 18, 3.4);
+  sfx.break(id);
+  freezeUntil = performance.now() + 55;            // hit-pause
+  if (settings.shake) shakeMag = 0.12;             // screen kick (toggleable)
 }
 
 function placeBlock() {
@@ -255,72 +369,140 @@ function placeBlock() {
   if (!hit) return;
   const [x, y, z] = hit.place;
   if (y < 1 || y >= HEIGHT) return;
-  // don't place inside the player
   const hw = player.width / 2 + 0.02;
   const p = player.pos;
   if (x + 1 > p.x - hw && x < p.x + hw &&
       y + 1 > p.y && y < p.y + player.height &&
       z + 1 > p.z - hw && z < p.z + hw) return;
   if (world.getBlock(x, y, z) !== 0) return;
-  world.setBlock(x, y, z, hotbar[selected]);
+  const id = hotbar[selected];
+  world.setBlock(x, y, z, id);
   applyEdit(Math.floor(x / CHUNK), Math.floor(z / CHUNK), x, y, z);
+  particles.burst(x + 0.5, y + 0.5, z + 0.5, blockColorHex(id), 6, 1.6);
+  sfx.place(id);
+}
+
+function updateMining(dt) {
+  const hit = playing ? currentTarget() : null;
+  if (hit) {
+    hlEdges.visible = true;
+    hlEdges.position.set(hit.block[0] + 0.5, hit.block[1] + 0.5, hit.block[2] + 0.5);
+  } else {
+    hlEdges.visible = false;
+  }
+
+  if (breakHeld && hit && playing) {
+    const [x, y, z] = hit.block;
+    const id = world.getBlock(x, y, z);
+    const hard = hardnessOf(id);
+    if (!isFinite(hard)) { breakProgress = 0; crackMesh.visible = false; return; } // bedrock
+    if (!sameBlock(hit.block, breakTarget)) { breakTarget = hit.block.slice(); breakProgress = 0; }
+    breakProgress += dt / hard;
+    const s = Math.min(CRACK_STAGES - 1, Math.floor(breakProgress * CRACK_STAGES));
+    crackMat.map = crackTex[s];
+    crackMesh.position.set(x + 0.5, y + 0.5, z + 0.5);
+    crackMesh.visible = true;
+    if (breakProgress >= 1) { doBreak(x, y, z, id); breakProgress = 0; breakTarget = null; crackMesh.visible = false; }
+  } else {
+    breakProgress = 0; breakTarget = null; crackMesh.visible = false;
+  }
 }
 
 // ---------------------------------------------------------------------------
-// Input
+// Input — desktop (keyboard + pointer lock) and shared state
 // ---------------------------------------------------------------------------
 const keys = {};
-let locked = false;
+let playing = false;
+let breakHeld = false;
+let touchJump = false;
+let touchVert = 0;
 let lastSpace = 0;
 
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Space' && e.target === document.body) e.preventDefault();
-  if (keys[e.code]) return; // ignore auto-repeat for toggles
+  if (keys[e.code]) return;
   keys[e.code] = true;
-
   if (e.code === 'Space') {
     const now = performance.now();
-    if (now - lastSpace < 280) player.fly = !player.fly; // double-tap to fly
+    if (now - lastSpace < 280) player.fly = !player.fly;
     lastSpace = now;
   }
-  if (e.code >= 'Digit1' && e.code <= 'Digit9') {
+  if (/^Digit[1-9]$/.test(e.code)) {
     const n = parseInt(e.code.slice(5), 10) - 1;
     if (n < hotbar.length) selectSlot(n);
   }
 });
 window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
-canvas.addEventListener('click', () => {
-  if (!locked) canvas.requestPointerLock();
-});
+const overlay = document.getElementById('overlay');
+function startPlay() {
+  sfx.resume();
+  if (isTouch) {
+    playing = true;
+    overlay.style.display = 'none';
+  } else {
+    canvas.requestPointerLock();
+  }
+}
+overlay.addEventListener('click', startPlay);
+
+// desktop pointer lock
 document.addEventListener('pointerlockchange', () => {
-  locked = document.pointerLockElement === canvas;
-  document.getElementById('overlay').style.display = locked ? 'none' : 'flex';
+  const locked = document.pointerLockElement === canvas;
+  playing = locked;
+  if (!locked) { breakHeld = false; }
+  overlay.style.display = locked ? 'none' : 'flex';
 });
 document.addEventListener('mousemove', (e) => {
-  if (!locked) return;
-  const s = 0.0022;
-  player.yaw -= e.movementX * s;
-  player.pitch -= e.movementY * s;
-  const lim = Math.PI / 2 - 0.01;
-  player.pitch = Math.max(-lim, Math.min(lim, player.pitch));
+  if (!playing || isTouch) return;
+  applyLook(e.movementX, e.movementY, 0.0022 * settings.sens);
 });
 document.addEventListener('mousedown', (e) => {
-  if (!locked) return;
-  if (e.button === 0) breakBlock();
+  if (!playing || isTouch) return;
+  if (e.button === 0) breakHeld = true;
   else if (e.button === 2) placeBlock();
 });
+document.addEventListener('mouseup', (e) => { if (e.button === 0) breakHeld = false; });
 window.addEventListener('contextmenu', (e) => e.preventDefault());
 window.addEventListener('wheel', (e) => {
-  if (!locked) return;
+  if (!playing) return;
   selectSlot((selected + (e.deltaY > 0 ? 1 : -1) + hotbar.length) % hotbar.length);
 });
-window.addEventListener('resize', () => {
+
+function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+}
+window.addEventListener('resize', onResize);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', onResize);
 window.addEventListener('beforeunload', () => world.saveEdits());
+
+// pause + save when the tab is hidden (mobile rarely fires beforeunload)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { paused = true; world.saveEdits(); }
+  else { paused = false; last = performance.now(); }
+});
+
+// ---------------------------------------------------------------------------
+// Touch input
+// ---------------------------------------------------------------------------
+const isTouch = isTouchDevice();
+let touch = null;
+if (isTouch) {
+  document.body.classList.add('touch');
+  touch = createTouchControls({
+    root: document.body,
+    isFlying: () => player.fly,
+    onLook: (dx, dy) => { if (playing) applyLook(dx, dy, 0.004 * settings.sens); },
+    onPlace: () => { if (playing) placeBlock(); },
+    onBreakStart: () => { if (playing) breakHeld = true; },
+    onBreakEnd: () => { breakHeld = false; },
+    onJump: (down) => { touchJump = down; },
+    onToggleFly: () => { player.fly = !player.fly; },
+    onVertical: (dir) => { touchVert = dir; },
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Hotbar UI
@@ -346,12 +528,11 @@ function buildHotbar() {
     name.className = 'name';
     name.textContent = BLOCKS[id].name;
     slot.appendChild(name);
+    slot.addEventListener('pointerdown', (e) => { e.stopPropagation(); selectSlot(i); sfx.resume(); });
     hotbarEl.appendChild(slot);
   });
   selectSlot(0);
 }
-
-// draw a small preview swatch by sampling the atlas tile (side face)
 function drawSwatch(ctx, id) {
   const tile = BLOCKS[id].faces[2];
   const tw = texture.image.width / cols;
@@ -362,31 +543,89 @@ function drawSwatch(ctx, id) {
   ctx.fillRect(0, 0, 32, 32);
   ctx.drawImage(texture.image, tx, ty, tw, tw, 0, 0, 32, 32);
 }
-
 function selectSlot(n) {
   selected = n;
   [...hotbarEl.children].forEach((c, i) => c.classList.toggle('active', i === n));
+  sfx.select();
 }
-
 buildHotbar();
 
-// reset button
-document.getElementById('reset').addEventListener('click', (e) => {
+// ---------------------------------------------------------------------------
+// Top bar: sound / share / settings / reset
+// ---------------------------------------------------------------------------
+const $ = (id) => document.getElementById(id);
+let toastT = 0;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 1700);
+}
+
+$('btn-sound').addEventListener('click', () => {
+  settings.sound = !settings.sound;
+  sfx.setEnabled(settings.sound);
+  sfx.resume();
+  $('btn-sound').style.opacity = settings.sound ? '1' : '0.4';
+  $('set-sound').checked = settings.sound;
+  saveSettings();
+});
+$('btn-sound').style.opacity = settings.sound ? '1' : '0.4';
+
+$('btn-share').addEventListener('click', async () => {
+  const res = await shareSeed(seed, 'Voxel Craft');
+  toast(res === 'shared' ? '共有しました' : res === 'copied' ? 'リンクをコピーしました' : '共有に失敗しました');
+});
+
+$('btn-reset').addEventListener('click', (e) => {
   e.stopPropagation();
+  if (!confirm('このワールドの編集をすべてリセットしますか？')) return;
   world.resetWorld();
   for (const key of [...meshes.keys()]) removeChunkMeshes(key);
   location.reload();
 });
 
+// settings panel
+const panel = $('settings');
+function openSettings() {
+  $('set-sens').value = settings.sens;
+  $('sens-val').textContent = settings.sens.toFixed(1) + '×';
+  $('set-dist').value = settings.dist;
+  $('dist-val').textContent = settings.dist;
+  $('set-sound').checked = settings.sound;
+  $('set-shake').checked = settings.shake;
+  $('seed-code').textContent = seedToCode(seed) + '  (#' + seed + ')';
+  panel.style.display = 'block';
+}
+$('btn-settings').addEventListener('click', openSettings);
+$('set-close').addEventListener('click', () => { panel.style.display = 'none'; });
+$('set-sens').addEventListener('input', (e) => {
+  settings.sens = parseFloat(e.target.value);
+  $('sens-val').textContent = settings.sens.toFixed(1) + '×';
+  saveSettings();
+});
+$('set-dist').addEventListener('input', (e) => {
+  settings.dist = parseInt(e.target.value, 10);
+  $('dist-val').textContent = settings.dist;
+  applyRenderDist();
+  saveSettings();
+});
+$('set-sound').addEventListener('change', (e) => {
+  settings.sound = e.target.checked;
+  sfx.setEnabled(settings.sound);
+  $('btn-sound').style.opacity = settings.sound ? '1' : '0.4';
+  saveSettings();
+});
+$('set-shake').addEventListener('change', (e) => { settings.shake = e.target.checked; saveSettings(); });
+
 // ---------------------------------------------------------------------------
 // Day / night cycle
 // ---------------------------------------------------------------------------
-let dayTime = 0.28; // 0..1
+let dayTime = 0.28;
 const NIGHT = new THREE.Color(0x0a1430);
-
 function updateDayNight(dt) {
-  dayTime = (dayTime + dt / 120) % 1; // ~2 min full cycle
-  // brightness: 1 at noon, ~0.18 at midnight
+  dayTime = (dayTime + dt / 120) % 1;
   const sun = Math.max(0, Math.sin(dayTime * Math.PI * 2 - Math.PI / 2));
   const light = 0.18 + 0.82 * sun;
   matOpaque.color.setRGB(light, light, light);
@@ -397,18 +636,19 @@ function updateDayNight(dt) {
 }
 
 // ---------------------------------------------------------------------------
-// HUD
+// HUD + dynamic resolution
 // ---------------------------------------------------------------------------
 const hud = document.getElementById('hud');
 let frames = 0, fpsTime = 0, fps = 0;
-
 function updateHud(dt) {
   frames++;
   fpsTime += dt;
   if (fpsTime >= 0.5) {
     fps = Math.round(frames / fpsTime);
-    frames = 0;
-    fpsTime = 0;
+    frames = 0; fpsTime = 0;
+    // dynamic resolution: ease pixelRatio toward a smooth 30+ fps
+    if (fps < 28 && curPR > 0.7) { curPR = Math.max(0.7, curPR - 0.15); applyPR(); }
+    else if (fps > 52 && curPR < PR_CAP) { curPR = Math.min(PR_CAP, curPR + 0.1); applyPR(); }
   }
   const p = player.pos;
   hud.textContent =
@@ -420,27 +660,25 @@ function updateHud(dt) {
 // Loop
 // ---------------------------------------------------------------------------
 let last = performance.now();
+let paused = false;
 function loop() {
+  requestAnimationFrame(loop);
   const now = performance.now();
   let dt = (now - last) / 1000;
   last = now;
-  if (dt > 0.05) dt = 0.05; // clamp to avoid tunnelling on hitches
+  if (paused) return;
+  if (dt > 0.05) dt = 0.05; // clamp (also covers tab-resume spikes)
 
-  if (locked) movePlayer(dt);
+  const frozen = now < freezeUntil;
+  if (playing && !frozen) movePlayer(dt);
   syncCamera();
+  shakeMag *= 0.82;
   updateChunks();
   updateDayNight(dt);
-
-  const hit = currentTarget();
-  if (hit) {
-    hlEdges.visible = true;
-    hlEdges.position.set(hit.block[0] + 0.5, hit.block[1] + 0.5, hit.block[2] + 0.5);
-  } else {
-    hlEdges.visible = false;
-  }
+  updateMining(dt);
+  particles.update(dt);
 
   renderer.render(scene, camera);
   updateHud(dt);
-  requestAnimationFrame(loop);
 }
 loop();
