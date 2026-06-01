@@ -445,6 +445,11 @@ function startPlay() {
   }
 }
 overlay.addEventListener('click', startPlay);
+// iOS Safari may not synthesize a `click` on a non-interactive <div> when
+// `touch-action: none` is set, so also start on `touchend` (which doubles as
+// the required user-gesture to unlock Web Audio). preventDefault avoids a
+// duplicate synthesized click.
+overlay.addEventListener('touchend', (e) => { e.preventDefault(); startPlay(); }, { passive: false });
 
 // desktop pointer lock
 document.addEventListener('pointerlockchange', () => {
