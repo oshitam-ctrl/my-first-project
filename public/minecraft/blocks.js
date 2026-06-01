@@ -66,6 +66,8 @@ const T = {
   packed_ice: 55,
   spruce_planks: 56,
   birch_planks: 57,
+  wheat_crop: 58,
+  veg_crop: 59,
 };
 
 // Block definitions. `faces` = [top, bottom, side] tile indices.
@@ -125,6 +127,8 @@ export const BLOCKS = {
   50: { name: 'Hay Bale', faces: [T.hay_bale, T.hay_bale, T.hay_bale], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
   51: { name: 'Spruce Planks', faces: [T.spruce_planks, T.spruce_planks, T.spruce_planks], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
   52: { name: 'Birch Planks', faces: [T.birch_planks, T.birch_planks, T.birch_planks], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
+  53: { name: 'Wheat Crop', faces: [T.wheat_crop, T.wheat_crop, T.wheat_crop], solid: false, opaque: false, hardness: 0.2, tool: null, tier: null, drop: 'wheat' },
+  54: { name: 'Vegetable Crop', faces: [T.veg_crop, T.veg_crop, T.veg_crop], solid: false, opaque: false, hardness: 0.2, tool: null, tier: null, drop: 'surplus_veg' },
 };
 
 export function isOpaque(id) {
@@ -479,6 +483,34 @@ const painters = {
       c.moveTo(0, y + 0.5);
       c.lineTo(TILE, y + 0.5);
       c.stroke();
+    }
+  },
+  [T.wheat_crop]: (c) => {
+    // golden wheat stalks: greenish-brown soil base + vertical golden lines
+    noisePx(c, [120, 96, 58], 16);
+    c.strokeStyle = 'rgba(214,184,70,0.95)';
+    for (let x = 2; x < TILE; x += 3) {
+      c.beginPath();
+      c.moveTo(x + 0.5, 2);
+      c.lineTo(x + 0.5, TILE);
+      c.stroke();
+    }
+    // grain heads near the top
+    c.fillStyle = 'rgb(230,202,96)';
+    for (let x = 2; x < TILE; x += 3) c.fillRect(x - 1, 1, 3, 3);
+  },
+  [T.veg_crop]: (c) => {
+    // leafy green base with a few coloured veg dots
+    noisePx(c, [78, 140, 60], 26);
+    c.fillStyle = 'rgba(40,90,35,0.5)';
+    for (let i = 0; i < 12; i++) c.fillRect((Math.random() * TILE) | 0, (Math.random() * TILE) | 0, 1, 1);
+    // veg dots: tomato red, carrot orange, eggplant purple
+    const veg = ['#d23a2e', '#e08a28', '#7a3a9a', '#e0c84a'];
+    for (let i = 0; i < 5; i++) {
+      c.fillStyle = veg[(Math.random() * veg.length) | 0];
+      const x = (Math.random() * (TILE - 2)) | 0;
+      const y = (Math.random() * (TILE - 2)) | 0;
+      c.fillRect(x, y, 2, 2);
     }
   },
 };

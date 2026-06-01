@@ -106,6 +106,8 @@ const _defs = [
   block('hay_bale', '干草の俵', 50, 0xb49628),
   block('spruce_planks', 'トウヒの板材', 51, 0x6e5232),
   block('birch_planks', 'シラカバの板材', 52, 0xc8b687),
+  block('wheat_crop', '麦畑', 53, 0xd6b846),
+  block('veg_crop', '野菜の苗', 54, 0x4e8c3c),
 
   // --- Materials ---
   material('stick', '棒', 0x9c7a4d),

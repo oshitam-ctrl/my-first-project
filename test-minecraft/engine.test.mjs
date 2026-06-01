@@ -85,7 +85,11 @@ check('color count matches position count', g.opaque.col.length === g.opaque.pos
 let colOk = true;
 for (let k = 0; k < g.opaque.col.length; k++) if (g.opaque.col[k] < 0 || g.opaque.col[k] > 1.001) colOk = false;
 check('shade/AO colors within [0,1]', colOk);
+// determinism: two FRESH same-seed worlds must match. (w1 above carries the
+// edit-test setBlocks, and the landmark overlaps chunk 0,0, so compare two
+// unedited worlds instead of the edited w1.)
 const g2 = w2.buildGeometry(0, 0);
-check('mesher deterministic for same seed', g2.opaque.pos.length === g.opaque.pos.length);
+const g3 = new World(777).buildGeometry(0, 0);
+check('mesher deterministic for same seed', g2.opaque.pos.length === g3.opaque.pos.length);
 
 console.log(`\nAll ${n} engine assertions passed.`);
