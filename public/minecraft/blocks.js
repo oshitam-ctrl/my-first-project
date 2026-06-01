@@ -1,7 +1,7 @@
 // Block registry + procedurally generated texture atlas (asset-free).
 // Every tile is painted into a single canvas, uploaded once as a
 // NearestFilter CanvasTexture so all chunk meshes share one material.
-import * as THREE from 'three';
+import * as THREE from './vendor/three.module.js';
 
 export const TILE = 16; // px per tile
 export const ATLAS_COLS = 8; // tiles per row in the atlas

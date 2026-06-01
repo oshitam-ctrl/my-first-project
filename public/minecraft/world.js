@@ -1,6 +1,6 @@
 // Voxel world: chunk storage, procedural terrain, culled+AO mesher,
 // DDA raycasting, and a persistent player-edit overlay.
-import * as THREE from 'three';
+import * as THREE from './vendor/three.module.js';
 import { Noise, hash2 } from './noise.js';
 import { BLOCKS, isOpaque, isSolid, tileUV } from './blocks.js';
 

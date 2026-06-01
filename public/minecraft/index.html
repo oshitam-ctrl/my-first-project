@@ -184,18 +184,11 @@
 
   <div id="rotate">📱 横向きにすると遊びやすいです</div>
 
-  <script type="importmap">
-    { "imports": { "three": "./vendor/three.module.js" } }
-  </script>
+  <!-- No inline scripts or import map on purpose: managed/enterprise browsers
+       can inject a strict Content-Security-Policy that blocks inline <script>
+       (including import maps), which would prevent the game from loading. The
+       module below uses direct relative imports for three.js and registers the
+       service worker itself, so an external same-origin module is all we need. -->
   <script type="module" src="./main.js"></script>
-
-  <script>
-    // Register the service worker for offline + installable PWA.
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => {});
-      });
-    }
-  </script>
 </body>
 </html>
