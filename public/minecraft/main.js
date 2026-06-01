@@ -8,6 +8,11 @@ import { createParticles } from './particles.js';
 import { isTouchDevice, createTouchControls } from './touch.js';
 import { getSeed, setSeedInURL, seedToCode, shareSeed } from './share.js';
 
+// Startup beacon for the on-screen diagnostic (diag.js). If main.js fails to
+// load/evaluate this never runs and diag.js reports the failure on screen.
+window.__mcLoaded = true;
+{ const d = document.getElementById('diag'); if (d) { d.style.background = 'rgba(0,130,0,.85)'; d.textContent = '✓ 起動OK (v7)'; setTimeout(() => { d.style.display = 'none'; }, 1200); } }
+
 // ---------------------------------------------------------------------------
 // Settings (persisted)
 // ---------------------------------------------------------------------------
