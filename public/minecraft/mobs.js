@@ -36,22 +36,22 @@ const REGISTRY = {
   pig: {
     kind: 'passive', hp: 10, w: 0.9, h: 0.9, speed: 3.0,
     model: 'quadruped', colors: { body: 0xf0a0a0, head: 0xf0a0a0, leg: 0xd98a8a },
-    drop: 'apple',
+    drop: 'raw_porkchop',
   },
   cow: {
     kind: 'passive', hp: 10, w: 0.9, h: 1.3, speed: 3.0,
     model: 'quadruped', colors: { body: 0x53381f, head: 0x53381f, leg: 0x3a2815, accent: 0xffffff },
-    drop: null,
+    drop: 'raw_beef',
   },
   sheep: {
     kind: 'passive', hp: 8, w: 0.9, h: 1.2, speed: 3.0,
     model: 'quadruped', colors: { body: 0xf0f0f0, head: 0xe0d6c8, leg: 0xd0c8bc },
-    drop: null,
+    drop: 'raw_mutton',
   },
   chicken: {
     kind: 'passive', hp: 4, w: 0.5, h: 0.6, speed: 3.2,
     model: 'chicken', colors: { body: 0xffffff, head: 0xffffff, leg: 0xffcc33, beak: 0xff8800 },
-    drop: null,
+    drop: 'raw_chicken',
   },
   // HOSTILE -----------------------------------------------------------------
   zombie: {

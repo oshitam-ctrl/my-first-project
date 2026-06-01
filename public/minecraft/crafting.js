@@ -74,6 +74,22 @@ export const RECIPES = [
 
   // bread: 3 wheat in a row
   shaped([['wheat', 'wheat', 'wheat']], { id: 'bread', count: 1 }),
+
+  // --- Petit Hermès bakery recipes ---
+  // 規格外野菜を瓶で発酵させて発酵液: empty_jar + surplus_veg -> levain
+  shapeless(['empty_jar', 'surplus_veg'], { id: 'levain', count: 1 }),
+
+  // 発酵液と小麦を混ぜてパン: levain + wheat -> bread x2
+  shapeless(['levain', 'wheat'], { id: 'bread', count: 2 }),
+
+  // 小麦から小麦粉: wheat x3 -> flour
+  shapeless(['wheat', 'wheat', 'wheat'], { id: 'flour', count: 1 }),
+
+  // 小麦粉と発酵液でもパン: flour + levain -> bread x2
+  shapeless(['flour', 'levain'], { id: 'bread', count: 2 }),
+
+  // 野菜たっぷりでたくさんの発酵液: surplus_veg x3 -> levain x2
+  shapeless(['surplus_veg', 'surplus_veg', 'surplus_veg'], { id: 'levain', count: 2 }),
 ];
 
 // Tools for each material tier.

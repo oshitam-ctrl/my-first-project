@@ -108,6 +108,54 @@ check('bread', craftResult([N, N, N, N, N, N, 'wheat', 'wheat', 'wheat']), {
   count: 1,
 });
 
+// --- Petit Hermès bakery recipes ---
+
+// jar + surplus_veg -> levain (2x2 grid)
+check('jar+veg->levain 2x2', craftResult(['empty_jar', 'surplus_veg', N, N]), {
+  id: 'levain',
+  count: 1,
+});
+
+// jar + surplus_veg -> levain, different offset / swapped order (position & order independent)
+check(
+  'veg+jar->levain offset',
+  craftResult([N, N, N, N, 'surplus_veg', N, N, N, 'empty_jar']),
+  { id: 'levain', count: 1 }
+);
+
+// levain + wheat -> bread x2
+check('levain+wheat->bread x2', craftResult(['levain', 'wheat', N, N]), {
+  id: 'bread',
+  count: 2,
+});
+
+// levain + wheat -> bread x2, offset bottom-right, swapped order
+check(
+  'wheat+levain->bread x2 offset',
+  craftResult([N, N, N, N, N, N, N, 'wheat', 'levain']),
+  { id: 'bread', count: 2 }
+);
+
+// 3 wheat -> flour (use an L/scatter so it does NOT match the shaped 3-in-a-row bread)
+check(
+  '3 wheat->flour (non-row)',
+  craftResult(['wheat', N, N, 'wheat', N, N, 'wheat', N, N]),
+  { id: 'flour', count: 1 }
+);
+
+// flour + levain -> bread x2
+check('flour+levain->bread x2', craftResult(['flour', 'levain', N, N]), {
+  id: 'bread',
+  count: 2,
+});
+
+// 3 surplus_veg -> levain x2, scattered positions
+check(
+  '3 veg->levain x2',
+  craftResult([N, 'surplus_veg', N, 'surplus_veg', N, N, N, N, 'surplus_veg']),
+  { id: 'levain', count: 2 }
+);
+
 // empty grid -> null
 check('empty', craftResult([N, N, N, N, N, N, N, N, N]), null);
 check('empty 2x2', craftResult([N, N, N, N]), null);
