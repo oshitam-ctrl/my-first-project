@@ -1,7 +1,7 @@
 /* Voxel Craft service worker — installable + offline app shell.
  * Plain Service Worker APIs only (no importScripts, no external code). */
 
-const CACHE_VERSION = 'voxelcraft-v1';
+const CACHE_VERSION = 'voxelcraft-v2';
 
 /* App shell. Paths are RELATIVE and resolved against the SW scope
  * (the SW lives at /minecraft/sw.js, so scope is /minecraft/). */
@@ -61,10 +61,9 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-/* Stale-while-revalidate: serve from cache immediately for speed/offline, but
- * always refetch in the background and update the cache, so a redeploy reaches
- * returning players on their next load instead of being stuck forever (the
- * trap of plain cache-first). Falls back to the cached shell when offline. */
+/* Network-first: when online, always fetch the latest and refresh the cache so
+ * a redeploy is picked up on the very next load (important while iterating).
+ * Falls back to the cache only when the network fails (offline support). */
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
@@ -77,31 +76,23 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     (async () => {
       const cache = await caches.open(CACHE_VERSION);
-      const cached = await cache.match(request);
-
-      // Kick off a background refresh regardless of cache hit.
-      const network = fetch(request)
-        .then((response) => {
-          if (response && response.ok && response.type !== 'opaque') {
-            cache.put(request, response.clone());
-          }
-          return response;
-        })
-        .catch(() => null);
-
-      // Serve cache now if we have it; otherwise wait for the network.
-      if (cached) return cached;
-
-      const response = await network;
-      if (response) return response;
-
-      // Offline and uncached: for navigations, serve the cached shell.
-      if (request.mode === 'navigate') {
-        const fallback =
-          (await cache.match('./index.html')) || (await cache.match('./'));
-        if (fallback) return fallback;
+      try {
+        const response = await fetch(request);
+        if (response && response.ok && response.type !== 'opaque') {
+          cache.put(request, response.clone());
+        }
+        return response;
+      } catch (err) {
+        // Offline: serve from cache, falling back to the shell for navigations.
+        const cached = await cache.match(request);
+        if (cached) return cached;
+        if (request.mode === 'navigate') {
+          const fallback =
+            (await cache.match('./index.html')) || (await cache.match('./'));
+          if (fallback) return fallback;
+        }
+        return Response.error();
       }
-      return Response.error();
     })()
   );
 });
