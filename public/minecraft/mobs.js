@@ -135,6 +135,96 @@ export function createMobs(opts) {
   // Model builders. Each returns { group, parts } where parts holds meshes we
   // animate (legs) or flash (all). Origin (0,0,0) is the feet center.
   // -------------------------------------------------------------------------
+  // Face-feature colors (shared, species-neutral). Reusing the box() helper +
+  // mat() cache keeps these cheap and lets hurt-flash tint them too.
+  const FEAT = {
+    black: 0x111111,
+    white: 0xf6f6f6,
+    pinkSnout: 0xe79aa6,
+    nostril: 0x9c5a66,
+    earPig: 0xe48f9b,
+    muzzle: 0xb89a78,
+    hornCow: 0xd8c8a0,
+    sheepFace: 0x2b2622,
+    earSheep: 0xd8d0c4,
+    beak: 0xff8800,
+    wattle: 0xcc2222,
+    zombieEye: 0x202820,
+    creeperFace: 0x0a1a0a,
+    spiderEye: 0xff3030,
+  };
+
+  // Add cosmetic facial features. They're parented to the group (which only
+  // carries rotation.y = yaw, no scale), positioned at the head's local center
+  // plus small offsets, so they "look" where the mob walks. The local +z axis
+  // is the front for every model (heads/beaks/eyes are all placed at +z).
+  // hx/hy = head center, hz = head front-face z. Each feature is tracked so it
+  // hurt-flashes with the rest of the body.
+  function addFace(group, track, model, c) {
+    const f = (color, sx, sy, sz, px, py, pz) =>
+      track(box(group, color, sx, sy, sz, px, py, pz));
+
+    if (model === 'quadruped') {
+      const hy = 0.9, hz = 0.755; // head center y; just in front of head front face (0.5+0.25)
+      // eyes (white sclera + dark pupil) — common to all quadrupeds
+      for (const ex of [0.13, -0.13]) {
+        f(FEAT.white, 0.1, 0.1, 0.04, ex, hy + 0.08, hz);
+        f(FEAT.black, 0.05, 0.05, 0.05, ex, hy + 0.08, hz + 0.01);
+      }
+      if (c.head === 0xf0a0a0) {
+        // PIG: pink snout w/ nostrils + ears
+        f(FEAT.pinkSnout, 0.24, 0.16, 0.08, 0, hy - 0.06, hz);
+        for (const nx of [0.05, -0.05]) f(FEAT.nostril, 0.04, 0.06, 0.04, nx, hy - 0.06, hz + 0.03);
+        for (const ex2 of [0.16, -0.16]) f(FEAT.earPig, 0.1, 0.1, 0.04, ex2, hy + 0.28, hz - 0.18);
+      } else if (c.accent) {
+        // COW: lighter muzzle, horns, ears
+        f(FEAT.muzzle, 0.3, 0.2, 0.06, 0, hy - 0.1, hz);
+        for (const nx of [0.07, -0.07]) f(FEAT.nostril, 0.05, 0.06, 0.04, nx, hy - 0.1, hz + 0.02);
+        for (const hxx of [0.16, -0.16]) f(FEAT.hornCow, 0.07, 0.07, 0.07, hxx, hy + 0.3, hz - 0.22);
+        for (const exx of [0.27, -0.27]) f(FEAT.muzzle, 0.1, 0.08, 0.06, exx, hy + 0.08, hz - 0.22);
+      } else {
+        // SHEEP: dark face panel + ears
+        f(FEAT.sheepFace, 0.34, 0.36, 0.06, 0, hy - 0.02, hz);
+        // re-add eyes on the dark face for contrast
+        for (const ex of [0.09, -0.09]) f(FEAT.white, 0.06, 0.06, 0.04, ex, hy + 0.04, hz + 0.02);
+        for (const exx of [0.22, -0.22]) f(FEAT.earSheep, 0.1, 0.09, 0.06, exx, hy + 0.02, hz - 0.22);
+      }
+    } else if (model === 'chicken') {
+      const hy = 0.65, hz = 0.335; // head center; front face at 0.18+0.15
+      for (const ex of [0.07, -0.07]) f(FEAT.black, 0.05, 0.05, 0.04, ex, hy + 0.05, hz);
+      // red wattle under the (existing) beak
+      f(FEAT.wattle, 0.06, 0.08, 0.05, 0, hy - 0.12, hz - 0.02);
+      // tiny red comb on top
+      f(FEAT.wattle, 0.06, 0.06, 0.12, 0, hy + 0.17, hz - 0.06);
+    } else if (model === 'humanoid') {
+      const hy = 1.65, hz = 0.235; // head center y; front face at 0.225
+      if (c.head === 0x4a8f4a) {
+        // ZOMBIE: dark sunken eyes + darker mouth line
+        for (const ex of [0.1, -0.1]) f(FEAT.zombieEye, 0.1, 0.08, 0.05, ex, hy + 0.06, hz);
+        f(FEAT.zombieEye, 0.24, 0.05, 0.04, 0, hy - 0.13, hz);
+      } else {
+        // SKELETON: black eye sockets + nasal/mouth line on white skull
+        for (const ex of [0.1, -0.1]) f(FEAT.black, 0.1, 0.1, 0.05, ex, hy + 0.06, hz);
+        f(FEAT.black, 0.05, 0.08, 0.05, 0, hy - 0.06, hz); // nasal cavity
+        f(FEAT.black, 0.22, 0.04, 0.04, 0, hy - 0.16, hz); // mouth/teeth line
+      }
+    } else if (model === 'creeper') {
+      const hy = 1.55, hz = 0.255; // head center y; front face at 0.25
+      // iconic creeper face: two square eyes + mouth with downward fangs
+      for (const ex of [0.12, -0.12]) f(FEAT.creeperFace, 0.12, 0.12, 0.05, ex, hy + 0.08, hz);
+      f(FEAT.creeperFace, 0.1, 0.18, 0.05, 0, hy - 0.1, hz); // mouth center stem
+      for (const mx of [0.1, -0.1]) f(FEAT.creeperFace, 0.1, 0.1, 0.05, mx, hy - 0.18, hz); // fangs
+    } else if (model === 'spider') {
+      const hy = 0.55, hz = 0.685; // head center ~0.45; front cluster just past 0.65
+      // cluster of small red eyes (two big + two small rows)
+      for (const ex of [0.1, -0.1]) f(FEAT.spiderEye, 0.08, 0.08, 0.04, ex, hy + 0.02, hz);
+      for (const ex of [0.18, -0.18]) f(FEAT.spiderEye, 0.06, 0.06, 0.04, ex, hy + 0.05, hz - 0.02);
+      for (const ex of [0.06, -0.06]) f(FEAT.spiderEye, 0.05, 0.05, 0.04, ex, hy + 0.1, hz - 0.02);
+      // mandible hint below the eyes
+      for (const mx of [0.07, -0.07]) f(FEAT.black, 0.05, 0.05, 0.06, mx, hy - 0.12, hz);
+    }
+  }
+
   function buildModel(def) {
     const group = new THREE.Group();
     const c = def.colors;
@@ -197,6 +287,9 @@ export function createMobs(opts) {
       // fallback cube
       track(box(group, 0xff00ff, 0.6, 0.6, 0.6, 0, 0.3, 0));
     }
+
+    // cosmetic facial features (eyes/snout/beak/etc.) on the front of the head
+    addFace(group, track, def.model, c);
 
     return { group, parts: { all, legs } };
   }

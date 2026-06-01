@@ -319,6 +319,9 @@ const hurtEl = document.getElementById('hurt');
 
 function applyDamage(n) {
   if (creative || player.dead || n <= 0) return;
+  if (inv.holdingShield()) n *= 0.35;                          // blocking with a shield
+  n *= 1 - Math.min(0.8, inv.armorPoints() * 0.04);            // armor: 4%/point, cap 80%
+  if (n <= 0.01) return;
   player.health = Math.max(0, player.health - n);
   sfx.hurt();
   hurtEl.style.opacity = '0.85';
@@ -486,6 +489,8 @@ function doBreak(x, y, z, id) {
 }
 
 function placeBlock() {
+  const sdef = inv.selectedDef();
+  if (sdef && sdef.magic) { castMagic(sdef.magic); return; } // wands cast instead of placing
   const hit = currentTarget();
   if (!hit) return;
   // right-click / tap on an interactive block opens it instead of placing
@@ -708,13 +713,62 @@ const mobs = createMobs({
 });
 window.__mobCount = () => mobs.count(); // debug/verification hook
 
-// Player melee: if a mob is under the crosshair, hit it instead of mining.
+const crosshairEl = document.getElementById('crosshair');
+function flashCrosshair(color) {
+  if (!crosshairEl) return;
+  crosshairEl.style.transition = 'none';
+  crosshairEl.style.transform = 'translate(-50%,-50%) scale(1.7)';
+  crosshairEl.style.filter = `drop-shadow(0 0 4px ${color || '#ff5a3a'})`;
+  setTimeout(() => {
+    crosshairEl.style.transition = 'transform .16s, filter .16s';
+    crosshairEl.style.transform = 'translate(-50%,-50%) scale(1)';
+    crosshairEl.style.filter = 'none';
+  }, 30);
+}
+
+// Player melee: if a mob is under (or near) the crosshair, hit it instead of mining.
 function tryAttackMob() {
-  const dir = new THREE.Vector3();
-  camera.getWorldDirection(dir);
+  const base = new THREE.Vector3();
+  camera.getWorldDirection(base);
   const t = inv.heldTool();
   const dmg = creative ? 1000 : (t && t.damage ? t.damage : 2);
-  return !!mobs.attack(camera.position.clone(), dir, 3.4, dmg);
+  const origin = camera.position;
+  let mob = mobs.attack(origin.clone(), base, 3.8, dmg);
+  if (!mob) { // forgiving aim cone
+    for (const [ox, oy] of [[0.09, 0], [-0.09, 0], [0, 0.09], [0, -0.09], [0.07, 0.07], [-0.07, -0.07]]) {
+      const d = base.clone(); d.x += ox; d.y += oy; d.normalize();
+      mob = mobs.attack(origin.clone(), d, 3.8, dmg);
+      if (mob) break;
+    }
+  }
+  if (mob) {
+    particles.burst(mob.pos.x, mob.pos.y + 0.6, mob.pos.z, 0xffe0a0, 14, 3.4); // impact spark
+    sfx.break(1);
+    flashCrosshair('#ff5a3a');
+    if (settings.shake) shakeMag = Math.max(shakeMag, 0.08);
+    return true;
+  }
+  return false;
+}
+
+// Cast a spell from a magic wand/staff (right-click / tap when holding one).
+function castMagic(kind) {
+  const dir = new THREE.Vector3();
+  camera.getWorldDirection(dir);
+  const origin = camera.position.clone();
+  sfx.select();
+  if (kind === 'heal') {
+    if (!creative) player.health = Math.min(20, player.health + 6);
+    for (let i = 0; i < 16; i++) particles.burst(player.pos.x, player.pos.y + 1, player.pos.z, 0x8aff9a, 1, 2.2);
+    flashCrosshair('#8aff9a');
+    return;
+  }
+  const color = kind === 'fire' ? 0xff6a1a : kind === 'frost' ? 0x7ad0ff : 0xffe65a;
+  const dmg = creative ? 1000 : (kind === 'bolt' ? 10 : 7);
+  for (let d = 1; d <= 16; d += 1.2) particles.burst(origin.x + dir.x * d, origin.y + dir.y * d, origin.z + dir.z * d, color, 3, 1.7);
+  mobs.attack(origin, dir, 16, dmg); // damage the first mob along the beam
+  flashCrosshair('#' + color.toString(16).padStart(6, '0'));
+  if (settings.shake) shakeMag = Math.max(shakeMag, 0.14);
 }
 
 // ---------------------------------------------------------------------------
