@@ -181,4 +181,64 @@ export function buildPetitHermes(stamp, B) {
   tireRing(px, pz, 1);
   tireRing(px, pz, 2);
   tireRing(px, pz, 3);
+
+  // ==========================================================================
+  // 6) FARM FIELD — tilled DIRT plot with alternating rows of wheat & veg.
+  //    Placed in the open far schoolyard (high z), west side, clear of the
+  //    building, entrance path, tree and tires.
+  // ==========================================================================
+  const fx0 = 4, fx1 = 11;   // 8 wide (x 4..11)
+  const fz0 = 28, fz1 = 37;  // 10 deep (z 28..37)
+  // tilled soil bed at ground level
+  fillBox(fx0, 0, fz0, fx1, 0, fz1, B.DIRT);
+  // crop rows along z, every other row a walking path (rows where z is odd
+  // get crops; even-z rows stay as bare tilled-dirt paths).
+  for (let z = fz0; z <= fz1; z++) {
+    if ((z - fz0) % 2 !== 0) continue; // 1-wide path between crop rows
+    // alternate strips of wheat and veg by row
+    const crop = (((z - fz0) / 2) % 2 === 0) ? B.WHEAT_CROP : B.VEG_CROP;
+    for (let x = fx0; x <= fx1; x++) stamp(x, 1, z, crop);
+  }
+  // low GRASS bank framing the field on its outer edges
+  for (let x = fx0 - 1; x <= fx1 + 1; x++) {
+    stamp(x, 0, fz0 - 1, B.GRASS);
+    stamp(x, 0, fz1 + 1, B.GRASS);
+  }
+  for (let z = fz0 - 1; z <= fz1 + 1; z++) {
+    stamp(fx0 - 1, 0, z, B.GRASS);
+    stamp(fx1 + 1, 0, z, B.GRASS);
+  }
+
+  // ==========================================================================
+  // 7) RIVER — a 3-wide WATER channel carved a block down, running along the
+  //    east edge of the lot, a few blocks east of the field. Grass/dirt banks.
+  // ==========================================================================
+  const rivX0 = 34, rivX1 = 36;   // 3 wide
+  const rivZ0 = 24, rivZ1 = 42;   // runs most of the lot length
+  // carve the trench: water fills y=0 (ground level lowered to water)
+  fillBox(rivX0, 0, rivZ0, rivX1, 0, rivZ1, B.WATER);
+  // dirt banks one block in from each long side, grass capping the rim
+  for (let z = rivZ0; z <= rivZ1; z++) {
+    stamp(rivX0 - 1, 0, z, B.DIRT);
+    stamp(rivX1 + 1, 0, z, B.DIRT);
+    stamp(rivX0 - 2, 0, z, B.GRASS);
+    stamp(rivX1 + 2, 0, z, B.GRASS);
+  }
+  // grass caps at the two ends of the channel
+  for (let x = rivX0 - 1; x <= rivX1 + 1; x++) {
+    stamp(x, 0, rivZ0 - 1, B.GRASS);
+    stamp(x, 0, rivZ1 + 1, B.GRASS);
+  }
+
+  // ==========================================================================
+  // 8) BUSHES — a couple of small OAK_LEAVES shrubs near the field.
+  // ==========================================================================
+  const bush = (bx, bz) => {
+    stamp(bx, 1, bz, B.OAK_LEAVES);
+    stamp(bx + 1, 1, bz, B.OAK_LEAVES);
+    stamp(bx, 1, bz + 1, B.OAK_LEAVES);
+    stamp(bx, 2, bz, B.OAK_LEAVES);
+  };
+  bush(fx1 + 3, fz0 + 1);
+  bush(fx1 + 3, fz1 - 2);
 }

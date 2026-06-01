@@ -58,7 +58,7 @@ assert.strictEqual(isFood('apple'), true, 'apple is food');
 
 // Counts
 assert.strictEqual(toolCount, 16, 'exactly 16 tools (16 base)');
-assert.strictEqual(blockCount, 50, 'exactly 50 block items');
+assert.strictEqual(blockCount, 52, 'exactly 52 block items');
 assert.strictEqual(foodCount, 11, 'exactly 11 food items');
 
 // Spot-check stats
