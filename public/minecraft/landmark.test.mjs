@@ -195,7 +195,10 @@ assert.ok(scienceLanternFound, 'expected LANTERN in 理科室 bay (x23..32)');
 
 // ── 音楽室 (music room) — 2F x23..32: BLACK_WOOL piano body + WHITE_WOOL keys ──
 // Piano body: BLACK_WOOL at 2F y-range (g1=9), x24..27, z2..3
-const g1 = 9; // floor-2 interior bottom
+const g1 = 9;    // floor-2 interior bottom (y9)
+const g2 = 14;   // floor-2 interior top   (y14)
+const f1Hi = 7;  // floor-1 interior ceiling
+const bkX0 = 45, bkX1 = 56, bkPartZ = 11; // bakery bay constants
 let musicPianoFound = false;
 for (let x = 23; x <= 32 && !musicPianoFound; x++)
   for (let y = g1; y <= g1 + 3 && !musicPianoFound; y++)
@@ -366,6 +369,102 @@ assert.ok(
   `east stair landing LANTERN expected at (81,8,12), got ${get(81, 8, 12)}`
 );
 
+// ══════════════════════════════════════════════════════════════════════════════
+// FIX A — GF DIVIDERS ARE SOLID (not erased by the hollow)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// GF dividers must be SANDSTONE at a mid-room cell (y=4, z=10 = room interior).
+// Before the fix they were AIR because the hollow (z3..19) ran AFTER the dividers.
+assert.strictEqual(
+  get(22, 4, 10), B.SANDSTONE,
+  `GF divider at (22,4,10) must be SANDSTONE (was AIR — hollow ordering bug)`
+);
+assert.strictEqual(
+  get(57, 4, 10), B.SANDSTONE,
+  `GF divider at (57,4,10) must be SANDSTONE (was AIR — hollow ordering bug)`
+);
+
+// Bakery must be a properly enclosed bay: dividers at x=44 and x=57 solid mid-bay.
+assert.strictEqual(
+  get(44, 4, 12), B.SANDSTONE,
+  `Bakery west divider (44,4,12) must be SANDSTONE — bakery bay must be enclosed`
+);
+assert.strictEqual(
+  get(57, 4, 12), B.SANDSTONE,
+  `Bakery east divider (57,4,12) must be SANDSTONE — bakery bay must be enclosed`
+);
+
+// Bakery corridor doorway (carved AFTER dividers) must still be AIR/passable.
+assert.ok(
+  get(49, 3, 20) === B.AIR || get(49, 3, 20) === -1,
+  `bakery corridor doorway (49,3,20) must be AIR — re-carved after divider placement`
+);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FIX B — 2F ROOMS ARE FURNISHED (desks, lockers, lanterns) + doorways open
+// ══════════════════════════════════════════════════════════════════════════════
+
+// 2F Classroom 1 (x12..21): count student desk (SPRUCE_PLANKS) + chair (BIRCH_PLANKS)
+let f2DeskCount = 0, f2ChairCount = 0;
+for (let x = 12; x <= 21; x++) {
+  for (let z = 3; z <= 19; z++) {
+    if (get(x, g1, z) === B.SPRUCE_PLANKS) f2DeskCount++;
+    if (get(x, g1, z) === B.BIRCH_PLANKS)  f2ChairCount++;
+  }
+}
+assert.ok(f2DeskCount >= 12, `2F Classroom 1 should have >=12 desk blocks, got ${f2DeskCount}`);
+assert.ok(f2ChairCount >= 12, `2F Classroom 1 should have >=12 chair blocks, got ${f2ChairCount}`);
+
+// 2F Classroom 1 lockers on west wall (x=12, WHITE_WOOL locker-door faces)
+let f2LockerCount = 0;
+for (let z = 6; z <= 18; z++)
+  if (get(12, g1 + 1, z) === B.WHITE_WOOL) f2LockerCount++;
+assert.ok(f2LockerCount >= 4, `2F Classroom 1 should have >=4 locker-door (WHITE_WOOL) blocks on west wall, got ${f2LockerCount}`);
+
+// 2F corridor doorways are AIR (carved correctly)
+let f2CorridorDoorwaysOk = 0;
+for (const [bayX0, bayX1] of [[12,21],[34,43],[45,56],[58,67],[69,78]]) {
+  const doorCx = Math.floor((bayX0 + bayX1) / 2);
+  if ((get(doorCx - 1, g1, 20) === B.AIR || get(doorCx - 1, g1, 20) === -1) &&
+      (get(doorCx,     g1, 20) === B.AIR || get(doorCx,     g1, 20) === -1))
+    f2CorridorDoorwaysOk++;
+}
+assert.ok(f2CorridorDoorwaysOk >= 4, `at least 4 of the 5 non-music 2F doorways must be AIR, got ${f2CorridorDoorwaysOk}`);
+
+// 2F rooms have LANTERN ceiling lighting (classroom_2f places 2 per room)
+let f2LanternCount = 0;
+for (let x = 12; x <= 78; x++)
+  for (let z = 3; z <= 19; z++)
+    if (get(x, g2 - 1, z) === B.LANTERN) f2LanternCount++;
+assert.ok(f2LanternCount >= 10, `2F rooms should have >=10 ceiling LANTERN blocks, got ${f2LanternCount}`);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FIX C — BAKERY SALES AREA POLISH (glass case, pendant lamps, teal, BLUE_WOOL)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// GLASS display case: at least one GLASS block in the bakery sales zone z=12..19
+let bakeryGlassCount = 0;
+for (let x = bkX0; x <= bkX1; x++)
+  for (let y = 2; y <= 6; y++)
+    for (let z = 12; z <= 19; z++)
+      if (get(x, y, z) === B.GLASS) bakeryGlassCount++;
+assert.ok(bakeryGlassCount >= 3, `bakery sales zone should have >=3 GLASS blocks (display case), got ${bakeryGlassCount}`);
+
+// LANTERN pendant lamps over counter (y=3..6, z=17..19, x=45..56 sales zone)
+let bakeryCounterLanternCount = 0;
+for (let x = bkX0; x <= bkX1; x++)
+  for (let y = 3; y <= 6; y++)
+    for (let z = 17; z <= 19; z++)
+      if (get(x, y, z) === B.LANTERN) bakeryCounterLanternCount++;
+assert.ok(bakeryCounterLanternCount >= 2, `bakery counter should have >=2 pendant LANTERN blocks over it, got ${bakeryCounterLanternCount}`);
+
+// BLUE_WOOL teal accent near bakery counter (the teal partition wall / accent wall)
+let bakeryTealCount = 0;
+for (let x = bkX0; x <= bkX1; x++)
+  for (let y = 2; y <= f1Hi; y++)
+    if (get(x, y, bkPartZ) === B.BLUE_WOOL) bakeryTealCount++;
+assert.ok(bakeryTealCount >= 4, `bakery partition wall should have >=4 BLUE_WOOL teal face blocks, got ${bakeryTealCount}`);
+
 console.log(`OK: ${calls} stamp calls, ${solid} solid blocks placed, max y=${maxY}.`);
 console.log(`  dims ${w}x${d}x${clearH}; distinct block ids: ${tally.size}`);
 console.log(`  bakery sales AIR=${airCount_sales}, classroom floor=${floorCount}, corridor walkable=${corridorAir}`);
@@ -376,3 +475,6 @@ console.log(`  Bakery doorway marker: lintel=${bakeryLintelFound}, hay=${bakeryH
 console.log(`  Workshop door marker: lintel=${workshopLintelFound}, lantern=${workshopLanternFound}, arrow=${workshopArrowFound}`);
 console.log(`  Stair markers: west lintel=${westStairLintelFound}, east lintel=${eastStairLintelFound}`);
 console.log(`  Stair arrows: west=${westArrowFound}, east=${eastArrowFound}; 2F markers: west=${westTwofFound}, east=${eastTwofFound}`);
+console.log(`  FIX A: GF divider(22,4,10)=${get(22,4,10)===B.SANDSTONE?'SOLID':'ERASED'}, divider(57,4,10)=${get(57,4,10)===B.SANDSTONE?'SOLID':'ERASED'}`);
+console.log(`  FIX B: 2F desks=${f2DeskCount}, chairs=${f2ChairCount}, lockers=${f2LockerCount}, ceiling lanterns=${f2LanternCount}, corridor doors open=${f2CorridorDoorwaysOk}`);
+console.log(`  FIX C: bakery GLASS=${bakeryGlassCount}, counter LANTERNs=${bakeryCounterLanternCount}, BLUE_WOOL teal=${bakeryTealCount}`);
