@@ -80,6 +80,7 @@ const matTrans = new THREE.MeshBasicMaterial({
 const sfx = createAudio();
 sfx.setEnabled(settings.sound);
 sfx.setMusicEnabled(settings.music !== false); // generative BGM (starts on first gesture)
+sfx.setAmbienceEnabled(true); // satoyama soundscape (birds/insects/wind/water), muted by master/sound off
 const particles = createParticles(scene, THREE, 160);
 
 // representative colour of a block, sampled once from the atlas (for debris)
@@ -928,6 +929,31 @@ function updateDayNight(dt) {
   scene.fog.color.copy(skyColor);
 }
 
+// Feed the generative soundscape a coarse "where am I" scene so it can crossfade
+// between outdoor birds/insects/wind and a muffled indoor bed, add a river layer
+// near water, and thin the birds at night. Throttled (~0.4s) — cheap but no need
+// to recompute every frame.
+const SCHOOL_BBOX = { x0: -9, x1: 23, z0: -34, z1: -24, y0: 29, y1: 40 };
+let ambTimer = 0;
+function updateAmbience(dt) {
+  ambTimer -= dt;
+  if (ambTimer > 0) return;
+  ambTimer = 0.4;
+  const p = player.pos;
+  const indoor =
+    p.x >= SCHOOL_BBOX.x0 && p.x <= SCHOOL_BBOX.x1 &&
+    p.z >= SCHOOL_BBOX.z0 && p.z <= SCHOOL_BBOX.z1 &&
+    p.y >= SCHOOL_BBOX.y0 && p.y <= SCHOOL_BBOX.y1;
+  // Sample a small neighbourhood for a WATER block (id 7) to open the river layer.
+  let nearWater = false;
+  const px = Math.floor(p.x), py = Math.floor(p.y), pz = Math.floor(p.z);
+  for (let dx = -2; dx <= 2 && !nearWater; dx++)
+    for (let dz = -2; dz <= 2 && !nearWater; dz++)
+      for (let dy = -1; dy <= 1; dy++)
+        if (world.getBlock(px + dx, py + dy, pz + dz) === 7) { nearWater = true; break; }
+  sfx.setAmbienceScene({ outdoor: !indoor, nearWater, night: curSun < 0.25 });
+}
+
 // ---------------------------------------------------------------------------
 // HUD + dynamic resolution
 // ---------------------------------------------------------------------------
@@ -971,6 +997,7 @@ function loop() {
   shakeMag *= 0.82;
   updateChunks();
   updateDayNight(dt);
+  if (playing) updateAmbience(dt);
   sky.update(dt, curSun, dayTime);
   updateMining(dt);
   particles.update(dt);

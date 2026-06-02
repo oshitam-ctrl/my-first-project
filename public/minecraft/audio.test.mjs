@@ -55,8 +55,12 @@ assert.ok(a, 'createAudio() returns an object');
 assert.strictEqual(typeof a.startMusic, 'function', 'startMusic exists');
 assert.strictEqual(typeof a.stopMusic, 'function', 'stopMusic exists');
 assert.strictEqual(typeof a.setMusicEnabled, 'function', 'setMusicEnabled exists');
+assert.strictEqual(typeof a.startAmbience, 'function', 'startAmbience exists');
+assert.strictEqual(typeof a.stopAmbience, 'function', 'stopAmbience exists');
+assert.strictEqual(typeof a.setAmbienceEnabled, 'function', 'setAmbienceEnabled exists');
+assert.strictEqual(typeof a.setAmbienceScene, 'function', 'setAmbienceScene exists');
 
-// 2. resume() doesn't throw (and auto-starts music since enabled by default).
+// 2. resume() doesn't throw (and auto-starts music + ambience since enabled).
 assert.doesNotThrow(() => a.resume(), 'resume()');
 
 // 3. SFX + music controls don't throw.
@@ -67,7 +71,21 @@ assert.doesNotThrow(() => { a.stopMusic(); a.startMusic(); }, 'stop/start music'
 assert.doesNotThrow(() => { a.setMusicEnabled(false); a.setMusicEnabled(true); }, 'setMusicEnabled');
 assert.doesNotThrow(() => { a.setEnabled(false); a.setEnabled(true); }, 'setEnabled mute');
 
-// cleanup pending scheduler timer so node exits.
+// 4. Ambience controls don't throw.
+assert.doesNotThrow(() => { a.stopAmbience(); a.startAmbience(); }, 'stop/start ambience');
+assert.doesNotThrow(() => { a.setAmbienceEnabled(false); a.setAmbienceEnabled(true); }, 'setAmbienceEnabled');
+assert.doesNotThrow(
+  () => a.setAmbienceScene({ outdoor: true, nearWater: true, night: false }),
+  'setAmbienceScene outdoor/water',
+);
+assert.doesNotThrow(
+  () => a.setAmbienceScene({ outdoor: false, night: true }),
+  'setAmbienceScene indoor/night',
+);
+assert.doesNotThrow(() => { a.setEnabled(false); a.setEnabled(true); }, 'mute with ambience on');
+
+// cleanup pending scheduler timers so node exits.
 a.stopMusic();
+a.stopAmbience();
 
 console.log('all audio tests passed');
