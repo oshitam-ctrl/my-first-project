@@ -80,12 +80,19 @@ for (const [key, id] of grid) {
 }
 assert.ok(maxY < 35, `max solid y should be < 35 (parapet y=16), got ${maxY}`);
 
-// ── Baker cell is AIR: local (50,2,18) must be walkable ──────────────────────
-const bakerCell = get(50, 2, 18);
+// ── Baker cell is AIR: local (47,2,18) must be walkable ──────────────────────
+const bakerCell = get(47, 2, 18);
 assert.ok(
   bakerCell === B.AIR || bakerCell === -1,
-  `baker cell (50,2,18) must be AIR, got ${bakerCell}`
+  `baker cell (47,2,18) must be AIR, got ${bakerCell}`
 );
+
+// ── Customer walk-in: the bakery counter must be OPEN at the doorway columns
+//    (x49..50, z=19) so players can actually enter the shop. ──────────────────
+for (const wx of [49, 50]) {
+  const c = get(wx, 2, 19);
+  assert.ok(c === B.AIR || c === -1, `bakery walk-in (${wx},2,19) must be AIR (open entrance), got ${c}`);
+}
 
 // ── Bakery SALES region has real interior AIR ─────────────────────────────────
 // sales zone: x46..55, y2..6, z12..18
