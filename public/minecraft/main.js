@@ -691,6 +691,23 @@ function toggleInv(size = 2) {
   if (tb) tb.insertBefore(b, tb.firstChild);
 }
 
+// About / story panel (Petit Hermès worldview) — title link + in-game ℹ️ button.
+{
+  const about = document.getElementById('about');
+  const show = (e) => { if (e) { e.stopPropagation(); e.preventDefault(); } if (about) about.style.display = 'flex'; };
+  const hide = (e) => { if (e) e.stopPropagation(); if (about) about.style.display = 'none'; };
+  const link = document.getElementById('about-link');
+  if (link) { link.addEventListener('click', show); link.addEventListener('touchend', show, { passive: false }); }
+  const close = document.getElementById('about-close');
+  if (close) close.addEventListener('click', hide);
+  if (about) about.addEventListener('click', (e) => { if (e.target === about) hide(); });
+  const ib = document.createElement('button');
+  ib.textContent = 'ℹ️'; ib.title = 'プチヘルメースについて';
+  ib.addEventListener('click', (e) => { e.stopPropagation(); show(); });
+  const tb2 = document.getElementById('topbar');
+  if (tb2) tb2.insertBefore(ib, tb2.firstChild);
+}
+
 // Mobs / entities (passive animals by day, hostiles at night)
 const mobs = createMobs({
   THREE, scene,
@@ -709,6 +726,13 @@ const mobs = createMobs({
   enabled: settings.mobs !== false,
 });
 window.__mobCount = () => mobs.count(); // debug/verification hook
+
+// Populate the shop: the baker behind the counter + a few customers in the yard.
+if (settings.mobs !== false) {
+  mobs.spawnAt('baker', 8, 31, -29);
+  mobs.spawnAt('customer', 4, 31, -11);
+  mobs.spawnAt('customer', 12, 31, -10);
+}
 
 const crosshairEl = document.getElementById('crosshair');
 function flashCrosshair(color) {

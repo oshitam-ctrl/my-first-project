@@ -28,6 +28,11 @@ const errs = [];
 page.on('pageerror', (e) => errs.push(e.message));
 await page.goto(url, { waitUntil: 'load' });
 await page.waitForTimeout(1200);
+// About/story panel (opened from the title, before starting)
+await page.evaluate(() => { const a = document.getElementById('about-link'); if (a) a.click(); });
+await page.waitForTimeout(400);
+await page.screenshot({ path: `/tmp/mc-about-${TAG}.png` });
+await page.evaluate(() => { const c = document.getElementById('about-close'); if (c) c.click(); });
 await page.click('#overlay');
 await page.waitForTimeout(800);
 

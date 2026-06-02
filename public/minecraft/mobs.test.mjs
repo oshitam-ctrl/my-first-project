@@ -129,4 +129,35 @@ check('creeper exploded (dead) and damaged player',
   exploded && hurtTotal > hurtBefore);
 cm.clear();
 
+// 11) spawnAt('baker', ...) increases count and the NPC persists.
+const npc = createMobs(makeOpts({ enabled: false })); // no ambient spawns
+const cBefore = npc.count();
+const baker = npc.spawnAt('baker', 0, 1, 0);
+check('spawnAt baker returns a mob and increases count',
+  baker && npc.count() === cBefore + 1);
+check('spawnAt mob is marked persistent', baker.persistent === true);
+
+// move the player far away (well past the 64-block despawn) then step time:
+// the persistent baker must NOT be culled.
+player.pos.x = 1000; player.pos.z = 1000;
+let bThrew = false;
+try { for (let i = 0; i < 30; i++) npc.update(0.1); } catch (e) { bThrew = true; console.error(e); }
+check('updates near persistent NPC do not throw', !bThrew);
+check('persistent baker survives despawn distance', npc.count() === cBefore + 1 && !baker.dead);
+player.pos.x = 0; player.pos.z = 0; // restore
+
+// 12) attacking near a customer does not throw (and the customer is harmless,
+// never dies even when hit repeatedly).
+const customer = npc.spawnAt('customer', 0, 1, 2); // 2 blocks in front (+z)
+let aThrew = false;
+let hit = null;
+try {
+  for (let i = 0; i < 10; i++) {
+    hit = npc.attack({ x: 0, y: 1.5, z: 0 }, { x: 0, y: 0, z: 1 }, 5, 50);
+  }
+} catch (e) { aThrew = true; console.error(e); }
+check('attacking near a customer does not throw', !aThrew);
+check('friendly customer hit but never dies (invincible)', !customer.dead);
+npc.clear();
+
 console.log(`\nAll ${passed} assertions passed.`);
