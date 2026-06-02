@@ -739,7 +739,10 @@ if (settings.mobs !== false) {
 // Guided "today's work" quest so first-time visitors know exactly what to do.
 let questDone = false;
 const quest = createQuest({
-  onComplete: () => { questDone = true; toast('🎉 パンが焼けました！本日のプチヘルメース、開店です'); if (settings.shake) shakeMag = 0.15; },
+  onComplete: () => {
+    questDone = true; toast('🎉 パンが焼けました！本日のプチヘルメース、開店です'); if (settings.shake) shakeMag = 0.15;
+    setTimeout(() => toast('🔗 右上の共有ボタンで「焼けた！」をシェアしよう'), 2600);
+  },
 });
 // the baker greets the player when nearby (story warmth)
 const speechEl = document.createElement('div');
@@ -846,10 +849,11 @@ $('btn-sound').addEventListener('click', () => {
 });
 $('btn-sound').style.opacity = settings.sound ? '1' : '0.4';
 
-$('btn-share').addEventListener('click', async () => {
-  const res = await shareSeed(seed, 'Voxel Craft');
-  toast(res === 'shared' ? '共有しました' : res === 'copied' ? 'リンクをコピーしました' : '共有に失敗しました');
-});
+async function doShare() {
+  const res = await shareSeed(seed, 'プチヘルメース');
+  toast(res === 'shared' ? '共有しました🥖' : res === 'copied' ? 'リンクをコピーしました🔗' : '共有に失敗しました');
+}
+$('btn-share').addEventListener('click', doShare);
 
 $('btn-reset').addEventListener('click', (e) => {
   e.stopPropagation();
