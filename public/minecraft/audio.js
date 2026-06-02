@@ -7,6 +7,7 @@ export function createAudio() {
   let master = null;       // master GainNode; gain=0 when muted
   let noiseBuf = null;     // cached white-noise buffer for crunch/step
   let enabled = true;
+  let unlocked = false;    // true once we've played a silent buffer to unlock iOS
 
   // --- Music state ---
   let musicEnabled = true;   // user toggle for background music (on top of master)
@@ -354,6 +355,19 @@ export function createAudio() {
     resume() {
       if (!ensure()) return;
       if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      // iOS / mobile Safari unlock: ctx.resume() alone does NOT start audio there —
+      // you must also PLAY a sound inside the user-gesture. Play a 1-sample silent
+      // buffer once (the canonical unlock) so all later synthesized sounds work.
+      if (!unlocked) {
+        try {
+          const buf = ctx.createBuffer(1, 1, 22050);
+          const src = ctx.createBufferSource();
+          src.buffer = buf;
+          src.connect(ctx.destination);
+          src.start(0);
+          unlocked = true;
+        } catch (e) { /* createBuffer/start unsupported — ignore */ }
+      }
       if (musicEnabled) sfx.startMusic();
       if (ambEnabled) sfx.startAmbience();
     },

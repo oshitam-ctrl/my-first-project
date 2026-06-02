@@ -994,10 +994,12 @@ if (isTouch) {
     root: document.body,
     isFlying: () => player.fly,
     onLook: (dx, dy) => { if (playing) applyLook(dx, dy, 0.004 * settings.sens); },
-    onPlace: () => { if (playing) placeBlock(); },
-    onBreakStart: () => { if (playing && !tryAttackMob()) breakHeld = true; },
+    // First in-game touch also (re)unlocks audio on mobile — belt-and-suspenders
+    // in case the start-overlay gesture didn't unlock the AudioContext.
+    onPlace: () => { sfx.resume(); if (playing) placeBlock(); },
+    onBreakStart: () => { sfx.resume(); if (playing && !tryAttackMob()) breakHeld = true; },
     onBreakEnd: () => { breakHeld = false; },
-    onJump: (down) => { touchJump = down; },
+    onJump: (down) => { if (down) sfx.resume(); touchJump = down; },
     onToggleFly: () => { player.fly = !player.fly; },
     onVertical: (dir) => { touchVert = dir; },
   });
@@ -1434,6 +1436,12 @@ const quest = createQuest({
   },
 });
 let deliveredTo = null;
+// debug/QA hook: force a quest re-evaluation and return completion state, so the
+// headless playthrough is deterministic even if the rAF loop is throttled.
+window.__quest = () => { try { updateQuest(); } catch (e) {} return { done: questDone }; };
+// debug/QA hook: the baker's LIVE position (it wanders), so the playthrough can
+// deliver to where the baker actually is.
+window.__bakerPos = () => (baker && baker.pos ? { x: baker.pos.x, y: baker.pos.y, z: baker.pos.z } : null);
 // the baker greets the player when nearby (story warmth)
 const speechEl = document.createElement('div');
 Object.assign(speechEl.style, {

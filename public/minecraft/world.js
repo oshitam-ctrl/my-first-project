@@ -12,6 +12,7 @@ const LB = {
   WHITE_WOOL: 31, BLUE_WOOL: 33, GREEN_WOOL: 35, BLACK_WOOL: 36, GRAVEL: 37, HAY: 50, STONE_BRICKS: 29,
   WATER: 7, WHEAT_CROP: 53, VEG_CROP: 54, FURNACE: 21, CRAFTING_TABLE: 20, PLANK: 9, PUMPKIN: 14,
   LANTERN: 55,
+  BREAD: 56,   // artisan bread block — golden loaf for bakery display/shelves
 };
 // Fixed world placement of the Petit Hermès landmark (centred in front of spawn).
 // Chosen so the entrance is at world x=8 and the facade plane at world z=-24

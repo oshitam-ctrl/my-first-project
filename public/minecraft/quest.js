@@ -119,6 +119,12 @@ export function createQuest(opts) {
 
   let done = false;          // true once all steps satisfied
   let completedOnce = false; // guards single onComplete() call
+  // Steps LATCH: once a step has ever been satisfied it stays done. Otherwise
+  // crafting the next ingredient (which consumes the previous one — e.g. baking
+  // consumes the levain that step 3 requires) would un-check an earlier step and
+  // the quest could never be "all done" at once. Latching makes it a monotonic
+  // checklist of accomplishments, matching player intuition.
+  const latched = STEPS.map(() => false);
 
   function renderSteps(state) {
     listEl.style.display = '';
@@ -126,10 +132,11 @@ export function createQuest(opts) {
     for (let i = 0; i < STEPS.length; i++) {
       const step = STEPS[i];
       const r = rows[i];
-      const ok = step.done(state);
+      // A step shows complete if it's latched OR currently satisfied.
+      const ok = latched[i] || step.done(state);
       r.mark.textContent = ok ? '✅' : '・';
       r.text.textContent = step.label;
-      r.prog.textContent = step.progress(state);
+      r.prog.textContent = ok ? '1/1' : step.progress(state);
       // Dim completed text slightly.
       r.text.style.opacity = ok ? '0.55' : '1';
       r.row.style.opacity = ok ? '0.85' : '1';
@@ -143,7 +150,13 @@ export function createQuest(opts) {
 
   function update(state) {
     const s = state || {};
-    const allDone = STEPS.every((step) => step.done(s));
+    // Latch each step once satisfied so later crafting (which consumes an
+    // earlier ingredient) can't un-check it. The quest is done when every step
+    // has been latched at some point.
+    for (let i = 0; i < STEPS.length; i++) {
+      latched[i] = latched[i] || STEPS[i].done(s);
+    }
+    const allDone = latched.every(Boolean);
     done = allDone;
 
     if (allDone) {
@@ -161,6 +174,7 @@ export function createQuest(opts) {
   function reset() {
     done = false;
     completedOnce = false;
+    latched.fill(false);
     renderSteps({});
   }
 

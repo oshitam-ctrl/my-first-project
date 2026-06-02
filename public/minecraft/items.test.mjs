@@ -58,7 +58,7 @@ assert.strictEqual(isFood('apple'), true, 'apple is food');
 
 // Counts
 assert.strictEqual(toolCount, 16, 'exactly 16 tools (16 base)');
-assert.strictEqual(blockCount, 52, 'exactly 52 block items');
+assert.strictEqual(blockCount, 53, 'exactly 53 block items (52 original + bread_block)');
 assert.strictEqual(foodCount, 23, 'exactly 23 food items');
 
 // Petit Hermès signature items
@@ -124,5 +124,17 @@ assert.ok(ITEMS.campagne.desc.includes('酵母'), 'campagne desc mentions 酵母
 assert.ok(ITEMS.rescue_bag.desc.includes('ランダム'), 'rescue_bag desc mentions ランダム');
 assert.ok(ITEMS.flour.desc.includes('粉'), 'flour desc mentions 粉');
 
+// New bread_block item
+assert.ok(ITEMS.bread_block, 'bread_block item exists');
+assert.strictEqual(ITEMS.bread_block.block, 56, 'bread_block maps to block id 56');
+assert.ok(isBlockItem('bread_block'), 'bread_block is a block item');
+assert.strictEqual(blockToItem(56), 'bread_block', 'blockToItem(56) round-trips to bread_block');
+assert.ok(ITEMS.bread_block.name.length > 0, 'bread_block has a name');
+assert.ok(ITEMS.bread_block.desc.length > 0, 'bread_block has a desc');
+assert.ok(ITEMS.bread_block.desc.includes('パン'), 'bread_block desc mentions パン');
+// bread_block is décor, not food
+assert.strictEqual(ITEMS.bread_block.food, undefined, 'bread_block has no food property');
+
 console.log(`OK: ${ids.length} items (${blockCount} blocks, ${toolCount} tools, ${foodCount} food)`);
 console.log('OK: desc field assertions passed');
+console.log('OK: bread_block assertions passed');

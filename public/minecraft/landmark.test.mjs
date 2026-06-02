@@ -13,6 +13,7 @@ const B = {
   WATER: 7, WHEAT_CROP: 53, VEG_CROP: 54,
   FURNACE: 60, CRAFTING_TABLE: 61, PLANK: 9, PUMPKIN: 62,
   LANTERN: 55,
+  BREAD: 56,   // artisan bread display block (new)
 };
 
 const { w, d, clearH } = LANDMARK;
@@ -270,12 +271,13 @@ for (let x = 47; x <= 52 && !bakeryLintelFound; x++)
   if (get(x, 6, 20) === B.BLUE_WOOL) bakeryLintelFound = true;
 assert.ok(bakeryLintelFound, 'expected BLUE_WOOL lintel at y=6, z=20 above bakery doorway');
 
-// HAY emblems near bakery doorway (x48..51, z=20, y=2..3)
-let bakeryHayFound = false;
-for (let x = 47; x <= 52 && !bakeryHayFound; x++)
-  for (let y = 2; y <= 4 && !bakeryHayFound; y++)
-    if (get(x, y, 20) === B.HAY) bakeryHayFound = true;
-assert.ok(bakeryHayFound, 'expected HAY bread emblems near bakery corridor doorway (z=20)');
+// BREAD emblems near bakery doorway (x48..51, z=20, y=2..3).
+// Previously HAY; now replaced with the BREAD block so the entrance reads as "パン屋".
+let bakeryBreadEmblemFound = false;
+for (let x = 47; x <= 52 && !bakeryBreadEmblemFound; x++)
+  for (let y = 2; y <= 4 && !bakeryBreadEmblemFound; y++)
+    if (get(x, y, 20) === B.BREAD) bakeryBreadEmblemFound = true;
+assert.ok(bakeryBreadEmblemFound, 'expected BREAD emblems (id 56) near bakery corridor doorway (z=20) — replaced HAY');
 
 // LANTERN above bakery doorway in corridor (z=21)
 let bakeryLanternFound = false;
@@ -474,6 +476,32 @@ for (let x = bkX0; x <= bkX1; x++)
     if (get(x, y, bkPartZ) === B.BLUE_WOOL) bakeryTealCount++;
 assert.ok(bakeryTealCount >= 4, `bakery partition wall should have >=4 BLUE_WOOL teal face blocks, got ${bakeryTealCount}`);
 
+// ── BREAD BLOCK in bakery sales region ─────────────────────────────────────
+// The new BREAD block (id 56) replaces HAY in all sales-area display contexts.
+// Expect BREAD on the counter top, in the display case (behind glass), on the
+// east-wall shelves, in the proofing baskets, and at the corridor doorway emblems.
+// Check: >= 8 BREAD blocks in the combined sales + corridor area.
+let bakeryBreadCount = 0;
+// sales zone x45..56, y2..7, z12..19
+for (let x = bkX0; x <= bkX1; x++)
+  for (let y = 2; y <= f1Hi; y++)
+    for (let z = 12; z <= 19; z++)
+      if (get(x, y, z) === B.BREAD) bakeryBreadCount++;
+// corridor emblems z=20
+for (let x = bkX0; x <= bkX1; x++)
+  for (let y = 2; y <= 5; y++)
+    if (get(x, y, 20) === B.BREAD) bakeryBreadCount++;
+assert.ok(bakeryBreadCount >= 8, `bakery should have >=8 BREAD blocks in sales+corridor area, got ${bakeryBreadCount}`);
+
+// Confirm HAY is NOT present in the bakery sales zone (display/shelves/counter).
+// HAY is only legitimate in the WORKSHOP flour-sack area (z=2..10).
+let salesHayCount = 0;
+for (let x = bkX0; x <= bkX1; x++)
+  for (let y = 2; y <= f1Hi; y++)
+    for (let z = 12; z <= 19; z++)
+      if (get(x, y, z) === B.HAY) salesHayCount++;
+assert.strictEqual(salesHayCount, 0, `bakery SALES zone (z=12..19) must have 0 HAY blocks — all replaced by BREAD, got ${salesHayCount}`);
+
 // ══════════════════════════════════════════════════════════════════════════════
 // BUG 1 FIX — 2F NORTH PERIMETER WALL PRESERVED (not erased by hollow)
 // The 2F hollow now starts at z=3, leaving the z=2 north wall intact.
@@ -601,7 +629,7 @@ console.log(`  bakery sales AIR=${airCount_sales}, classroom floor=${floorCount}
 console.log(`  理科室: benches=${scienceBenchCount}, water sinks=${scienceWaterCount}, calcite basins=${scienceCalciteCount}`);
 console.log(`  音楽室: piano BLACK_WOOL=${musicPianoFound}, WHITE_WOOL keys=${musicKeysFound}, stands=${musicStandFound}`);
 console.log(`  図書室: shelves=${libraryShelfCount}, book-wools=${libraryBookWoolCount}, tables=${libraryTableFound}`);
-console.log(`  Bakery doorway marker: lintel=${bakeryLintelFound}, hay=${bakeryHayFound}, lantern=${bakeryLanternFound}`);
+console.log(`  Bakery doorway marker: lintel=${bakeryLintelFound}, bread_emblem=${bakeryBreadEmblemFound}, lantern=${bakeryLanternFound}`);
 console.log(`  Workshop door marker: lintel=${workshopLintelFound}, lantern=${workshopLanternFound}, arrow=${workshopArrowFound}`);
 console.log(`  Stair markers: west lintel=${westStairLintelFound}, east lintel=${eastStairLintelFound}`);
 console.log(`  Stair arrows: west=${westArrowFound}, east=${eastArrowFound}; 2F badges: west=${westTwofFound}, east=${eastTwofFound}`);
@@ -610,3 +638,4 @@ console.log(`  BUG-2 fix: stair landing(7,8,12)=${get(7,8,12)===B.LANTERN?'LANT'
 console.log(`  FIX A: GF divider(22,4,10)=${get(22,4,10)===B.SANDSTONE?'SOLID':'ERASED'}, divider(57,4,10)=${get(57,4,10)===B.SANDSTONE?'SOLID':'ERASED'}`);
 console.log(`  FIX B: 2F desks=${f2DeskCount}, chairs=${f2ChairCount}, lockers=${f2LockerCount}, ceiling lanterns=${f2LanternCount}, corridor doors open=${f2CorridorDoorwaysOk}`);
 console.log(`  FIX C: bakery GLASS=${bakeryGlassCount}, counter LANTERNs=${bakeryCounterLanternCount}, BLUE_WOOL teal=${bakeryTealCount}`);
+console.log(`  BREAD redesign: BREAD blocks in sales+corridor=${bakeryBreadCount}, HAY in sales zone=${salesHayCount}`);
