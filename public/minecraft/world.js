@@ -337,7 +337,10 @@ export class World {
     // sky-exposure heightmap: highest opaque block per column. A face that opens
     // into an air cell with no opaque block above it is sky-lit; otherwise it's
     // inside a cave/overhang and gets darkened. (Cheap fake lighting.)
-    const CAVE_DARK = 0.34;
+    // This is a cozy bakery (no hostile caves), and the whole point is to walk
+    // INTO プチヘルメース and SEE the shop — so indoor spaces stay clearly
+    // readable rather than pitch black.
+    const CAVE_DARK = 0.6;
     const skyH = new Int16Array(CHUNK * CHUNK).fill(-1);
     for (let lz = 0; lz < CHUNK; lz++) {
       for (let lx = 0; lx < CHUNK; lx++) {
