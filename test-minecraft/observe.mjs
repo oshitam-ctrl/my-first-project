@@ -31,16 +31,21 @@ await page.waitForTimeout(1200);
 await page.click('#overlay');
 await page.waitForTimeout(800);
 
-// visit different biomes and screenshot a horizon view of each
-await page.evaluate(() => { window.__time && window.__time(0.5); window.__view && window.__view(8, 41, 30, 0, -0.32); });
-await page.waitForTimeout(11000);
-await page.screenshot({ path: `/tmp/mc-hermes-front-${TAG}.png` });
-await page.evaluate(() => window.__view && window.__view(8, 70, 22, 0, -1.0));
-await page.waitForTimeout(6000);
-await page.screenshot({ path: `/tmp/mc-hermes-aerial-${TAG}.png` });
-await page.evaluate(() => window.__view && window.__view(8, 32, -16, 0, -0.04));
-await page.waitForTimeout(4000);
-await page.screenshot({ path: `/tmp/mc-hermes-inside-${TAG}.png` });
+// 1) initial spawn view — should face the Petit Hermès school (no __view!)
+await page.waitForTimeout(6000); // let chunks stream so the school is visible
+await page.screenshot({ path: `/tmp/mc-spawn-${TAG}.png` });
+// 2) open inventory and verify the palette actually scrolls
+await page.keyboard.press('KeyE');
+await page.waitForTimeout(600);
+const sc = await page.evaluate(() => {
+  const grids = [...document.querySelectorAll('#inv-screen *')].filter((e) => getComputedStyle(e).overflowY === 'scroll');
+  const pal = grids[0];
+  if (!pal) return { found: false };
+  const before = pal.scrollTop; pal.scrollTop = 250; const after = pal.scrollTop;
+  return { found: true, scrollH: pal.scrollHeight, clientH: pal.clientHeight, touch: getComputedStyle(pal).touchAction, scrolled: after - before };
+});
+console.log('palette scroll:', JSON.stringify(sc));
+await page.screenshot({ path: `/tmp/mc-palette-${TAG}.png` });
 
 const hud = await page.evaluate(() => document.getElementById('hud').textContent);
 console.log(`[${TAG}] hud: ${hud} | pageerrors: ${errs.length}`);

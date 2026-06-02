@@ -190,18 +190,15 @@ function updateChunks() {
 // ---------------------------------------------------------------------------
 // Player
 // ---------------------------------------------------------------------------
+const SPAWN = { x: 8.5, y: 31, z: -12 }; // schoolyard, in front of the Petit Hermès entrance
 const player = {
-  pos: new THREE.Vector3(8, 0, 8),
+  pos: new THREE.Vector3(SPAWN.x, SPAWN.y, SPAWN.z),
   vel: new THREE.Vector3(),
-  yaw: 0, pitch: 0,
+  yaw: 0, pitch: -0.05, // yaw 0 faces -z, toward the school entrance
   onGround: false, fly: false,
   width: 0.6, height: 1.8, eye: 1.62,
   health: 20, hunger: 20, air: 10, _peakY: 0, dead: false, // survival stats
 };
-{
-  const h = world.heightAt(8, 8);
-  player.pos.y = Math.max(h, SEA_LEVEL) + 2;
-}
 // debug/verification: reposition the camera (e.g. aerial view) from tests
 window.__view = (x, y, z, yaw = 0, pitch = -0.85) => {
   player.pos.set(x, y, z); player.yaw = yaw; player.pitch = pitch; player.fly = true; player.vel.set(0, 0, 0);
@@ -276,7 +273,7 @@ function movePlayer(dt) {
   }
 
   if (p.y < -20) {
-    p.set(8, Math.max(world.heightAt(8, 8), SEA_LEVEL) + 2, 8);
+    p.set(SPAWN.x, SPAWN.y, SPAWN.z);
     player.vel.set(0, 0, 0);
     player._peakY = p.y;
   }
@@ -333,7 +330,7 @@ function die() {
   player.dead = true;
   toast('やられた… リスポーンします');
   setTimeout(() => {
-    player.pos.set(8, Math.max(world.heightAt(8, 8), SEA_LEVEL) + 2, 8);
+    player.pos.set(SPAWN.x, SPAWN.y, SPAWN.z);
     player.vel.set(0, 0, 0);
     player.health = 20; player.hunger = 20; player.air = 10; player._peakY = player.pos.y;
     player.dead = false;
