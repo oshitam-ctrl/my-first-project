@@ -17,6 +17,22 @@ export function createAudio() {
   let musicPlaying = false;  // true while scheduling is active
   let nextNoteTime = 0;      // AudioContext-clock time of the next scheduled note
 
+  // --- Ambience state (generative outdoor soundscape) ---
+  let ambEnabled = true;     // user toggle for ambience (on top of master)
+  let ambGain = null;        // dedicated gain so ambience is independent of music/sfx
+  let ambPlaying = false;    // true while ambience is running
+  let ambBirdTimer = null;   // setTimeout handle for the bird lookahead scheduler
+  let nextBirdTime = 0;      // AudioContext-clock time of the next bird event
+  // Continuous bed nodes (long-lived; their gains are modulated, not recreated).
+  let insectGain = null;     // cicada-ish shimmer level
+  let windGain = null;       // wind swell level
+  let waterGain = null;      // river bed level (only audible near water)
+  let birdGain = null;       // sub-gain birds route through (scaled by night/indoor)
+  // Current scene -> target levels. Updated by setAmbienceScene().
+  let scene = { outdoor: true, nearWater: false, night: false };
+  // Per-layer target gains derived from the scene (set in applyAmbienceScene).
+  let ambTargets = { master: 1, insect: 0.05, wind: 0.06, water: 0, bird: 1 };
+
   // C major pentatonic across a couple of octaves (Hz). Calm, no dissonance.
   const SCALE = [
     130.81, 146.83, 164.81, 196.00, 220.00, // C3 D3 E3 G3 A3
@@ -36,6 +52,7 @@ export function createAudio() {
       master.connect(ctx.destination);
       noiseBuf = makeNoise();
       buildMusicChain();
+      buildAmbienceChain();
     } catch (e) {
       ctx = null;
       return false;
@@ -61,6 +78,97 @@ export function createAudio() {
     fb.gain.value = 0.32;
     musicDelay.connect(fb).connect(musicDelay);
     musicDelay.connect(musicGain);
+  }
+
+  // Build the ambience signal chain once. A master ambGain feeds the master bus.
+  // Three continuous beds (insects, wind, water) are long-lived noise sources with
+  // their own filters + gains; their levels are ramped by the scene. Bird voices
+  // are scheduled one-shots that route through birdGain. Nothing here makes sound
+  // until startAmbience() ramps ambGain up.
+  function buildAmbienceChain() {
+    ambGain = ctx.createGain();
+    ambGain.gain.value = 0.0001; // silent until startAmbience()
+    ambGain.connect(master);
+
+    birdGain = ctx.createGain();
+    birdGain.gain.value = ambTargets.bird;
+    birdGain.connect(ambGain);
+
+    // Insects / cicada shimmer: high-bandpass noise with a fast tremolo LFO.
+    insectGain = ctx.createGain();
+    insectGain.gain.value = 0.0001;
+    insectGain.connect(ambGain);
+    const insNoise = loopNoise();
+    const insFilter = ctx.createBiquadFilter();
+    insFilter.type = 'bandpass';
+    insFilter.frequency.value = 5200;
+    insFilter.Q.value = 6;
+    insNoise.connect(insFilter).connect(insectGain);
+    const insLfo = ctx.createOscillator();
+    const insLfoGain = ctx.createGain();
+    insLfo.type = 'sine';
+    insLfo.frequency.value = 11; // shimmer rate
+    insLfoGain.gain.value = 0.4;
+    insLfo.connect(insLfoGain).connect(insectGain.gain);
+    insNoise.start();
+    insLfo.start();
+
+    // Wind: slow band-pass noise swelling with a slow LFO on gain + filter.
+    windGain = ctx.createGain();
+    windGain.gain.value = 0.0001;
+    windGain.connect(ambGain);
+    const windNoise = loopNoise();
+    const windFilter = ctx.createBiquadFilter();
+    windFilter.type = 'bandpass';
+    windFilter.frequency.value = 500;
+    windFilter.Q.value = 0.7;
+    windNoise.connect(windFilter).connect(windGain);
+    const windLfo = ctx.createOscillator();
+    const windLfoGain = ctx.createGain();
+    windLfo.type = 'sine';
+    windLfo.frequency.value = 0.08; // very slow swell
+    windLfoGain.gain.value = 0.6;
+    windLfo.connect(windLfoGain).connect(windGain.gain);
+    const windFiltLfo = ctx.createOscillator();
+    const windFiltLfoGain = ctx.createGain();
+    windFiltLfo.type = 'sine';
+    windFiltLfo.frequency.value = 0.05;
+    windFiltLfoGain.gain.value = 200;
+    windFiltLfo.connect(windFiltLfoGain).connect(windFilter.frequency);
+    windNoise.start();
+    windLfo.start();
+    windFiltLfo.start();
+
+    // Water / river: soft continuous low-pass noise bed (level 0 unless nearWater).
+    waterGain = ctx.createGain();
+    waterGain.gain.value = 0.0001;
+    waterGain.connect(ambGain);
+    const watNoise = loopNoise();
+    const watFilter = ctx.createBiquadFilter();
+    watFilter.type = 'lowpass';
+    watFilter.frequency.value = 1100;
+    watFilter.Q.value = 0.4;
+    const watHp = ctx.createBiquadFilter();
+    watHp.type = 'highpass';
+    watHp.frequency.value = 300;
+    watNoise.connect(watHp).connect(watFilter).connect(waterGain);
+    const watLfo = ctx.createOscillator();
+    const watLfoGain = ctx.createGain();
+    watLfo.type = 'sine';
+    watLfo.frequency.value = 0.3; // gentle burble
+    watLfoGain.gain.value = 0.15;
+    watLfo.connect(watLfoGain).connect(waterGain.gain);
+    watNoise.start();
+    watLfo.start();
+  }
+
+  // A long-lived looping white-noise source (reuses the cached buffer).
+  function loopNoise() {
+    const src = ctx.createBufferSource();
+    src.buffer = noiseBuf;
+    src.loop = true;
+    src.playbackRate.value = vary(0.05);
+    return src;
   }
 
   // One second of mono white noise, reused by every noisy sound.
@@ -152,6 +260,94 @@ export function createAudio() {
     musicTimer = setTimeout(musicScheduler, 400);
   }
 
+  // A short whistled birdsong chirp: 1-3 quick sine/triangle notes with vibrato,
+  // routed through birdGain. Pitch/timing randomized so it never repeats exactly.
+  function birdChirp(t0) {
+    const notes = 1 + Math.floor(Math.random() * 3);
+    let base = 1800 + Math.random() * 1600; // whistled register
+    let t = t0;
+    for (let i = 0; i < notes; i++) {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = Math.random() < 0.6 ? 'sine' : 'triangle';
+      const f = base * (1 + (Math.random() * 2 - 1) * 0.15);
+      osc.frequency.setValueAtTime(f, t);
+      // tiny upward/downward sweep per note
+      osc.frequency.exponentialRampToValueAtTime(f * (0.9 + Math.random() * 0.3), t + 0.08);
+      // vibrato LFO
+      const vib = ctx.createOscillator();
+      const vibGain = ctx.createGain();
+      vib.type = 'sine';
+      vib.frequency.value = 18 + Math.random() * 14;
+      vibGain.gain.value = f * 0.02;
+      vib.connect(vibGain).connect(osc.frequency);
+      const peak = 0.12 + Math.random() * 0.1;
+      const dur = 0.06 + Math.random() * 0.07;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(peak, t + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(g).connect(birdGain);
+      osc.start(t);
+      osc.stop(t + dur + 0.02);
+      vib.start(t);
+      vib.stop(t + dur + 0.02);
+      base *= 1 + (Math.random() * 2 - 1) * 0.12;
+      t += dur + 0.03 + Math.random() * 0.05;
+    }
+  }
+
+  // Schedule the next bird chirp and advance nextBirdTime. Gaps are longer at
+  // night (sparser birds) and when indoors; randomized so timing never loops.
+  function scheduleBird() {
+    if (scene.outdoor) birdChirp(nextBirdTime);
+    // base gap: 3-9s by day, much sparser (8-22s) at night, and rare indoors.
+    let gap;
+    if (!scene.outdoor) gap = 12 + Math.random() * 18;
+    else if (scene.night) gap = 8 + Math.random() * 14;
+    else gap = 3 + Math.random() * 6;
+    nextBirdTime += gap;
+  }
+
+  // Lookahead scheduler for bird one-shots: keep ~4s queued on the audio clock.
+  function birdScheduler() {
+    if (!ambPlaying || !ctx) return;
+    while (nextBirdTime < ctx.currentTime + 4.0) scheduleBird();
+    ambBirdTimer = setTimeout(birdScheduler, 1000);
+  }
+
+  // Recompute per-layer target gains from the current scene and ramp toward them.
+  // Indoors -> everything muffled/quiet; outdoors -> full; nearWater -> river in;
+  // night -> fewer birds (handled in scheduler) + a touch more insects.
+  function applyAmbienceScene() {
+    const indoorMul = scene.outdoor ? 1 : 0.18; // muffle beds when inside
+    ambTargets.master = scene.outdoor ? 1 : 0.5;
+    ambTargets.insect = (scene.night ? 0.09 : 0.05) * indoorMul;
+    ambTargets.wind = 0.06 * indoorMul;
+    ambTargets.water = (scene.nearWater ? 0.08 : 0.0) * indoorMul;
+    ambTargets.bird = scene.outdoor ? 1 : 0.25;
+    rampAmbience();
+  }
+
+  // Smoothly ramp every ambience layer to its target (no clicks). Safe to call
+  // before the chain exists (no-op) or before ambience is playing.
+  function rampAmbience() {
+    if (!ctx || !ambGain) return;
+    const t = ctx.currentTime;
+    const set = (node, target) => {
+      if (!node) return;
+      const v = Math.max(node.gain.value, 0.0001);
+      node.gain.cancelScheduledValues(t);
+      node.gain.setValueAtTime(v, t);
+      node.gain.linearRampToValueAtTime(Math.max(target, 0.0001), t + 1.5);
+    };
+    // The top ambGain only opens while playing; beds/birds track scene always.
+    if (ambPlaying) set(ambGain, ambTargets.master);
+    set(insectGain, ambTargets.insect);
+    set(windGain, ambTargets.wind);
+    set(waterGain, ambTargets.water);
+    set(birdGain, ambTargets.bird);
+  }
+
   const sfx = {
     enabled,
 
@@ -159,6 +355,51 @@ export function createAudio() {
       if (!ensure()) return;
       if (ctx.state === 'suspended') ctx.resume().catch(() => {});
       if (musicEnabled) sfx.startMusic();
+      if (ambEnabled) sfx.startAmbience();
+    },
+
+    // Begin the generative ambient bed. No-op if context not ready or running.
+    startAmbience() {
+      if (!ctx || ambPlaying || !ambGain) return;
+      ambPlaying = true;
+      const t = ctx.currentTime;
+      applyAmbienceScene(); // set bed/bird targets + ramp beds in
+      ambGain.gain.cancelScheduledValues(t);
+      ambGain.gain.setValueAtTime(Math.max(ambGain.gain.value, 0.0001), t);
+      ambGain.gain.linearRampToValueAtTime(Math.max(ambTargets.master, 0.0001), t + 3);
+      nextBirdTime = t + 1.0;
+      birdScheduler();
+    },
+
+    // Stop scheduling bird voices and fade the whole ambient bed out.
+    stopAmbience() {
+      if (!ambPlaying) return;
+      ambPlaying = false;
+      if (ambBirdTimer) { clearTimeout(ambBirdTimer); ambBirdTimer = null; }
+      if (ambGain && ctx) {
+        const t = ctx.currentTime;
+        ambGain.gain.cancelScheduledValues(t);
+        ambGain.gain.setValueAtTime(Math.max(ambGain.gain.value, 0.0001), t);
+        ambGain.gain.exponentialRampToValueAtTime(0.0001, t + 2);
+      }
+    },
+
+    // Toggle ambience. On + resumed context -> (re)start; off -> stop.
+    setAmbienceEnabled(on) {
+      ambEnabled = !!on;
+      if (ambEnabled) {
+        if (ctx && ctx.state !== 'suspended') sfx.startAmbience();
+      } else {
+        sfx.stopAmbience();
+      }
+    },
+
+    // Adjust the ambient mix for the current location/time, ramping smoothly.
+    setAmbienceScene(opts = {}) {
+      if ('outdoor' in opts) scene.outdoor = !!opts.outdoor;
+      if ('nearWater' in opts) scene.nearWater = !!opts.nearWater;
+      if ('night' in opts) scene.night = !!opts.night;
+      applyAmbienceScene();
     },
 
     // Begin generative music. No-op if already playing or context not ready.
@@ -254,6 +495,29 @@ export function createAudio() {
         noiseBurst('lowpass', (300 + Math.random() * 150), 0.8, 0.16, 0.005, 0.07, t);
         blip('triangle', (90 + Math.random() * 30), 0.12, 0.005, 0.06, t);
       }
+    },
+
+    // craft = a warm two-note " できた！" chime (used for baking / crafting).
+    craft() {
+      if (!enabled || !ensure()) return;
+      const t0 = ctx.currentTime;
+      blip('triangle', 523 * vary(0.02), 0.22, 0.004, 0.16, t0);        // C5
+      blip('sine', 784 * vary(0.02), 0.18, 0.004, 0.22, t0 + 0.09);     // G5
+    },
+
+    // pop = a soft bubble "ぷくっ" (fermentation matured): quick upward sine.
+    pop() {
+      if (!enabled || !ensure()) return;
+      const t0 = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      const f0 = 320 * vary(0.06);
+      osc.frequency.setValueAtTime(f0, t0);
+      osc.frequency.exponentialRampToValueAtTime(f0 * 2.4, t0 + 0.07); // bloop up
+      osc.connect(g).connect(master);
+      env(g, osc, t0, 0.2, 0.003, 0.08);
+      noiseBurst('bandpass', 1600 * vary(0.1), 2, 0.12, 0.002, 0.04, t0);
     },
 
     setEnabled(on) {

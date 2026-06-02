@@ -76,8 +76,10 @@ export const RECIPES = [
   shaped([['wheat', 'wheat', 'wheat']], { id: 'bread', count: 1 }),
 
   // --- Petit Hermès bakery recipes ---
-  // 規格外野菜を瓶で発酵させて発酵液: empty_jar + surplus_veg -> levain
-  shapeless(['empty_jar', 'surplus_veg'], { id: 'levain', count: 1 }),
+  // 発酵液 (levain) is NOT an instant craft: it comes only from *time-based*
+  // fermentation — surplus veg sealed in a jar, left to bubble (see
+  // fermentation.js + the パン工房 one-tap panel). That wait is the heart of the
+  // shop's 天然酵母 identity, so the instant jar→levain recipes were removed.
 
   // 発酵液と小麦を混ぜてパン: levain + wheat -> bread x2
   shapeless(['levain', 'wheat'], { id: 'bread', count: 2 }),
@@ -87,9 +89,6 @@ export const RECIPES = [
 
   // 小麦粉と発酵液でバゲット: flour + levain -> baguette x1
   shapeless(['flour', 'levain'], { id: 'baguette', count: 1 }),
-
-  // 野菜たっぷりでたくさんの発酵液: surplus_veg x3 -> levain x2
-  shapeless(['surplus_veg', 'surplus_veg', 'surplus_veg'], { id: 'levain', count: 2 }),
 
   // --- Petit Hermès signature breads (天然酵母ハードパン) ---
   // 天然酵母カンパーニュ (hero hard loaf): levain + flour + flour -> campagne
