@@ -92,6 +92,7 @@ export function createInventory(opts) {
     return el;
   }
   function paintSlot(el, cell) {
+    el._cell = cell || null;  // store for tooltip handlers
     drawIcon(el._cv, cell && cell.item);
     const n = cell && cell.count > 1 ? cell.count : '';
     el._cnt.textContent = n;
@@ -310,6 +311,147 @@ export function createInventory(opts) {
     }, 1500);
   }
 
+  // --- slot item tooltip -------------------------------------------------
+  let tooltipEl = null, tooltipTimer = null, tooltipVisible = false;
+
+  function ensureTooltip() {
+    if (tooltipEl) return;
+    if (!document.body || typeof document.body.appendChild !== 'function') return;
+    tooltipEl = document.createElement('div');
+    tooltipEl.id = 'inv-slot-tooltip';
+    Object.assign(tooltipEl.style, {
+      position: 'fixed',
+      zIndex: '30',
+      pointerEvents: 'none',
+      background: 'rgba(0,0,0,0.82)',
+      color: '#fff',
+      fontSize: '13px',
+      padding: '7px 12px',
+      borderRadius: '6px',
+      border: '1px solid rgba(255,255,255,0.22)',
+      textShadow: '0 1px 3px #000',
+      letterSpacing: '0.02em',
+      opacity: '0',
+      transition: 'opacity 0.12s ease',
+      whiteSpace: 'pre-line',
+      maxWidth: '240px',
+      lineHeight: '1.55',
+      display: 'none',
+    });
+    document.body.appendChild(tooltipEl);
+  }
+
+  // Returns { name, extras: string[] } or null if slot is empty
+  function buildTooltipData(cell) {
+    if (!cell || !cell.item) return null;
+    const def = itemDef(cell.item);
+    if (!def) return null;
+    const extras = [];
+    if (def.desc) extras.push(def.desc);
+    if (def.food) extras.push('満腹度 +' + def.food.hunger);
+    if (def.tool) {
+      extras.push('耐久 ' + def.tool.durability + '　速度 ' + def.tool.speed + '　攻撃力 ' + def.tool.damage);
+    }
+    return { name: def.name, extras };
+  }
+
+  function positionTooltip(x, y) {
+    if (!tooltipEl) return;
+    const W = (typeof window !== 'undefined' && window.innerWidth) || 1280;
+    const H = (typeof window !== 'undefined' && window.innerHeight) || 720;
+    const tw = tooltipEl.offsetWidth || 200;
+    const th = tooltipEl.offsetHeight || 80;
+    // try right of cursor; clamp to viewport
+    let left = x + 14;
+    let top = y - 10;
+    if (left + tw > W - 8) left = x - tw - 14;
+    if (left < 8) left = 8;
+    if (top + th > H - 8) top = H - th - 8;
+    if (top < 8) top = 8;
+    tooltipEl.style.left = left + 'px';
+    tooltipEl.style.top = top + 'px';
+  }
+
+  function showTooltip(cell, x, y) {
+    if (!document.body || typeof document.body.appendChild !== 'function') return;
+    ensureTooltip();
+    if (!tooltipEl) return;
+    if (tooltipTimer) { clearTimeout(tooltipTimer); tooltipTimer = null; }
+    const data = buildTooltipData(cell);
+    if (!data) { hideTooltip(); return; }
+    // Build HTML: name (bold) + extra lines
+    let html = '<strong style="font-size:14px">' + data.name + '</strong>';
+    for (const line of data.extras) {
+      html += '<br><span style="color:rgba(255,255,255,0.8)">' + line + '</span>';
+    }
+    tooltipEl.innerHTML = html;
+    tooltipEl.style.display = 'block';
+    tooltipEl.style.opacity = '0';
+    // position before showing so offsetWidth is fresh
+    positionTooltip(x, y);
+    // allow display:block to take effect before fading in
+    requestAnimationFrame(() => {
+      if (tooltipEl) { tooltipEl.style.opacity = '1'; tooltipVisible = true; }
+    });
+  }
+
+  function hideTooltip() {
+    if (tooltipTimer) { clearTimeout(tooltipTimer); tooltipTimer = null; }
+    tooltipVisible = false;
+    if (!tooltipEl) return;
+    tooltipEl.style.opacity = '0';
+    tooltipTimer = setTimeout(() => {
+      if (tooltipEl && !tooltipVisible) tooltipEl.style.display = 'none';
+      tooltipTimer = null;
+    }, 130);
+  }
+
+  // Attach hover (desktop) + long-press (mobile) tooltip to a slot element.
+  // Called once per slot after creation. Safe to call in headless env (guards doc).
+  function attachTooltipHandlers(el) {
+    if (!el || typeof el.addEventListener !== 'function') return;
+
+    // Desktop: show on pointerenter (mouse), hide on pointerleave
+    el.addEventListener('pointerenter', (e) => {
+      if (e.pointerType === 'mouse' && el._cell) {
+        showTooltip(el._cell, e.clientX, e.clientY);
+      }
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (e.pointerType === 'mouse' && tooltipVisible && el._cell) {
+        positionTooltip(e.clientX, e.clientY);
+      }
+    });
+    el.addEventListener('pointerleave', (e) => {
+      if (e.pointerType === 'mouse') hideTooltip();
+    });
+
+    // Mobile: long-press (~450ms) shows tooltip; release/scroll hides it
+    let lpTimer = null, lpActive = false;
+    el.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse') return; // handled by pointerenter
+      lpActive = false;
+      if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+      if (!el._cell) return;
+      const cx = e.clientX, cy = e.clientY;
+      lpTimer = setTimeout(() => {
+        lpTimer = null;
+        lpActive = true;
+        showTooltip(el._cell, cx, cy);
+      }, 450);
+    });
+    const cancelLp = () => {
+      if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+      if (lpActive) { lpActive = false; hideTooltip(); }
+    };
+    el.addEventListener('pointerup', cancelLp);
+    el.addEventListener('pointercancel', cancelLp);
+    // If the pointer moves much, cancel (allow scrolling without showing tooltip)
+    el.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse' && lpTimer) cancelLp();
+    });
+  }
+
   // --- hotbar rendering --------------------------------------------------
   let hotbarEl = null, hotbarSlots = [];
   function mountHotbar(el) {
@@ -372,12 +514,12 @@ export function createInventory(opts) {
     craftSlots = [];
     for (let i = 0; i < 9; i++) {
       const s = makeSlot((e) => clickSlot('craft', i, e && e.shiftKey));
-      craftSlots.push(s); grid.appendChild(s);
+      craftSlots.push(s); attachTooltipHandlers(s); grid.appendChild(s);
     }
     craftRow.appendChild(grid);
     const arrow = document.createElement('div'); arrow.textContent = '➜';
     Object.assign(arrow.style, { color: '#fff', fontSize: '22px' }); craftRow.appendChild(arrow);
-    resultSlot = makeSlot((e) => { if (e && e.shiftKey && !creative) shiftTakeResult(); else takeResult(); });
+    resultSlot = makeSlot((e) => { if (e && e.shiftKey && !creative) shiftTakeResult(); else takeResult(); }); attachTooltipHandlers(resultSlot);
     resultSlot.style.borderColor = 'rgba(255,220,120,.6)';
     craftRow.appendChild(resultSlot);
     panel.appendChild(craftRow);
@@ -401,7 +543,7 @@ export function createInventory(opts) {
     CREATIVE_LIST.forEach((id) => {
       const s = makeSlot(() => creativePick(id), true);
       s.title = (itemDef(id) && itemDef(id).name) || id; // hover tooltip
-      paintSlot(s, { item: id, count: 1 });
+      paintSlot(s, { item: id, count: 1 }); attachTooltipHandlers(s);
       palette.appendChild(s); paletteSlots.push([id, s]);
     });
     panel.appendChild(palette); screen._palette = palette;
@@ -410,7 +552,7 @@ export function createInventory(opts) {
     const store = document.createElement('div');
     store.style.display = 'grid'; store.style.gridTemplateColumns = 'repeat(9, 1fr)'; store.style.gap = '3px';
     storageSlots = [];
-    for (let i = 9; i < MAIN; i++) { const s = makeSlot((e) => clickSlot('main', i, e && e.shiftKey)); storageSlots.push([i, s]); store.appendChild(s); }
+    for (let i = 9; i < MAIN; i++) { const s = makeSlot((e) => clickSlot('main', i, e && e.shiftKey)); storageSlots.push([i, s]); attachTooltipHandlers(s); store.appendChild(s); }
     panel.appendChild(store); screen._store = store;
     const hotRow = document.createElement('div');
     hotRow.style.display = 'grid'; hotRow.style.gridTemplateColumns = 'repeat(9, 1fr)'; hotRow.style.gap = '3px'; hotRow.style.marginTop = '6px';
@@ -418,7 +560,7 @@ export function createInventory(opts) {
     for (let i = 0; i < 9; i++) {
       // creative: tap a hotbar slot to SELECT it; survival: normal move
       const s = makeSlot((e) => { if (creative) { selected = i; renderAll(); sfx && sfx.select(); } else clickSlot('main', i, e && e.shiftKey); });
-      storageSlots.push([i, s]); hotRowSlots.push([i, s]); hotRow.appendChild(s);
+      storageSlots.push([i, s]); hotRowSlots.push([i, s]); attachTooltipHandlers(s); hotRow.appendChild(s);
     }
     panel.appendChild(hotRow);
 

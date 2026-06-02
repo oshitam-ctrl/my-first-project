@@ -85,4 +85,44 @@ assert.strictEqual(ITEMS.diamond_sword.tool.damage, 7, 'diamond sword damage 7')
 assert.strictEqual(ITEMS.wood_pickaxe.tool.durability, 59, 'wood pickaxe durability 59');
 assert.strictEqual(ITEMS.iron_shovel.tool.speed, 6, 'iron shovel speed 6');
 
+// --- desc field assertions ---
+// All items must have a desc field (string, may be empty)
+for (const id of ids) {
+  const def = ITEMS[id];
+  assert.strictEqual(typeof def.desc, 'string', `${id} has desc field`);
+}
+
+// Bakery / food-loss items must have non-empty desc
+const mustHaveDesc = [
+  'levain', 'natural_yeast', 'surplus_veg', 'campagne', 'rescue_bag',
+  'flour', 'baguette', 'pain_de_mie', 'rosemary', 'thinned_apple', 'ripe_fruit',
+  'fruit_campagne', 'rye_hard_bread', 'rescued_focaccia', 'rosemary_bread',
+  'apple_bread', 'fruit_bread', 'toast',
+];
+for (const id of mustHaveDesc) {
+  assert.ok(ITEMS[id] && ITEMS[id].desc.length > 0, `${id} desc is non-empty`);
+}
+
+// Key standard food and materials
+assert.ok(ITEMS.apple.desc.length > 0, 'apple has desc');
+assert.ok(ITEMS.bread.desc.length > 0, 'bread has desc');
+assert.ok(ITEMS.iron_ingot.desc.length > 0, 'iron_ingot has desc');
+assert.ok(ITEMS.diamond.desc.length > 0, 'diamond has desc');
+assert.ok(ITEMS.wheat.desc.length > 0, 'wheat has desc');
+
+// Tools must have non-empty desc (auto-generated)
+assert.ok(ITEMS.wood_pickaxe.desc.length > 0, 'wood_pickaxe has desc');
+assert.ok(ITEMS.diamond_sword.desc.length > 0, 'diamond_sword has desc');
+assert.ok(ITEMS.iron_axe.desc.length > 0, 'iron_axe has desc');
+assert.ok(ITEMS.stone_shovel.desc.length > 0, 'stone_shovel has desc');
+
+// Specific desc content checks
+assert.ok(ITEMS.levain.desc.includes('酵母'), 'levain desc mentions 酵母');
+assert.ok(ITEMS.natural_yeast.desc.includes('種菌'), 'natural_yeast desc mentions 種菌');
+assert.ok(ITEMS.surplus_veg.desc.includes('規格外'), 'surplus_veg desc mentions 規格外');
+assert.ok(ITEMS.campagne.desc.includes('酵母'), 'campagne desc mentions 酵母');
+assert.ok(ITEMS.rescue_bag.desc.includes('ランダム'), 'rescue_bag desc mentions ランダム');
+assert.ok(ITEMS.flour.desc.includes('粉'), 'flour desc mentions 粉');
+
 console.log(`OK: ${ids.length} items (${blockCount} blocks, ${toolCount} tools, ${foodCount} food)`);
+console.log('OK: desc field assertions passed');
