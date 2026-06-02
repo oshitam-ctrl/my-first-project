@@ -158,9 +158,9 @@ export function codeToSeed(code) {
 // 'shared' | 'copied' | 'failed'. Feature-detects navigator.share /
 // navigator.clipboard and never throws. (navigator.share needs a user gesture
 // and HTTPS — we just attempt and catch.)
-export async function shareSeed(seed, title = 'Voxel Craft') {
+export async function shareSeed(seed, title = 'プチヘルメース', text) {
   const url = buildShareURL(seed);
-  const text = `Play my Voxel Craft world! Seed: ${toUint32(seed)}`;
+  if (!text) text = `「プチヘルメース」をマイクラ風の世界で疑似体験🥖 畑の余り野菜と発酵でパン作り！ #プチヘルメース`;
 
   // 1) Native share sheet, when available.
   if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
