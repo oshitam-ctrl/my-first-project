@@ -13,7 +13,11 @@ const LB = {
   WATER: 7, WHEAT_CROP: 53, VEG_CROP: 54, FURNACE: 21, CRAFTING_TABLE: 20, PLANK: 9, PUMPKIN: 14,
 };
 // Fixed world placement of the Petit Hermès landmark (centred in front of spawn).
-const LM_X = -12, LM_Y = 29, LM_Z = -36;
+// Chosen so the entrance is at world x=8 and the facade plane at world z=-24
+// (player spawns at (8.5,31,-12) facing -z into it); the large school then grows
+// wider in x and deeper toward -z. Local coords are >=0, so the facade sits at the
+// MAX local z (=26) and LM_Z is pushed back to -50 to give depth room.
+const LM_X = -36, LM_Y = 29, LM_Z = -50;
 import { BLOCKS, isOpaque, isSolid, tileUV } from './blocks.js';
 
 export const CHUNK = 16;
@@ -40,27 +44,29 @@ const VCX = 8, VCZ = -12;          // valley centre (near school)
 const VFLOOR = 29;                  // valley floor y (matches landmark ground y=29)
 const VRAD_FLAT = 82;               // inner radius — fully flat farmland
 const VRAD_BLEND = 110;             // outer radius — blends back to natural terrain
-// Exclusion box — landmark owns this; we skip all scenery features here
-const EX0 = -16, EX1 = 32, EZ0 = -42, EZ1 = 14;
+// Exclusion box — landmark owns this; we skip all scenery features here.
+// Must fully contain the (now much larger) school + yard: building world
+// x −32..47, z −48..−24, plus the front yard out to ~z+18 and the field.
+const EX0 = -40, EX1 = 56, EZ0 = -54, EZ1 = 18;
 
-// Country road: runs roughly north–south on the west side of the valley.
-// Road centre x = -32; road width ±2 (total 5 cols); shoulder ±3.
-const ROAD_X = -32;                 // road centre world-x
-const ROAD_Z0 = -100;               // road south end
-const ROAD_Z1 = 50;                 // road north end
+// Country road: runs roughly north–south, WEST of the (wider) building whose
+// west edge is now world x=-32 — so push the road further out to x=-52.
+const ROAD_X = -52;                 // road centre world-x
+const ROAD_Z0 = -120;               // road south end
+const ROAD_Z1 = 60;                 // road north end
 // School drive: short east–west connector from road to school front gate
-const DRIVE_Z = 18;                 // z of drive centre (just south of exclusion box)
+const DRIVE_Z = 24;                 // z of drive centre (just south of exclusion box)
 const DRIVE_X0 = ROAD_X + 3;       // drive west end (road shoulder)
 const DRIVE_X1 = EX0 - 1;          // drive east end (up to exclusion box)
 
 // Gate pillars: flank the school drive where it meets the yard
-const GATE_X = EX0 - 1;            // world x of pillar pair (−17)
+const GATE_X = EX0 - 1;            // world x of pillar pair (−41)
 const GATE_Z = DRIVE_Z;            // z centre of drive
 
 // Sunflower strip: south face of the yard, just outside exclusion box (z > EZ1)
-const SUN_Z = EZ1 + 2;             // z = 16 — front of sunflower strip
-const SUN_X0 = EX0 + 4;            // x = -12, giving room past gate
-const SUN_X1 = EX1 - 4;            // x = 28
+const SUN_Z = EZ1 + 2;             // z = 20 — front of sunflower strip
+const SUN_X0 = EX0 + 4;            // x = -36
+const SUN_X1 = EX1 - 4;            // x = 52
 
 // Paddy cell sizes (paddy content + levee)
 const PADDY_CELL = 9;              // grid repeat (8 paddy + 1 levee)
@@ -140,6 +146,31 @@ const dirs = [
   { d: [0, 0, -1], shade: 0.8, face: 2 },
 ];
 const AO_BRIGHT = [0.5, 0.7, 0.86, 1.0];
+
+// ── Petit Hermès landmark stamp cache ───────────────────────────────────────
+// The landmark is STATIC (its geometry is seed-independent), but it overlaps
+// ~30 chunks at the new size and `buildPetitHermes` is expensive. So build it
+// ONCE into per-chunk buckets of world-space cells, then each chunk just replays
+// its bucket with force-stamps (preserving the original last-write-wins + AIR
+// carving semantics) instead of re-running the whole builder every time.
+let _lmBuckets = null; // Map<"cx,cz", number[]> flat groups of [wx, wy, wz, id]
+function buildLandmarkCache() {
+  const cells = new Map(); // "wx,wy,wz" -> id (last write wins, mirrors force=true)
+  const stamp = (x, y, z, id) => {
+    cells.set((LM_X + x) + ',' + (LM_Y + y) + ',' + (LM_Z + z), id);
+  };
+  buildPetitHermes(stamp, LB);
+  const buckets = new Map();
+  for (const [k, id] of cells) {
+    const c = k.split(',');
+    const wx = +c[0], wy = +c[1], wz = +c[2];
+    const ck = Math.floor(wx / CHUNK) + ',' + Math.floor(wz / CHUNK);
+    let arr = buckets.get(ck);
+    if (!arr) { arr = []; buckets.set(ck, arr); }
+    arr.push(wx, wy, wz, id);
+  }
+  return buckets;
+}
 
 export class World {
   constructor(seed = 20260530) {
@@ -483,12 +514,17 @@ export class World {
     data[i] = id;
   }
 
-  // Stamp the Petit Hermès landmark into this chunk (only the overlapping part).
+  // Stamp the Petit Hermès landmark into this chunk by replaying the cached
+  // per-chunk bucket (built once, lazily). Only cells in this chunk are touched.
   _stampLandmark(data, ox, oz) {
     const x0 = LM_X, x1 = LM_X + LANDMARK.w, z0 = LM_Z, z1 = LM_Z + LANDMARK.d;
     if (ox + CHUNK <= x0 || ox >= x1 || oz + CHUNK <= z0 || oz >= z1) return; // no overlap
-    const stamp = (x, y, z, id) => this._stamp(data, LM_X + x - ox, LM_Y + y, LM_Z + z - oz, id, true);
-    buildPetitHermes(stamp, LB);
+    if (!_lmBuckets) _lmBuckets = buildLandmarkCache();
+    const arr = _lmBuckets.get((ox / CHUNK) + ',' + (oz / CHUNK));
+    if (!arr) return;
+    for (let i = 0; i < arr.length; i += 4) {
+      this._stamp(data, arr[i] - ox, arr[i + 1], arr[i + 2] - oz, arr[i + 3], true);
+    }
   }
 
   // A small 5x5 hut at world (hx,hz): cobble floor, plank walls, glass windows,

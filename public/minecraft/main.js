@@ -745,23 +745,24 @@ window.__mobCount = () => mobs.count(); // debug/verification hook
 // Minecraft fans all find someone fun. Each has a name + a personality line.
 let baker = null;
 const customers = []; // (every spawned yard NPC; used for the delivery hearts)
-// type, world (x,z), name, line — placed around the open schoolyard (ground y31).
+// type, world (x,z), name, line — spread across the open schoolyard (ground y31),
+// in front of the facade (z=-24), clear of the harvest field (x -8..0, z -8..2).
 const NPC_ROSTER = [
-  ['villager', 2, -8, 'みどりさん', '今日はどのパンにしようかしら🥖'],
-  ['child', 6, -6, 'はると', 'おにいちゃん、パン作るの！？すごい！'],
-  ['child', 14, -7, 'ゆい', 'かけっこしよ〜！'],
-  ['farmer', 16, -14, 'たけぞうさん', 'うちの規格外野菜、よかったら使ってな'],
-  ['customer', 0, -14, 'さとう先生', '昔ここで教えとったんよ。懐かしいねぇ'],
-  ['knight_diamond', 18, -4, 'ダイヤの騎士アル', 'この校舎、見事な砦…いや、パン屋か。'],
-  ['knight_netherite', 22, -12, 'ネザライトの勇者', 'ネザーの業火で鍛えた鎧だ。焼きたての香りには敵わんがな'],
-  ['knight_gold', -2, -4, '黄金の騎士', '金より価値あるのは、焼きたてのパンよ'],
-  ['adventurer', 20, -18, '旅人リン', '各地を巡ってきた。ここの天然酵母は絶品と聞いて'],
-  ['wizard', 4, -2, '魔法使いミント', '発酵は小さな魔法じゃよ。ぷくぷく…ほぅ'],
-  ['miner', -4, -12, '鉱夫ゴロウ', 'ダイヤも掘ったが、結局パンが一番うまい'],
-  ['ninja', 12, 2, '影', '……（こくり）'],
+  ['villager', 10, -8, 'みどりさん', '今日はどのパンにしようかしら🥖'],
+  ['child', 16, -6, 'はると', 'おにいちゃん、パン作るの！？すごい！'],
+  ['child', 24, -8, 'ゆい', 'かけっこしよ〜！'],
+  ['farmer', 32, -12, 'たけぞうさん', 'うちの規格外野菜、よかったら使ってな'],
+  ['customer', -14, -10, 'さとう先生', '昔ここで教えとったんよ。懐かしいねぇ'],
+  ['knight_diamond', 28, -16, 'ダイヤの騎士アル', 'この校舎、見事な砦…いや、パン屋か。'],
+  ['knight_netherite', 36, -8, 'ネザライトの勇者', 'ネザーの業火で鍛えた鎧だ。焼きたての香りには敵わんがな'],
+  ['knight_gold', -18, -6, '黄金の騎士', '金より価値あるのは、焼きたてのパンよ'],
+  ['adventurer', 4, -18, '旅人リン', '各地を巡ってきた。ここの天然酵母は絶品と聞いて'],
+  ['wizard', -10, -16, '魔法使いミント', '発酵は小さな魔法じゃよ。ぷくぷく…ほぅ'],
+  ['miner', 20, -20, '鉱夫ゴロウ', 'ダイヤも掘ったが、結局パンが一番うまい'],
+  ['ninja', 40, -14, '影', '……（こくり）'],
 ];
 if (settings.mobs !== false) {
-  baker = mobs.spawnAt('baker', 8, 31, -29);
+  baker = mobs.spawnAt('baker', 14, 31, -32);
   for (const [type, x, z, name, line] of NPC_ROSTER) {
     const m = mobs.spawnAt(type, x, 31, z);
     if (m) { m.npcName = name; m.npcLine = line; customers.push(m); }
@@ -1052,7 +1053,7 @@ function updateDayNight(dt) {
 // between outdoor birds/insects/wind and a muffled indoor bed, add a river layer
 // near water, and thin the birds at night. Throttled (~0.4s) — cheap but no need
 // to recompute every frame.
-const SCHOOL_BBOX = { x0: -9, x1: 23, z0: -34, z1: -24, y0: 29, y1: 40 };
+const SCHOOL_BBOX = { x0: -33, x1: 48, z0: -49, z1: -23, y0: 29, y1: 46 };
 let ambTimer = 0;
 function updateAmbience(dt) {
   ambTimer -= dt;

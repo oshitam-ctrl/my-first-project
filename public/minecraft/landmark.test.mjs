@@ -34,10 +34,13 @@ for (const [, id] of grid) {
   tally.set(id, (tally.get(id) || 0) + 1);
 }
 const has = (id) => (tally.get(id) || 0) > 0;
+const get = (x, y, z) => grid.get(`${x},${y},${z}`) ?? -1;
 
-assert.ok(calls > 1500, `expected >1500 stamp calls, got ${calls}`);
-assert.ok(solid > 1500, `expected >1500 solid blocks, got ${solid}`);
+// ── Stamp count / solid block count (raised for the larger building) ─────────
+assert.ok(calls > 5000, `expected >5000 stamp calls, got ${calls}`);
+assert.ok(solid > 5000, `expected >5000 solid blocks, got ${solid}`);
 
+// ── Block types present ──────────────────────────────────────────────────────
 assert.ok(has(B.GLASS), 'expected some GLASS');
 assert.ok(has(B.BRICK), 'expected some BRICK');
 assert.ok(has(B.BLUE_WOOL), 'expected some BLUE_WOOL');
@@ -50,7 +53,12 @@ assert.ok(has(B.STONE_BRICKS), 'expected some STONE_BRICKS (partition wall)');
 assert.ok(has(B.SMOOTH_STONE), 'expected some SMOOTH_STONE (interior staircase)');
 assert.ok(has(B.OAK_PLANKS), 'expected some OAK_PLANKS (interior floors)');
 
-// all coords within [0..w] x [0..clearH] x [0..d]
+// ── LANDMARK dimensions ───────────────────────────────────────────────────────
+assert.strictEqual(w, 88, 'LANDMARK.w must be 88');
+assert.strictEqual(d, 80, 'LANDMARK.d must be 80');
+assert.strictEqual(clearH, 40, 'LANDMARK.clearH must be 40');
+
+// ── All coords within [0..w] x [0..clearH] x [0..d] ─────────────────────────
 for (const key of grid.keys()) {
   const [x, y, z] = key.split(',').map(Number);
   assert.ok(x >= 0 && x <= w, `x out of range: ${x}`);
@@ -58,5 +66,79 @@ for (const key of grid.keys()) {
   assert.ok(z >= 0 && z <= d, `z out of range: ${z}`);
 }
 
-console.log(`OK: ${calls} stamp calls, ${solid} solid blocks placed.`);
+// ── Max local y < 35 (parapet at y=16, no block above clearH=40) ─────────────
+let maxY = 0;
+for (const [key, id] of grid) {
+  if (id !== B.AIR) {
+    const [, y] = key.split(',').map(Number);
+    if (y > maxY) maxY = y;
+  }
+}
+assert.ok(maxY < 35, `max solid y should be < 35 (parapet y=16), got ${maxY}`);
+
+// ── Baker cell is AIR: local (50,2,18) must be walkable ──────────────────────
+const bakerCell = get(50, 2, 18);
+assert.ok(
+  bakerCell === B.AIR || bakerCell === -1,
+  `baker cell (50,2,18) must be AIR, got ${bakerCell}`
+);
+
+// ── Bakery SALES region has real interior AIR ─────────────────────────────────
+// sales zone: x46..55, y2..6, z12..18
+let airCount_sales = 0;
+for (let x = 46; x <= 55; x++)
+  for (let y = 2; y <= 6; y++)
+    for (let z = 12; z <= 18; z++) {
+      const id = get(x, y, z);
+      if (id === B.AIR || id === -1) airCount_sales++;
+    }
+assert.ok(airCount_sales > 200, `bakery sales region should have >200 AIR cells, got ${airCount_sales}`);
+
+// ── Classroom interior floor >= 8×8 of OAK_PLANKS (Classroom 1: x12..21, z3..19) ─
+let floorCount = 0;
+for (let x = 12; x <= 21; x++)
+  for (let z = 3; z <= 19; z++) {
+    if (get(x, 1, z) === B.OAK_PLANKS) floorCount++;
+  }
+assert.ok(floorCount >= 64, `classroom floor should have >= 64 OAK_PLANKS cells (8×8), got ${floorCount}`);
+
+// ── Corridor walkable z >= 4 at some x ───────────────────────────────────────
+// Corridor z21..25 (4 wide). At x=44 check y=2..3 are AIR across z=21..25
+let corridorAir = 0;
+for (let z = 21; z <= 25; z++) {
+  if ((get(44, 2, z) === B.AIR || get(44, 2, z) === -1) &&
+      (get(44, 3, z) === B.AIR || get(44, 3, z) === -1)) {
+    corridorAir++;
+  }
+}
+assert.ok(corridorAir >= 4, `corridor should have >=4 walkable z-cells at x=44, got ${corridorAir}`);
+
+// ── Blackboard present in classrooms ─────────────────────────────────────────
+// Classroom 1 back wall z=2: check for BLACK_WOOL somewhere x12..21, y3..6
+let bbFound = false;
+for (let x = 12; x <= 21 && !bbFound; x++)
+  for (let y = 3; y <= 6 && !bbFound; y++)
+    if (get(x, y, 2) === B.BLACK_WOOL) bbFound = true;
+assert.ok(bbFound, 'expected BLACK_WOOL blackboard on classroom 1 back wall (z=2)');
+
+// ── Workshop ovens (FURNACE) on back wall z=2 ────────────────────────────────
+let ovenFound = false;
+for (let x = 45; x <= 56 && !ovenFound; x++)
+  for (let y = 2; y <= 4 && !ovenFound; y++)
+    if (get(x, y, 2) === B.FURNACE) ovenFound = true;
+assert.ok(ovenFound, 'expected FURNACE ovens in workshop back wall (z=2)');
+
+// ── Entrance opening: center cell (cx-1..cx, y=2..4, z=26) must be AIR ────────
+const cx = Math.floor(w / 2); // 44
+assert.ok(
+  (get(cx - 1, 2, 26) === B.AIR || get(cx - 1, 2, 26) === -1),
+  `entrance cell (${cx - 1},2,26) must be AIR`
+);
+assert.ok(
+  (get(cx, 2, 26) === B.AIR || get(cx, 2, 26) === -1),
+  `entrance cell (${cx},2,26) must be AIR`
+);
+
+console.log(`OK: ${calls} stamp calls, ${solid} solid blocks placed, max y=${maxY}.`);
 console.log(`  dims ${w}x${d}x${clearH}; distinct block ids: ${tally.size}`);
+console.log(`  bakery sales AIR=${airCount_sales}, classroom floor=${floorCount}, corridor walkable=${corridorAir}`);
