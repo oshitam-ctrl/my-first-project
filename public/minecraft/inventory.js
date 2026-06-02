@@ -346,6 +346,7 @@ export function createInventory(opts) {
     setSelected, scroll, get selected() { return selected; },
     toggleScreen, isOpen: () => screenVisible(),
     give(itemId, count) { add(itemId, count); },
+    count(id) { let n = 0; for (const c of main) if (c && c.item === id) n += c.count; return n; },
     selectedDef() { const c = main[selected]; return c ? itemDef(c.item) : null; },
     holdingShield() { const d = this.selectedDef(); return !!(d && d.shield); },
     armorPoints() {

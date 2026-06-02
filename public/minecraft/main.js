@@ -9,6 +9,7 @@ import { isTouchDevice, createTouchControls } from './touch.js';
 import { getSeed, setSeedInURL, seedToCode, shareSeed } from './share.js';
 import { createInventory } from './inventory.js';
 import { createMobs } from './mobs.js';
+import { createQuest } from './quest.js';
 import { createSky } from './sky.js';
 import { itemDef, blockToItem } from './items.js';
 
@@ -728,10 +729,22 @@ const mobs = createMobs({
 window.__mobCount = () => mobs.count(); // debug/verification hook
 
 // Populate the shop: the baker behind the counter + a few customers in the yard.
+let baker = null;
 if (settings.mobs !== false) {
-  mobs.spawnAt('baker', 8, 31, -29);
+  baker = mobs.spawnAt('baker', 8, 31, -29);
   mobs.spawnAt('customer', 4, 31, -11);
   mobs.spawnAt('customer', 12, 31, -10);
+}
+
+// Guided "today's work" quest so first-time visitors know exactly what to do.
+const quest = createQuest({
+  onComplete: () => { toast('🎉 パンが焼けました！本日のプチヘルメース、開店です'); if (settings.shake) shakeMag = 0.15; },
+});
+const BREADS = ['bread', 'campagne', 'baguette', 'pain_de_mie', 'rosemary_bread', 'apple_bread', 'fruit_bread', 'toast'];
+function updateQuest() {
+  const bread = BREADS.reduce((s, id) => s + inv.count(id), 0);
+  const nearBaker = !!(baker && Math.hypot(player.pos.x - baker.pos.x, player.pos.z - baker.pos.z) < 3.5);
+  quest.update({ wheat: inv.count('wheat'), veg: inv.count('surplus_veg'), levain: inv.count('levain'), bread, nearBaker });
 }
 
 const crosshairEl = document.getElementById('crosshair');
@@ -913,6 +926,7 @@ function updateHud(dt) {
     `FPS ${fps}  |  XYZ ${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)}` +
     `  |  ${player.fly ? 'FLY' : 'WALK'}  |  chunks ${meshes.size}`;
   drawStats();
+  updateQuest();
 }
 
 // ---------------------------------------------------------------------------
