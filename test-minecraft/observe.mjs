@@ -31,21 +31,15 @@ await page.waitForTimeout(1200);
 await page.click('#overlay');
 await page.waitForTimeout(800);
 
-// 1) initial spawn view — should face the Petit Hermès school (no __view!)
-await page.waitForTimeout(6000); // let chunks stream so the school is visible
-await page.screenshot({ path: `/tmp/mc-spawn-${TAG}.png` });
-// 2) open inventory and verify the palette actually scrolls
-await page.keyboard.press('KeyE');
-await page.waitForTimeout(600);
-const sc = await page.evaluate(() => {
-  const grids = [...document.querySelectorAll('#inv-screen *')].filter((e) => getComputedStyle(e).overflowY === 'scroll');
-  const pal = grids[0];
-  if (!pal) return { found: false };
-  const before = pal.scrollTop; pal.scrollTop = 250; const after = pal.scrollTop;
-  return { found: true, scrollH: pal.scrollHeight, clientH: pal.clientHeight, touch: getComputedStyle(pal).touchAction, scrolled: after - before };
-});
-console.log('palette scroll:', JSON.stringify(sc));
-await page.screenshot({ path: `/tmp/mc-palette-${TAG}.png` });
+await page.evaluate(() => window.__time && window.__time(0.5));
+// front exterior (school facade + entrance)
+await page.evaluate(() => window.__view && window.__view(8, 36, 16, 0, -0.18));
+await page.waitForTimeout(12000);
+await page.screenshot({ path: `/tmp/mc-ext-${TAG}.png` });
+// interior (bakery: counter, bread case, chalkboard, teal walls)
+await page.evaluate(() => window.__view && window.__view(8, 31.5, -20, 0, 0.0));
+await page.waitForTimeout(4000);
+await page.screenshot({ path: `/tmp/mc-int-${TAG}.png` });
 
 const hud = await page.evaluate(() => document.getElementById('hud').textContent);
 console.log(`[${TAG}] hud: ${hud} | pageerrors: ${errs.length}`);
