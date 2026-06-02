@@ -54,13 +54,13 @@ export function createInventory(opts) {
   }
 
   // --- a single slot element ---------------------------------------------
-  function makeSlot(onClick, big) {
+  function makeSlot(onClick, scrollable) {
     const el = document.createElement('div');
     Object.assign(el.style, {
       position: 'relative', width: '44px', height: '44px', borderRadius: '4px',
       background: 'rgba(255,255,255,.08)', border: '2px solid rgba(255,255,255,.18)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-      touchAction: 'none',
+      touchAction: scrollable ? 'pan-y' : 'none', // scrollable slots let the palette scroll
     });
     const cv = document.createElement('canvas'); cv.width = cv.height = 32;
     Object.assign(cv.style, { width: '34px', height: '34px', imageRendering: 'pixelated', pointerEvents: 'none' });
@@ -71,7 +71,12 @@ export function createInventory(opts) {
       fontWeight: '700', textShadow: '1px 1px 2px #000', pointerEvents: 'none', fontVariantNumeric: 'tabular-nums',
     });
     el.appendChild(cnt);
-    el.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); onClick(e); });
+    if (scrollable) {
+      // use click so a drag scrolls the palette and a tap selects (no preventDefault)
+      el.addEventListener('click', (e) => { e.stopPropagation(); onClick(e); });
+    } else {
+      el.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); onClick(e); });
+    }
     el._cv = cv.getContext('2d'); el._cnt = cnt;
     return el;
   }
@@ -240,10 +245,10 @@ export function createInventory(opts) {
     panel.appendChild(search); screen._search = search;
 
     const palette = document.createElement('div');
-    Object.assign(palette.style, { display: 'none', gridTemplateColumns: 'repeat(9, 44px)', gap: '3px', maxHeight: '46vh', overflowY: 'auto', padding: '2px' });
+    Object.assign(palette.style, { display: 'none', gridTemplateColumns: 'repeat(9, 44px)', gap: '3px', maxHeight: '46vh', overflowY: 'scroll', padding: '2px', touchAction: 'pan-y', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' });
     paletteSlots = [];
     CREATIVE_LIST.forEach((id) => {
-      const s = makeSlot(() => creativePick(id));
+      const s = makeSlot(() => creativePick(id), true);
       s.title = (itemDef(id) && itemDef(id).name) || id; // hover tooltip
       paintSlot(s, { item: id, count: 1 });
       palette.appendChild(s); paletteSlots.push([id, s]);
