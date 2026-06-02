@@ -425,103 +425,120 @@ export function buildPetitHermes(stamp, B) {
 
   // ==========================================================================
   // 8) BAKERY (パン屋) — ground floor, x45..56, z3..19.
-  //    Baker NPC stands at local (50,2,18) = world (14,31,-32) — MUST stay AIR.
+  //    Baker NPC stands at world (11,31,-32) = local (47,2,18) — MUST stay AIR.
   //    Counter along z=19 (facing corridor at z=20). Baker behind counter at z=18.
   //    Partition wall at z=11: SALES front z12..19, WORKSHOP back z3..10.
   //    Teal accent wall (BLUE_WOOL) on sales-face of partition z=11.
-  //    FIX C: genuine artisan bakery feel — glass display case, pendant lamps,
-  //    proofing baskets, bread shelf, chalkboard menu, kraft tags.
+  //    BREAD REDESIGN: replace all HAY "loaves" in the sales area with the
+  //    new BREAD block (id 56) — golden-brown crusty loaves that read as bread.
+  //    HAY is kept ONLY in the workshop for genuine flour sacks.
+  //    Layout:
+  //      z=19 = L-shaped SPRUCE_PLANKS counter (x46..48 west + x52..55 east).
+  //      x49..50, z=19 = OPEN customer walk-in (must stay AIR y2..5).
+  //      x52..55, z=18..19 = GLASS-fronted display case packed with BREAD loaves.
+  //      x56, z=12..18   = east wall: two SPRUCE shelves loaded with BREAD + CALCITE price tags.
+  //      x45, z=12..17   = west wall: proofing-basket shelf (CALCITE bowl + BREAD).
+  //      z=11 teal partition = BLACK_WOOL chalkboard MENU (x46..49) + WHITE_WOOL header.
+  //      Three CALCITE-shade LANTERN pendant lamps hang above the counter (z=18).
+  //      Baker NPC cell (47,2,18) carved clear last.
   // ==========================================================================
   const bkX0 = 45, bkX1 = 56;           // bakery bay x extents
   const bkPartZ = 11;                    // partition wall between sales and workshop
   const bakerZ  = 18;                    // baker standing z (local)
   const counterZ = 19;                   // counter z (between baker and corridor)
 
-  // ── PARTITION WALL (STONE_BRICKS base, teal face on sales side) ───────────
+  // ── PARTITION WALL (STONE_BRICKS base, teal BLUE_WOOL face on sales side) ──
   fillBox(bkX0, 2, bkPartZ, bkX1, f1Hi, bkPartZ, B.STONE_BRICKS);
   // 2-wide × 3-tall passageway from sales to workshop (centred)
   fillBox(50, 2, bkPartZ, 51, 4, bkPartZ, B.AIR);
-  // TEAL (BLUE_WOOL) sales-face of partition — covers stone face toward corridor
+  // TEAL (BLUE_WOOL) sales-face — covers the stone toward the sales floor
   fillBox(bkX0, 2, bkPartZ, bkX1, f1Hi, bkPartZ, B.BLUE_WOOL);
   fillBox(50, 2, bkPartZ, 51, 4, bkPartZ, B.AIR); // re-open passageway
 
-  // ── CHALKBOARD MENU (BLACK_WOOL) west of doorway on teal wall, y=3..5 ─────
-  // x=46..49 (leaves the doorway x=50..51 open, and x=45 is bay divider wall)
+  // ── CHALKBOARD MENU (BLACK_WOOL) — x46..49, y=3..5 on teal wall z=11 ─────
+  // West side of the teal wall (stays left of the passageway opening x50..51).
+  // x=45 is the bay divider — start at x=46.
   fillBox(bkX0 + 1, 3, bkPartZ, 49, 5, bkPartZ, B.BLACK_WOOL);
-  // Chalk-title row at y=6 (WHITE_WOOL strip: "MENU" header texture impression)
+  // WHITE_WOOL "MENU" header stripe at y=6 above the chalkboard
   fillBox(bkX0 + 1, 6, bkPartZ, 49, 6, bkPartZ, B.WHITE_WOOL);
-  // Kraft/price tag accents east of doorway on teal wall: alternating CALCITE spots
+  // CALCITE "price tag" accents east of passageway on teal wall (decorative)
   for (let kx = 52; kx <= 55; kx += 2) stamp(kx, 4, bkPartZ, B.CALCITE);
 
-  // ── SALES COUNTER (SPRUCE_PLANKS bar) — x46..55, z=19, y2..3 ─────────────
-  // Customer-facing side: z=20 corridor sees the warm wood front.
-  // Baker side: z=18 (baker NPC stands here — kept AIR below y=5).
-  fillBox(bkX0 + 1, 2, counterZ, bkX1 - 1, 3, counterZ, B.SPRUCE_PLANKS);
-  // Baker NPC now stands at x=47 (WEST of the customer walk-in), behind the west
-  // counter segment — keep that cell clear. (main.js spawns the baker at world
-  // (11,31,-32) = local (47,2,18).)
-  fillBox(47, 2, bakerZ, 47, f1Hi, bakerZ, B.AIR);
+  // ── SALES COUNTER (SPRUCE_PLANKS bar) — L-shape at z=19, y2..3 ─────────
+  // West arm: x46..48 (baker stands behind at x47, z=18).
+  // East arm: x52..55 (fronts the glass display case).
+  // Gap at x49..50 = 2-wide customer WALK-IN — stays OPEN.
+  // Counter top (y=3) is spruce plank.  Counter face (y=2) toward z=20 corridor.
+  // West counter arm (x46..48, z=19, y2..3)
+  fillBox(bkX0 + 1, 2, counterZ, 48, 3, counterZ, B.SPRUCE_PLANKS);
+  // East counter arm (x52..55, z=19, y2..3) — double-width with glass case above
+  fillBox(52, 2, counterZ, bkX1 - 1, 3, counterZ, B.SPRUCE_PLANKS);
 
-  // ── GLASS-FRONTED BREAD DISPLAY CASE (FIX C core feature) ────────────────
-  // A 4-wide glass case built into the east end of the counter (x52..55, z=19)
-  // replaces the plain hay-on-counter there.  Glass front at z=19 y2..4,
-  // HAY loaves packed inside at z=18 (behind glass), SPRUCE_PLANKS case sides.
-  fillBox(52, 2, counterZ, 55, 4, counterZ, B.GLASS);   // glass front panel
-  fillBox(52, 2, counterZ, 52, 4, counterZ, B.SPRUCE_PLANKS); // west case wall
-  // HAY loaves filling the case (at z=18 = counterZ-1, between east bay wall z=55
-  // and the passageway area; baker cell x=50 is clear)
-  for (let cx2 = 53; cx2 <= 55; cx2++) {
-    stamp(cx2, 2, counterZ - 1, B.HAY);  // bottom row of loaves
-    stamp(cx2, 3, counterZ - 1, B.HAY);  // upper row of loaves
+  // ── GLASS-FRONTED DISPLAY CASE (core bakery feature) ────────────────────
+  // Structure at z=18..19, x=52..55:
+  //   z=19, y=2..4 → GLASS front panel (what customers see from corridor)
+  //   z=19, y=2, x=52 → SPRUCE west side wall of case
+  //   z=18, y=2..4 → BREAD loaves packed in two tiers behind the glass
+  //   z=18..19, y=4 → CALCITE "marble" display surface / case top
+  // GLASS front (overwrites the counter top on z=19 for x52..55)
+  fillBox(52, 2, counterZ, bkX1 - 1, 4, counterZ, B.GLASS);
+  // West case wall (solid spruce at x=52)
+  fillBox(52, 2, counterZ, 52, 4, counterZ, B.SPRUCE_PLANKS);
+  // BREAD loaves inside the case (z=18, two rows: lower y=2, upper y=3)
+  for (let cx2 = 53; cx2 <= bkX1 - 1; cx2++) {
+    stamp(cx2, 2, counterZ - 1, B.BREAD); // bottom row of loaves (visible thru glass)
+    stamp(cx2, 3, counterZ - 1, B.BREAD); // upper row of loaves
   }
-  // CALCITE case top (marble-effect display surface)
-  fillBox(52, 4, counterZ, 55, 4, counterZ, B.CALCITE);
+  // BREAD also on top of the display surface (y=4 at z=18, "tray" visible over case top)
+  for (let cx2 = 53; cx2 <= bkX1 - 1; cx2++) stamp(cx2, 4, counterZ - 1, B.BREAD);
+  // CALCITE case top / marble counter surface
+  fillBox(52, 4, counterZ, bkX1 - 1, 4, counterZ, B.CALCITE);
 
-  // ── BREAD LOAVES on the open (west) counter top: HAY on SPRUCE top ────────
-  // West section of counter x=46..51, tops at y=4 (above y=3 plank)
-  for (let bx2 = bkX0 + 1; bx2 <= 51; bx2 += 2) stamp(bx2, 4, counterZ, B.HAY);
+  // ── BREAD LOAVES on the open (west) counter top ──────────────────────────
+  // West arm tops at y=4 (above y=3 plank face): every other x for spacing.
+  // Uses the new BREAD block — looks like freshly baked loaves on the counter.
+  for (let bx2 = bkX0 + 1; bx2 <= 48; bx2 += 2) stamp(bx2, 4, counterZ, B.BREAD);
 
-  // ── CUSTOMER WALK-IN ─────────────────────────────────────────────────────
-  // Open a 2-wide gap in the counter at the doorway columns (x49..50, z=19) so
-  // customers can step IN from the corridor doorway (z=20) into the sales floor
-  // and reach the workshop door (z=11). Without this the counter SEALED the
-  // bakery entrance (regression from enclosing the bays). Carved last so it
-  // clears the counter/loaves placed above.
+  // ── CUSTOMER WALK-IN: open 2-wide gap at x49..50, z=19 ─────────────────
+  // Must stay AIR y2..5 so customers can enter and reach the workshop door.
+  // Carved last so it overrides any counter/loaf placed above.
   fillBox(49, 2, counterZ, 50, 5, counterZ, B.AIR);
-  // Ensure the short path forward to the sales floor is clear too (z=18..12 at the
-  // walk-in columns is open floor already from the room hollow).
 
-  // ── BREAD DISPLAY SHELF on east bay wall (x=56) — sales zone z=12..18 ─────
-  // Two SPRUCE_PLANKS shelf planks at y=3 and y=5, lined with HAY loaves.
-  // Kraft price tags: CALCITE spots between loaves.
-  fillBox(bkX1, 3, 12, bkX1, 3, 18, B.SPRUCE_PLANKS); // lower shelf
-  fillBox(bkX1, 5, 12, bkX1, 5, 18, B.SPRUCE_PLANKS); // upper shelf
+  // ── BREAD DISPLAY SHELVES on east bay wall (x=56, sales zone z=12..18) ───
+  // Two SPRUCE_PLANKS shelf planks at y=3 and y=5.
+  // BREAD loaves on the shelves every other z; CALCITE "kraft price tag" between.
+  // Top shelf also gets loaves at y=6 (one level above plank, reachable by eye).
+  fillBox(bkX1, 3, 12, bkX1, 3, 18, B.SPRUCE_PLANKS); // lower shelf plank
+  fillBox(bkX1, 5, 12, bkX1, 5, 18, B.SPRUCE_PLANKS); // upper shelf plank
   for (let sz = 12; sz <= 18; sz += 2) {
-    stamp(bkX1, 4, sz, B.HAY);           // bread on lower shelf
-    stamp(bkX1, 6, sz, B.HAY);           // bread on upper shelf
-    if (sz < 18) stamp(bkX1, 4, sz + 1, B.CALCITE); // kraft tag between loaves
+    stamp(bkX1, 4, sz,     B.BREAD);    // BREAD on lower shelf
+    stamp(bkX1, 6, sz,     B.BREAD);    // BREAD on upper shelf
+    if (sz < 18) stamp(bkX1, 4, sz + 1, B.CALCITE); // kraft price tag between loaves
   }
 
-  // ── PROOFING BASKETS on a low shelf at the back of the sales area z=12 ────
-  // A short SPRUCE_PLANKS shelf on the west bay wall (x=45) at y=3, z=12..15.
-  // Baskets = CALCITE bowl (base) + HAY (dough) stacked.
-  fillBox(bkX0, 3, 12, bkX0, 3, 15, B.SPRUCE_PLANKS); // shelf plank on west wall
-  for (let bz2 = 12; bz2 <= 15; bz2 += 2) {
+  // ── PROOFING BASKETS on west bay wall (x=45, z=12..17) ──────────────────
+  // Short SPRUCE shelf at y=3. CALCITE = rattan basket bowl; BREAD = rising dough.
+  // Conveys the artisan "proving" process happening behind the counter.
+  fillBox(bkX0, 3, 12, bkX0, 3, 17, B.SPRUCE_PLANKS); // shelf plank on west wall
+  for (let bz2 = 12; bz2 <= 17; bz2 += 2) {
     stamp(bkX0, 3, bz2,     B.CALCITE); // basket base (CALCITE "rattan" bowl)
-    stamp(bkX0, 4, bz2,     B.HAY);     // rising dough in basket
-    if (bz2 + 1 <= 15) stamp(bkX0, 3, bz2 + 1, B.CALCITE); // second basket
+    stamp(bkX0, 4, bz2,     B.BREAD);   // risen loaf in basket (BREAD, not HAY)
+    if (bz2 + 1 <= 17) stamp(bkX0, 3, bz2 + 1, B.CALCITE); // second basket slot
   }
 
-  // ── PENDANT LAMPS over the sales counter (FIX C warm lighting) ───────────
-  // Three lamps hanging over the counter row, each: CALCITE "shade" at y=f1Hi-1=6,
-  // with a LANTERN below at y=5 casting warm amber glow.
-  // Positions: x47, x50, x53 (spread across the counter width above z=19).
+  // ── PENDANT LAMPS over the sales counter (warm amber lighting) ───────────
+  // Three lamps along the counter line (z=18): CALCITE shade at y=f1Hi-1=6,
+  // LANTERN glow below at y=f1Hi-2=5. Spread x47, x50, x53 for even coverage.
+  // Baker cell (47,2,18) is carved clear after, so the lamp at (47,5,18) is fine.
   if (B.LANTERN != null) {
     for (const lx of [47, 50, 53]) {
-      stamp(lx, f1Hi - 1, counterZ - 1, B.CALCITE);  // lamp shade / housing
-      stamp(lx, f1Hi - 2, counterZ - 1, B.LANTERN);  // pendant lantern below shade
+      stamp(lx, f1Hi - 1, counterZ - 1, B.CALCITE);  // CALCITE lamp shade / housing
+      stamp(lx, f1Hi - 2, counterZ - 1, B.LANTERN);  // pendant LANTERN below shade
     }
   }
+
+  // Baker NPC cell: local (47,2,18) — keep clear so NPC can stand here.
+  fillBox(47, 2, bakerZ, 47, f1Hi, bakerZ, B.AIR);
 
   // ── WORKSHOP (工房) — z3..10 ──────────────────────────────────────────────
   // Three FURNACE oven stacks on back wall z=2
@@ -548,17 +565,18 @@ export function buildPetitHermes(stamp, B) {
   // 8b) BAKERY CORRIDOR DOORWAY MARKER — so players spot the bakery entrance.
   //     Bakery doorway in z=20 wall: x49..50, y2..5 (AIR already opened above).
   //     Add a distinct teal 暖簾 lintel (BLUE_WOOL) at y=6 spanning x48..51,
-  //     HAY "bread" emblems flanking the doorway at y=2, and a LANTERN above.
+  //     BREAD emblems flanking the doorway at y=2 (replaces HAY — now reads as
+  //     "bread on display" not "hay"), and a LANTERN above.
   //     Corridor side (z=21) gets the decorative elements.
   // ==========================================================================
   // 暖簾 lintel: BLUE_WOOL row at y=6, x48..51, z=20 (top of doorway arch)
   fillBox(48, 6, 20, 51, 6, 20, B.BLUE_WOOL);
-  // HAY bread emblems flanking doorway at y=2, z=20 (corridor wall face)
-  // placed on the SANDSTONE wall cells to either side of the doorway (x48, x51 still solid)
-  stamp(48, 2, 20, B.HAY); // west emblem on wall (already solid here, so overwrites)
-  stamp(51, 2, 20, B.HAY); // east emblem
-  stamp(48, 3, 20, B.HAY); // second tier west
-  stamp(51, 3, 20, B.HAY); // second tier east
+  // BREAD emblems flanking doorway at y=2, z=20 (corridor wall face).
+  // These golden-bread blocks signal "パン屋" to approaching players.
+  stamp(48, 2, 20, B.BREAD); // west emblem
+  stamp(51, 2, 20, B.BREAD); // east emblem
+  stamp(48, 3, 20, B.BREAD); // second tier west
+  stamp(51, 3, 20, B.BREAD); // second tier east
   // LANTERN just inside/above corridor doorway, z=21 (corridor side)
   if (B.LANTERN != null) {
     stamp(49, 6, 21, B.LANTERN); // lantern above bakery doorway, corridor side

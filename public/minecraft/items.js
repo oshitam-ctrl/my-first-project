@@ -117,6 +117,9 @@ const _defs = [
   block('birch_planks', 'シラカバの板材', 52, 0xc8b687, 'シラカバの原木から作った明るい板材。'),
   block('wheat_crop', '麦畑', 53, 0xd6b846, '育てると小麦が収穫できる。'),
   block('veg_crop', '野菜の苗', 54, 0x4e8c3c, '育てると野菜が収穫できる。'),
+  // Bakery display block — artisan loaf, golden-brown crust. Décor only (it is the
+  // bread you see in the display case and on shelves, not food consumed by right-click).
+  block('bread_block', 'パン', 56, 0xd28840, '焼きたてのパン。お店の主役。ショーケースや棚に並べて。'),
 
   // --- Materials ---
   material('stick', '棒', 0x9c7a4d, '木から作る棒。道具のクラフトに使う。'),

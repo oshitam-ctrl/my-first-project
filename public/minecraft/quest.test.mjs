@@ -70,4 +70,20 @@ assert.strictEqual(quest.done, false, 'reset clears done');
 quest.update({ wheat: 1, veg: 1, levain: 1, bread: 1, nearBaker: true });
 assert.strictEqual(completes, 2, 'onComplete fires again after reset');
 
-console.log('OK: quest.js builds, steps advance, onComplete guarded.');
+// --- LATCHING: an ingredient consumed by a later craft keeps its step done ----
+// Baking consumes the levain (recipe: levain + wheat -> bread), so after baking
+// `levain` reverts to 0. The quest must NOT un-check step 3 — otherwise it could
+// never be "all done" at once and would be impossible to complete in real play.
+const q2 = createQuest({ onComplete: () => {} });
+q2.update({ wheat: 1, veg: 1, levain: 0, bread: 0, nearBaker: false }); // before fermenting
+q2.update({ wheat: 1, veg: 1, levain: 1, bread: 0, nearBaker: false }); // levain obtained -> latches step 3
+q2.update({ wheat: 1, veg: 1, levain: 0, bread: 1, nearBaker: false }); // baked: levain consumed
+function doneCountOf(quest) {
+  const listEl = quest.el.children[1];
+  return listEl.children.filter((row) => row.children[0].textContent === '✅').length;
+}
+assert.strictEqual(doneCountOf(q2), 4, 'levain step stays latched after baking consumes it');
+q2.update({ wheat: 1, veg: 1, levain: 0, bread: 1, nearBaker: true });  // deliver
+assert.strictEqual(q2.done, true, 'quest completes despite levain now being 0 (latched)');
+
+console.log('OK: quest.js builds, steps advance, latch, onComplete guarded.');

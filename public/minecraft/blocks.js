@@ -69,6 +69,8 @@ const T = {
   wheat_crop: 58,
   veg_crop: 59,
   lantern: 60,   // glowing lantern tile (warm amber)
+  bread_top:  61, // bread loaf — golden-brown crusty top with a score slash
+  bread_side: 62, // bread loaf — warm crumb/crust side face
 };
 
 // Block definitions. `faces` = [top, bottom, side] tile indices.
@@ -125,6 +127,9 @@ export const BLOCKS = {
   47: { name: 'Obsidian', faces: [T.obsidian, T.obsidian, T.obsidian], solid: true, opaque: true, hardness: 8.0, tool: 'pickaxe', tier: 'wood' },
   48: { name: 'Packed Ice', faces: [T.packed_ice, T.packed_ice, T.packed_ice], solid: true, opaque: true, hardness: 0.6, tool: 'pickaxe', tier: 'wood' },
   55: { name: 'Lantern', faces: [T.lantern, T.lantern, T.lantern], solid: true, opaque: true, hardness: 1.5, tool: 'pickaxe', tier: null, light: 14 },
+  // 56 = BREAD — a basket/tray of fresh artisan loaves for display in the bakery.
+  // top face: golden crust with score; bottom: dark pan base; sides: warm crumb.
+  56: { name: 'Bread', faces: [T.bread_top, T.bread_top, T.bread_side], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
   49: { name: 'Bookshelf', faces: [T.bookshelf, T.bookshelf, T.bookshelf], solid: true, opaque: true, hardness: 1.5, tool: 'axe', tier: null },
   50: { name: 'Hay Bale', faces: [T.hay_bale, T.hay_bale, T.hay_bale], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
   51: { name: 'Spruce Planks', faces: [T.spruce_planks, T.spruce_planks, T.spruce_planks], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
@@ -566,6 +571,69 @@ const painters = {
       const y = (Math.random() * (TILE - 2)) | 0;
       c.fillRect(x, y, 2, 2);
     }
+  },
+
+  // ── BREAD tiles ─────────────────────────────────────────────────────────────
+  // bread_top: golden-brown crusty top face — oval loaf body with a diagonal
+  // score slash (the "grigne"), a dusting of flour (pale specks), and warm noise.
+  [T.bread_top]: (c) => {
+    // warm golden-brown base with subtle crust variation
+    noisePx(c, [194, 140, 62], 22);
+    // darker crust rim around the top (simulate rounded loaf edge)
+    c.fillStyle = 'rgba(110, 68, 20, 0.6)';
+    c.fillRect(0, 0, TILE, 2);    // top edge crust
+    c.fillRect(0, TILE - 2, TILE, 2); // bottom edge crust
+    c.fillRect(0, 0, 2, TILE);    // left edge crust
+    c.fillRect(TILE - 2, 0, 2, TILE); // right edge crust
+    // golden highlight stripe through the centre — sun-baked crown
+    c.fillStyle = 'rgba(230, 185, 70, 0.55)';
+    c.fillRect(3, 5, 10, 6);
+    // diagonal score/slash (the baker's cut — "grigne"):
+    // runs upper-left to lower-right, 1px wide, warm cream colour
+    c.strokeStyle = 'rgba(245, 220, 150, 0.92)';
+    c.lineWidth = 1.5;
+    c.beginPath();
+    c.moveTo(4, 2);
+    c.lineTo(12, 10);
+    c.stroke();
+    // parallel second slash (lighter)
+    c.strokeStyle = 'rgba(235, 210, 135, 0.55)';
+    c.lineWidth = 1;
+    c.beginPath();
+    c.moveTo(6, 2);
+    c.lineTo(14, 10);
+    c.stroke();
+    // flour dusting: small pale specks scattered on crust
+    c.fillStyle = 'rgba(248, 238, 215, 0.7)';
+    for (let i = 0; i < 14; i++) {
+      const fx = (Math.random() * (TILE - 1)) | 0;
+      const fy = (Math.random() * (TILE - 1)) | 0;
+      c.fillRect(fx, fy, 1, 1);
+    }
+  },
+
+  // bread_side: warm crumb interior visible on the side — shows the open
+  // crumb holes and a thin darker crust border along the top/bottom.
+  [T.bread_side]: (c) => {
+    // warm amber-orange mid-crust base
+    noisePx(c, [188, 128, 52], 20);
+    // top crust strip (dark, baked)
+    c.fillStyle = 'rgba(100, 58, 16, 0.75)';
+    c.fillRect(0, 0, TILE, 3);
+    // bottom crust strip
+    c.fillRect(0, TILE - 2, TILE, 2);
+    // crumb interior: lighter warm tone in the centre band
+    c.fillStyle = 'rgba(220, 175, 90, 0.4)';
+    c.fillRect(1, 3, TILE - 2, TILE - 6);
+    // open-crumb "holes" — irregular small dark ellipses
+    c.fillStyle = 'rgba(138, 82, 28, 0.6)';
+    const holeSeeds = [[2,5],[6,4],[11,6],[4,9],[9,10],[13,8],[3,12],[8,12],[12,11],[6,8]];
+    for (const [hx, hy] of holeSeeds) {
+      c.fillRect(hx, hy, 2, 1);
+    }
+    // highlight along bottom of top crust (golden where bread rises)
+    c.fillStyle = 'rgba(228, 185, 80, 0.55)';
+    c.fillRect(1, 3, TILE - 2, 2);
   },
 };
 
