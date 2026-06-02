@@ -481,7 +481,7 @@ function doBreak(x, y, z, id) {
   const b = BLOCKS[id];
   if (b && b.drop !== null && canHarvest(id)) {
     const dropId = b.drop !== undefined ? b.drop : blockToItem(id);
-    if (dropId) inv.add(dropId, b.dropCount || 1);
+    if (dropId) inv.collect(dropId, b.dropCount || 1);
   }
   inv.damageHeldTool(1);
 }
@@ -721,7 +721,7 @@ const mobs = createMobs({
   },
   player,
   onHurtPlayer: (dmg) => { applyDamage(dmg || 1); }, // real damage in survival; no-op in creative
-  addDrop: (itemId, n) => { if (itemId) inv.add(itemId, n); },
+  addDrop: (itemId, n) => { if (itemId) inv.collect(itemId, n); },
   sfx,
   isNight: () => false, // bakery game: only peaceful animals spawn, never hostiles
   enabled: settings.mobs !== false,
@@ -737,14 +737,32 @@ if (settings.mobs !== false) {
 }
 
 // Guided "today's work" quest so first-time visitors know exactly what to do.
+let questDone = false;
 const quest = createQuest({
-  onComplete: () => { toast('🎉 パンが焼けました！本日のプチヘルメース、開店です'); if (settings.shake) shakeMag = 0.15; },
+  onComplete: () => { questDone = true; toast('🎉 パンが焼けました！本日のプチヘルメース、開店です'); if (settings.shake) shakeMag = 0.15; },
 });
+// the baker greets the player when nearby (story warmth)
+const speechEl = document.createElement('div');
+Object.assign(speechEl.style, {
+  position: 'fixed', left: '50%', top: '13%', transform: 'translateX(-50%)', zIndex: '7', display: 'none',
+  maxWidth: '82vw', padding: '10px 16px', borderRadius: '12px', background: 'rgba(43,111,106,.92)', color: '#fff',
+  fontSize: '14px', lineHeight: '1.5', textAlign: 'center', boxShadow: '0 6px 20px rgba(0,0,0,.4)', pointerEvents: 'none',
+});
+document.body.appendChild(speechEl);
 const BREADS = ['bread', 'campagne', 'baguette', 'pain_de_mie', 'rosemary_bread', 'apple_bread', 'fruit_bread', 'toast'];
 function updateQuest() {
   const bread = BREADS.reduce((s, id) => s + inv.count(id), 0);
-  const nearBaker = !!(baker && Math.hypot(player.pos.x - baker.pos.x, player.pos.z - baker.pos.z) < 3.5);
+  const nearBaker = !!(baker && playing && Math.hypot(player.pos.x - baker.pos.x, player.pos.z - baker.pos.z) < 3.5);
   quest.update({ wheat: inv.count('wheat'), veg: inv.count('surplus_veg'), levain: inv.count('levain'), bread, nearBaker });
+  if (nearBaker) {
+    speechEl.style.display = 'block';
+    speechEl.textContent = questDone
+      ? '👩‍🍳 ありがとう！“もったいない”を“おいしい”に。本日も開店です🥖'
+      : (bread > 0 ? '👩‍🍳 わぁ、焼けたのね！こっちに届けてくれる？🥖'
+        : '👩‍🍳 いらっしゃい。畑の余り野菜と小麦で、パンを焼いてみてね🥖');
+  } else {
+    speechEl.style.display = 'none';
+  }
 }
 
 const crosshairEl = document.getElementById('crosshair');

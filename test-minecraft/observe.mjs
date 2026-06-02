@@ -41,9 +41,11 @@ await page.evaluate(() => window.__time && window.__time(0.5));
 await page.evaluate(() => window.__view && window.__view(8, 36, 16, 0, -0.18));
 await page.waitForTimeout(12000);
 await page.screenshot({ path: `/tmp/mc-ext-${TAG}.png` });
-// interior (bakery: counter, bread case, chalkboard, teal walls)
-await page.evaluate(() => window.__view && window.__view(8, 31.5, -20, 0, 0.0));
-await page.waitForTimeout(4000);
+// interior — stand near the baker so the greeting shows
+await page.evaluate(() => { if (window.__view) window.__view(8, 31, -27, 0, 0.02); if (window.__view) {} });
+await page.waitForTimeout(4500);
+const speech = await page.evaluate(() => { const els = [...document.querySelectorAll('body>div')].filter((e) => /いらっしゃい|ありがとう|届けて/.test(e.textContent || '')); return els.length && getComputedStyle(els[0]).display !== 'none' ? els[0].textContent.slice(0, 30) : 'hidden'; });
+console.log('baker speech:', speech);
 await page.screenshot({ path: `/tmp/mc-int-${TAG}.png` });
 
 const hud = await page.evaluate(() => document.getElementById('hud').textContent);
