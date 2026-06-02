@@ -33,3 +33,28 @@ npm run dev    # 開発サーバー起動
 npm run build  # プロダクションビルド
 npm run lint   # ESLint実行
 ```
+
+## 🥖 プチヘルメース（マイクラ風ブラウザゲーム）
+
+旧・北広島町立南方小学校のパン屋「プチヘルメース」を、マイクラ風の里山の世界で
+疑似体験するゲーム（Three.js / バニラES Modules / PWA、`public/minecraft/`）。
+
+### 遊ぶ（本番URL）
+
+```
+https://my-first-project-oshitam-ctrls-projects.vercel.app/minecraft
+```
+
+> 注意: `my-first-project.vercel.app`（スコープ無しの短い名前）は別アカウントが
+> 押さえている共有ドメインで 404 になります。必ず上の **スコープ付き** URL（末尾
+> `/minecraft`）を使ってください。ゲームへのルーティングは `next.config.mjs` の
+> rewrites（`/minecraft → /minecraft/index.html`）で解決しています。
+
+### テスト
+
+```bash
+cd public/minecraft && for t in *.test.mjs; do node "$t"; done   # 各モジュールの単体テスト
+node --import ./test-minecraft/setup.mjs test-minecraft/run.mjs   # ヘッドレス起動チェック
+node test-minecraft/play.mjs                                      # 端末別の起動/エラー確認
+```
+
