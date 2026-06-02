@@ -48,6 +48,20 @@
       transition: opacity .12s ease-out;
       background: radial-gradient(ellipse at center, rgba(170,0,0,0) 45%, rgba(170,0,0,.6) 100%); }
 
+    /* About / story panel (Petit Hermès worldview) */
+    #about-link { margin-top: 14px; font-size: 13px; color: #ffd9a8; text-decoration: underline;
+      cursor: pointer; display: inline-block; }
+    #about { position: fixed; inset: 0; z-index: 25; display: none; align-items: center;
+      justify-content: center; background: rgba(0,0,0,.62); padding: 16px; }
+    #about .about-card { background: #2b6f6a; color: #f3efe6; max-width: 540px; width: 100%;
+      max-height: 86vh; overflow-y: auto; border-radius: 14px; padding: 22px 22px 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.5); line-height: 1.7; font-size: 14px; }
+    #about h2 { margin: 0 0 10px; font-size: 22px; }
+    #about p { margin: 0 0 10px; }
+    #about .about-note { font-size: 12px; opacity: .85; border-top: 1px solid rgba(255,255,255,.25); padding-top: 10px; margin-top: 12px; }
+    #about button { margin-top: 8px; padding: 10px 18px; border: 0; border-radius: 8px;
+      background: #f3efe6; color: #2b6f6a; font-weight: 700; cursor: pointer; }
+
     /* Crosshair */
     #crosshair { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
       width: 22px; height: 22px; pointer-events: none; z-index: 5; mix-blend-mode: difference; }
@@ -202,6 +216,19 @@
       ② <b>E / 🎒</b> でインベントリ → <b>空き瓶＋規格外野菜</b>で『発酵液』をつくる<br>
       ③ <b>発酵液＋小麦粉</b>で『天然酵母カンパーニュ』など本物のパンが焼ける（＋ローズマリー/摘果りんごで味変）<br>
       ④ 鶏・牛・豚・羊を倒すと<b>お肉</b>。クリエイティブなので🎒の<b>検索</b>から全アイテムも出せます。自動保存・🔗で共有。</div>
+    <div id="about-link">📖 プチヘルメースについて</div>
+  </div>
+
+  <div id="about">
+    <div class="about-card">
+      <h2>🥖 プチヘルメース</h2>
+      <p><b>「畑の食品ロスで作る、未来のパン屋」</b></p>
+      <p>規格外で行き場をなくしがちな地元の野菜や果物を仕入れ、自家製の<b>天然酵母</b>で発酵させてパンにする——スローガンは<b>「毎日食べたい幸せ酵母」</b>。</p>
+      <p>出た端材は<b>コンポスト→肥料→畑へ</b>還し、<i>育てる人・作る人・食べる人</i>をつなぐ循環をめざすお店です。</p>
+      <p>広島県北広島町、2013年に閉校した<b>旧・南方小学校</b>の1階教室をリノベして<b>2025年1月</b>に開店。北海道から移住したご夫婦が営む、水・土の週2日だけのちいさなパン屋。看板は<b>天然酵母カンパーニュ</b>。</p>
+      <p class="about-note">このゲームは、その世界観を“マイクラ風”に疑似体験する非公式のファン作品です。<br>畑で収穫 → 瓶で発酵 → 小麦粉と混ぜて焼く、の流れでパン作りを楽しめます。</p>
+      <button id="about-close">とじる</button>
+    </div>
   </div>
 
   <div id="rotate">📱 横向きにすると遊びやすいです</div>

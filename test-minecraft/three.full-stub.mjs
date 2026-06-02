@@ -45,7 +45,9 @@ export class Mesh {
     this.geometry = geo || new BufferGeometry();
     this.material = mat || new MeshBasicMaterial();
     this.position = new V3();
-    this.scale = { setScalar() {} };
+    this.scale = { setScalar() {}, set() {} };
+    this.rotation = { x: 0, y: 0, z: 0 };
+    this.userData = {};
     this.visible = true; this.renderOrder = 0; this.frustumCulled = true;
   }
 }

@@ -53,6 +53,25 @@ const REGISTRY = {
     model: 'chicken', colors: { body: 0xffffff, head: 0xffffff, leg: 0xffcc33, beak: 0xff8800 },
     drop: 'raw_chicken',
   },
+  // FRIENDLY HUMAN NPCs -----------------------------------------------------
+  // Passive, no drop, no attack. Use the 'humanoid' model with a friendly face.
+  // `friendly: true` selects calm eyes/smile + skin-tone head in addFace, and
+  // marks them harmless (player attacks can hit but won't kill them).
+  baker: {
+    // パン屋の店主: cream apron-y look, mostly stands still.
+    kind: 'passive', hp: 40, w: 0.6, h: 1.8, speed: 1.0,
+    model: 'humanoid', friendly: true, calm: true, invincible: true,
+    // legs = apron/torso (teal apron), head = skin tone, limb = cream sleeves
+    colors: { body: 0xfff4e0, head: 0xf0c8a0, limb: 0xfff4e0, legs: 0x4fb3a6, hair: 0x5a4634 },
+    drop: null,
+  },
+  customer: {
+    // お客さん: casual clothes, gentle normal wander.
+    kind: 'passive', hp: 30, w: 0.6, h: 1.8, speed: 1.8,
+    model: 'humanoid', friendly: true, invincible: true,
+    colors: { body: 0xc05a5a, head: 0xe8b890, limb: 0xc05a5a, legs: 0x3a5a8a, hair: 0x2a2018 },
+    drop: null,
+  },
   // HOSTILE -----------------------------------------------------------------
   zombie: {
     kind: 'hostile', hp: 20, w: 0.6, h: 1.8, speed: 2.8, aggro: 16,
@@ -198,7 +217,17 @@ export function createMobs(opts) {
       f(FEAT.wattle, 0.06, 0.06, 0.12, 0, hy + 0.17, hz - 0.06);
     } else if (model === 'humanoid') {
       const hy = 1.65, hz = 0.235; // head center y; front face at 0.225
-      if (c.head === 0x4a8f4a) {
+      if (c.friendly) {
+        // FRIENDLY NPC (baker/customer): calm round eyes + a gentle smile.
+        for (const ex of [0.1, -0.1]) {
+          f(FEAT.white, 0.09, 0.09, 0.04, ex, hy + 0.06, hz);
+          f(FEAT.black, 0.05, 0.05, 0.05, ex, hy + 0.06, hz + 0.01);
+        }
+        // small rosy cheeks
+        for (const cx of [0.16, -0.16]) f(FEAT.pinkSnout, 0.06, 0.05, 0.03, cx, hy - 0.05, hz);
+        // smile (a short dark mouth line)
+        f(FEAT.black, 0.14, 0.03, 0.04, 0, hy - 0.13, hz);
+      } else if (c.head === 0x4a8f4a) {
         // ZOMBIE: dark sunken eyes + darker mouth line
         for (const ex of [0.1, -0.1]) f(FEAT.zombieEye, 0.1, 0.08, 0.05, ex, hy + 0.06, hz);
         f(FEAT.zombieEye, 0.24, 0.05, 0.04, 0, hy - 0.13, hz);
@@ -254,7 +283,14 @@ export function createMobs(opts) {
       head.userData.isHead = true;
     } else if (def.model === 'humanoid') {
       track(box(group, c.legs, 0.5, 0.75, 0.28, 0, 1.1, 0)); // body/torso
+      // friendly NPCs get a contrasting cream top over the torso (apron/shirt)
+      if (c.body && c.body !== c.legs) track(box(group, c.body, 0.52, 0.42, 0.3, 0, 1.28, 0));
       const head = track(box(group, c.head, 0.45, 0.45, 0.45, 0, 1.65, 0)); // head
+      // simple hair cap (sits on top/back of head) for friendly NPCs
+      if (c.hair) {
+        track(box(group, c.hair, 0.48, 0.16, 0.48, 0, 1.82, 0)); // top
+        track(box(group, c.hair, 0.48, 0.4, 0.12, 0, 1.66, -0.2)); // back
+      }
       // arms
       track(box(group, c.limb, 0.18, 0.7, 0.18, 0.34, 1.1, 0));
       track(box(group, c.limb, 0.18, 0.7, 0.18, -0.34, 1.1, 0));
@@ -381,8 +417,19 @@ export function createMobs(opts) {
       moving: false,
       fuseT: 0,
       dead: false,
+      persistent: false, // spawnAt() sets this true so the mob never despawns
     };
     mobs.push(mob);
+    return mob;
+  }
+
+  // Spawn one mob of registry `typeId` at world (x,y,z). Unlike random spawns
+  // this does NOT respect the soft cap and is marked persistent so the despawn
+  // check (64-block / fell-out-of-world) leaves it alone — e.g. the baker
+  // stays put in the shop. Returns the mob (or null for an unknown id).
+  function spawnAt(typeId, x, y, z) {
+    const mob = spawnMob(typeId, x, y, z);
+    if (mob) mob.persistent = true;
     return mob;
   }
 
@@ -416,7 +463,9 @@ export function createMobs(opts) {
   // Damage application + knockback
   // -------------------------------------------------------------------------
   function hurt(mob, dmg, fromX, fromZ, knock) {
-    mob.hp -= dmg;
+    // Friendly/invincible NPCs (baker, customers) can be hit but never take
+    // damage or die — cozy game. They still flash + gently scurry away.
+    if (!mob.def.invincible) mob.hp -= dmg;
     flash(mob);
     if (sfx && sfx.break) { try { sfx.break(mob.id); } catch (e) { /* optional */ } }
     // knockback: shove away from source on the horizontal plane
@@ -546,11 +595,13 @@ export function createMobs(opts) {
       if (mob.stateT <= 0) { mob.state = 'idle'; mob.headingT = 0; }
       return;
     }
-    // wander: pick a new heading every few seconds; sometimes idle
+    // wander: pick a new heading every few seconds; sometimes idle. "calm"
+    // mobs (e.g. the baker) mostly stand still with only rare gentle steps.
+    const calm = mob.def.calm;
     mob.headingT -= dt;
     if (mob.headingT <= 0) {
-      mob.headingT = 2 + Math.random() * 4;
-      if (Math.random() < 0.3) {
+      mob.headingT = calm ? 4 + Math.random() * 5 : 2 + Math.random() * 4;
+      if (Math.random() < (calm ? 0.85 : 0.3)) {
         mob.dirX = 0; mob.dirZ = 0; // pause
       } else {
         const a = Math.random() * Math.PI * 2;
@@ -775,11 +826,13 @@ export function createMobs(opts) {
       ai(mob, dt);
       physics(mob, dt);
       syncMesh(mob, dt);
-      // despawn if far from player
-      const ddx = mob.pos.x - player.pos.x, ddz = mob.pos.z - player.pos.z;
-      if (Math.hypot(ddx, ddz) > DESPAWN_DIST) removeMob(mob, null);
-      // fell out of world
-      else if (mob.pos.y < player.pos.y - 64) removeMob(mob, null);
+      // despawn if far from player — but persistent (spawnAt) mobs never cull
+      if (!mob.persistent) {
+        const ddx = mob.pos.x - player.pos.x, ddz = mob.pos.z - player.pos.z;
+        if (Math.hypot(ddx, ddz) > DESPAWN_DIST) removeMob(mob, null);
+        // fell out of world
+        else if (mob.pos.y < player.pos.y - 64) removeMob(mob, null);
+      }
     }
 
     updateArrows(dt);
@@ -807,6 +860,7 @@ export function createMobs(opts) {
   const api = {
     update,
     attack,
+    spawnAt,
     setEnabled,
     clear,
     count,
