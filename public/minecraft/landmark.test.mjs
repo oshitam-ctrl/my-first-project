@@ -341,30 +341,32 @@ for (let x = 79; x <= 83 && !eastStairLanternFound; x++)
     if (get(x, y, 21) === B.LANTERN) eastStairLanternFound = true;
 assert.ok(eastStairLanternFound, 'expected LANTERN above east stair doorway in corridor');
 
-// UP-ARROW (WHITE_WOOL) above west stair doorway on corridor wall (y=7..9, z=20)
+// UP-ARROW (WHITE_WOOL) above west stair doorway on corridor wall.
+// Markers span y=7..8 (below door) and y=13 (above door top at y=12).
+// Doorway is at y=9..12, so markers must NOT occupy y=9..12 at the doorway x-range.
 let westArrowFound = false;
 for (let x = 5; x <= 10 && !westArrowFound; x++)
-  for (let y = 7; y <= 10 && !westArrowFound; y++)
-    if (get(x, y, 20) === B.WHITE_WOOL) westArrowFound = true;
-assert.ok(westArrowFound, 'expected WHITE_WOOL up-arrow above west stair doorway (y=7..10, z=20)');
+  for (let y of [7, 8, 13])
+    if (get(x, y, 20) === B.WHITE_WOOL) { westArrowFound = true; break; }
+assert.ok(westArrowFound, 'expected WHITE_WOOL up-arrow above west stair doorway (y=7,8,13 z=20)');
 
 // UP-ARROW (WHITE_WOOL) above east stair doorway
 let eastArrowFound = false;
 for (let x = 79; x <= 83 && !eastArrowFound; x++)
-  for (let y = 7; y <= 10 && !eastArrowFound; y++)
-    if (get(x, y, 20) === B.WHITE_WOOL) eastArrowFound = true;
-assert.ok(eastArrowFound, 'expected WHITE_WOOL up-arrow above east stair doorway (y=7..10, z=20)');
+  for (let y of [7, 8, 13])
+    if (get(x, y, 20) === B.WHITE_WOOL) { eastArrowFound = true; break; }
+assert.ok(eastArrowFound, 'expected WHITE_WOOL up-arrow above east stair doorway (y=7,8,13 z=20)');
 
-// "2F" BLUE_WOOL marker at y=10, z=20 near both stairs
+// "2F" BLUE_WOOL badge at y=14, z=20 near both stairs (moved above door arch at y=9..12)
 let westTwofFound = false;
 for (let x = 5; x <= 10 && !westTwofFound; x++)
-  if (get(x, 10, 20) === B.BLUE_WOOL) westTwofFound = true;
-assert.ok(westTwofFound, 'expected BLUE_WOOL "2F" marker at y=10, z=20 near west stair');
+  if (get(x, 14, 20) === B.BLUE_WOOL) westTwofFound = true;
+assert.ok(westTwofFound, 'expected BLUE_WOOL "2F" badge at y=14, z=20 near west stair');
 
 let eastTwofFound = false;
 for (let x = 79; x <= 83 && !eastTwofFound; x++)
-  if (get(x, 10, 20) === B.BLUE_WOOL) eastTwofFound = true;
-assert.ok(eastTwofFound, 'expected BLUE_WOOL "2F" marker at y=10, z=20 near east stair');
+  if (get(x, 14, 20) === B.BLUE_WOOL) eastTwofFound = true;
+assert.ok(eastTwofFound, 'expected BLUE_WOOL "2F" badge at y=14, z=20 near east stair');
 
 // Stair LANDING LANTERNs at top of stairs (y=8, z=12)
 assert.ok(
@@ -472,6 +474,127 @@ for (let x = bkX0; x <= bkX1; x++)
     if (get(x, y, bkPartZ) === B.BLUE_WOOL) bakeryTealCount++;
 assert.ok(bakeryTealCount >= 4, `bakery partition wall should have >=4 BLUE_WOOL teal face blocks, got ${bakeryTealCount}`);
 
+// ══════════════════════════════════════════════════════════════════════════════
+// BUG 1 FIX — 2F NORTH PERIMETER WALL PRESERVED (not erased by hollow)
+// The 2F hollow now starts at z=3, leaving the z=2 north wall intact.
+// ══════════════════════════════════════════════════════════════════════════════
+
+// 2F north wall (z=2, y=g1..g2) must be non-AIR at several x positions.
+// These are set by section-2 wallRing (SANDSTONE) + section-3 windowBand (GLASS).
+// Check a handful of interior x-columns (avoid bay dividers/stair ends for simplicity).
+const northWallCheckXs = [10, 20, 30, 50, 60, 70];
+for (const nx of northWallCheckXs) {
+  for (let ny = g1; ny <= g2; ny++) {
+    const nid = get(nx, ny, 2);
+    assert.ok(
+      nid !== B.AIR && nid !== -1,
+      `2F north wall destroyed: (${nx},${ny},2) is AIR — BUG-1 hollow should start at z=3`
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BUG 2 FIX — STAIR→2F CORRIDOR ROUTE IS WALKABLE
+// The stair shaft is punched z=13..19 only; z=12 landing is solid at deck (y=8).
+// The x=9 catwalk (solid deck y=8, z=12..20) connects landing to corridor.
+// The 2F corridor doorways at z=20 are clear (AIR y=9..12).
+// A WHITE_WOOL railing runs along the east rim of the west shaft (x=8, z=13..19, y=g1).
+// ══════════════════════════════════════════════════════════════════════════════
+
+// West stair landing at z=12 must be solid at deck level (y=8) — not punched.
+assert.ok(
+  get(7, 8, 12) === B.LANTERN || get(7, 8, 12) === B.OAK_PLANKS,
+  `west stair landing (7,8,12) must be solid (LANTERN or OAK_PLANKS), got ${get(7,8,12)}`
+);
+for (const lx of [6, 8]) {
+  assert.ok(
+    get(lx, 8, 12) === B.OAK_PLANKS || get(lx, 8, 12) === B.SMOOTH_STONE,
+    `west stair landing (${lx},8,12) must be solid, got ${get(lx,8,12)}`
+  );
+}
+
+// Stair shaft (z=13..19, x=6..8, y=8) must be AIR (punched for GF↔2F).
+for (const sx of [6, 7, 8]) {
+  for (let sz = 13; sz <= 19; sz++) {
+    assert.strictEqual(
+      get(sx, 8, sz), B.AIR,
+      `west stair shaft (${sx},8,${sz}) must be AIR, got ${get(sx,8,sz)}`
+    );
+  }
+}
+
+// x=9 catwalk (west stair) — solid floor y=8 all the way z=12..20.
+for (let cz = 12; cz <= 20; cz++) {
+  assert.ok(
+    get(9, 8, cz) !== B.AIR && get(9, 8, cz) !== -1,
+    `2F catwalk (9,8,${cz}) must be solid — player walkway from stair landing to corridor`
+  );
+  assert.ok(
+    get(9, 9, cz) === B.AIR || get(9, 9, cz) === -1,
+    `2F catwalk headspace (9,9,${cz}) must be AIR, got ${get(9,9,cz)}`
+  );
+}
+
+// 2F stair bay corridor doorway (x=6..9, y=9..12, z=20) must be clear.
+for (const dx of [6, 8, 9]) {
+  assert.ok(
+    get(dx, 9, 20) === B.AIR || get(dx, 9, 20) === -1,
+    `2F stair corridor doorway (${dx},9,20) must be AIR, got ${get(dx,9,20)}`
+  );
+}
+
+// Landing exit clear: player body space (y=9..10) at the landing (z=12, x=6..8) is AIR.
+for (const lx of [6, 7, 8]) {
+  for (const ly of [9, 10]) {
+    assert.ok(
+      get(lx, ly, 12) === B.AIR || get(lx, ly, 12) === -1,
+      `stair landing body-space (${lx},${ly},12) must be AIR (no railing blocking exit), got ${get(lx,ly,12)}`
+    );
+  }
+}
+
+// 2F shaft east-rim railing: WHITE_WOOL at x=8, y=g1, z=13..19.
+let shaftRailingFound = false;
+for (let rz = 13; rz <= 19; rz++)
+  if (get(8, g1, rz) === B.WHITE_WOOL) { shaftRailingFound = true; break; }
+assert.ok(shaftRailingFound, 'expected WHITE_WOOL railing on east rim of west stair shaft (x=8, y=g1, z=13..19)');
+
+// East stair symmetric checks.
+assert.ok(
+  get(81, 8, 12) === B.LANTERN || get(81, 8, 12) === B.OAK_PLANKS,
+  `east stair landing (81,8,12) must be solid, got ${get(81,8,12)}`
+);
+for (const sx of [80, 81, 82]) {
+  for (let sz = 13; sz <= 19; sz++) {
+    assert.strictEqual(
+      get(sx, 8, sz), B.AIR,
+      `east stair shaft (${sx},8,${sz}) must be AIR, got ${get(sx,8,sz)}`
+    );
+  }
+}
+let eastShaftRailing = false;
+for (let rz = 13; rz <= 19; rz++)
+  if (get(80, g1, rz) === B.WHITE_WOOL) { eastShaftRailing = true; break; }
+assert.ok(eastShaftRailing, 'expected WHITE_WOOL railing on west rim of east stair shaft (x=80, y=g1, z=13..19)');
+
+// Stair marker arrows must NOT block the 2F doorway (y=9..12 at x=6..9, z=20).
+// The arrow tip was moved to y=13 and "2F" badges to y=14.
+for (const mx of [7, 8]) {
+  for (const my of [9, 10, 11, 12]) {
+    const mval = get(mx, my, 20);
+    assert.ok(
+      mval === B.AIR || mval === -1,
+      `stair marker must not block 2F doorway: (${mx},${my},20) = ${mval}, expected AIR`
+    );
+  }
+}
+
+// ── Counting reports ─────────────────────────────────────────────────────────
+let northWallSolid = 0;
+for (const nx of northWallCheckXs)
+  for (let ny = g1; ny <= g2; ny++)
+    if (get(nx, ny, 2) !== B.AIR && get(nx, ny, 2) !== -1) northWallSolid++;
+
 console.log(`OK: ${calls} stamp calls, ${solid} solid blocks placed, max y=${maxY}.`);
 console.log(`  dims ${w}x${d}x${clearH}; distinct block ids: ${tally.size}`);
 console.log(`  bakery sales AIR=${airCount_sales}, classroom floor=${floorCount}, corridor walkable=${corridorAir}`);
@@ -481,7 +604,9 @@ console.log(`  図書室: shelves=${libraryShelfCount}, book-wools=${libraryBook
 console.log(`  Bakery doorway marker: lintel=${bakeryLintelFound}, hay=${bakeryHayFound}, lantern=${bakeryLanternFound}`);
 console.log(`  Workshop door marker: lintel=${workshopLintelFound}, lantern=${workshopLanternFound}, arrow=${workshopArrowFound}`);
 console.log(`  Stair markers: west lintel=${westStairLintelFound}, east lintel=${eastStairLintelFound}`);
-console.log(`  Stair arrows: west=${westArrowFound}, east=${eastArrowFound}; 2F markers: west=${westTwofFound}, east=${eastTwofFound}`);
+console.log(`  Stair arrows: west=${westArrowFound}, east=${eastArrowFound}; 2F badges: west=${westTwofFound}, east=${eastTwofFound}`);
+console.log(`  BUG-1 fix: 2F north wall (z=2, y${g1}..${g2}) solid at sampled x: ${northWallSolid}/${northWallCheckXs.length * (g2 - g1 + 1)} cells`);
+console.log(`  BUG-2 fix: stair landing(7,8,12)=${get(7,8,12)===B.LANTERN?'LANT':get(7,8,12)}, shaft(7,8,13)=${get(7,8,13)}, catwalk(9,8,15)=${get(9,8,15)}, railing=${shaftRailingFound}`);
 console.log(`  FIX A: GF divider(22,4,10)=${get(22,4,10)===B.SANDSTONE?'SOLID':'ERASED'}, divider(57,4,10)=${get(57,4,10)===B.SANDSTONE?'SOLID':'ERASED'}`);
 console.log(`  FIX B: 2F desks=${f2DeskCount}, chairs=${f2ChairCount}, lockers=${f2LockerCount}, ceiling lanterns=${f2LanternCount}, corridor doors open=${f2CorridorDoorwaysOk}`);
 console.log(`  FIX C: bakery GLASS=${bakeryGlassCount}, counter LANTERNs=${bakeryCounterLanternCount}, BLUE_WOOL teal=${bakeryTealCount}`);
