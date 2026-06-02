@@ -155,6 +155,23 @@ const _defs = [
   food('apple_bread', '摘果りんごパン', 9, 0xd2a85e),
   food('fruit_bread', '完熟フルーツパン', 9, 0xcf8f4a),
   food('toast', 'トースト', 6, 0xc88a44),
+
+  // --- 食品ロス救済 × 天然酵母 — 新アイテム ---
+  // 天然酵母: 規格外フルーツから培養した種菌。発酵液(levain)をさらに育てたもの。
+  // 中間素材なので material() (food値なし)。
+  material('natural_yeast', '天然酵母', 0xe8d06a),
+
+  // フルーツカンパーニュ: 旗艦カンパーニュ＋完熟/摘果フルーツで風味アップ。
+  food('fruit_campagne', 'フルーツカンパーニュ', 11, 0xd4904a),
+
+  // ライ麦ハードパン: 小麦粉＋levain＋ライ麦風味の丈夫なパン。
+  food('rye_hard_bread', 'ライ麦ハードパン', 10, 0x9a7040),
+
+  // 規格外フォカッチャ: 規格外野菜＋小麦粉＋levainで"もったいない→おいしい"。
+  food('rescued_focaccia', '規格外フォカッチャ', 10, 0xc8a850),
+
+  // ロスパン袋: おまかせ袋。開けるとランダムなパンが出てくる。
+  material('rescue_bag', 'ロスパン袋', 0x8b6a3e),
 ];
 
 // Tools: classes × tiers

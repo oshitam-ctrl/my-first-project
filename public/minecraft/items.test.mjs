@@ -59,7 +59,7 @@ assert.strictEqual(isFood('apple'), true, 'apple is food');
 // Counts
 assert.strictEqual(toolCount, 16, 'exactly 16 tools (16 base)');
 assert.strictEqual(blockCount, 52, 'exactly 52 block items');
-assert.strictEqual(foodCount, 20, 'exactly 20 food items');
+assert.strictEqual(foodCount, 23, 'exactly 23 food items');
 
 // Petit Hermès signature items
 assert.strictEqual(ITEMS.campagne.food.hunger, 9, 'campagne hunger 9');
@@ -67,6 +67,18 @@ assert.strictEqual(ITEMS.toast.food.hunger, 6, 'toast hunger 6');
 assert.strictEqual(isFood('baguette'), true, 'baguette is food');
 assert.strictEqual(isFood('rosemary'), false, 'rosemary is not food (ingredient)');
 assert.strictEqual(ITEMS.rosemary.color, 0x5f8a5a, 'rosemary color');
+
+// 食品ロス救済ライン — 新アイテム
+assert.strictEqual(isFood('fruit_campagne'), true, 'fruit_campagne is food');
+assert.strictEqual(ITEMS.fruit_campagne.food.hunger, 11, 'fruit_campagne hunger 11');
+assert.strictEqual(isFood('rye_hard_bread'), true, 'rye_hard_bread is food');
+assert.strictEqual(ITEMS.rye_hard_bread.food.hunger, 10, 'rye_hard_bread hunger 10');
+assert.strictEqual(isFood('rescued_focaccia'), true, 'rescued_focaccia is food');
+assert.strictEqual(ITEMS.rescued_focaccia.food.hunger, 10, 'rescued_focaccia hunger 10');
+assert.strictEqual(isFood('natural_yeast'), false, 'natural_yeast is not food (intermediate material)');
+assert.strictEqual(ITEMS.natural_yeast.color, 0xe8d06a, 'natural_yeast color');
+assert.strictEqual(isFood('rescue_bag'), false, 'rescue_bag is not food (container item)');
+assert.strictEqual(ITEMS.rescue_bag.color, 0x8b6a3e, 'rescue_bag color');
 
 // Spot-check stats
 assert.strictEqual(ITEMS.diamond_sword.tool.damage, 7, 'diamond sword damage 7');

@@ -68,6 +68,7 @@ const T = {
   birch_planks: 57,
   wheat_crop: 58,
   veg_crop: 59,
+  lantern: 60,   // glowing lantern tile (warm amber)
 };
 
 // Block definitions. `faces` = [top, bottom, side] tile indices.
@@ -96,7 +97,7 @@ export const BLOCKS = {
   18: { name: 'Diamond Ore', faces: [T.diamond_ore, T.diamond_ore, T.diamond_ore], solid: true, opaque: true, hardness: 3.0, tool: 'pickaxe', tier: 'iron', drop: 'diamond' },
   19: { name: 'Redstone Ore', faces: [T.redstone_ore, T.redstone_ore, T.redstone_ore], solid: true, opaque: true, hardness: 3.0, tool: 'pickaxe', tier: 'iron', drop: 'redstone', dropCount: 4 },
   20: { name: 'Crafting Table', faces: [T.table_top, T.plank, T.table_side], solid: true, opaque: true, hardness: 2.5, tool: 'axe', tier: null },
-  21: { name: 'Furnace', faces: [T.furnace_top, T.furnace_top, T.furnace_front], solid: true, opaque: true, hardness: 3.5, tool: 'pickaxe', tier: 'wood' },
+  21: { name: 'Furnace', faces: [T.furnace_top, T.furnace_top, T.furnace_front], solid: true, opaque: true, hardness: 3.5, tool: 'pickaxe', tier: 'wood', light: 13 },
   23: { name: 'Birch Log', faces: [T.birch_log, T.birch_log, T.birch_log], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
   24: { name: 'Birch Leaves', faces: [T.birch_leaves, T.birch_leaves, T.birch_leaves], solid: true, opaque: false, hardness: 0.2, tool: null, tier: null, drop: null },
   25: { name: 'Spruce Log', faces: [T.spruce_log, T.spruce_log, T.spruce_log], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
@@ -123,6 +124,7 @@ export const BLOCKS = {
   46: { name: 'Calcite', faces: [T.calcite, T.calcite, T.calcite], solid: true, opaque: true, hardness: 2.0, tool: 'pickaxe', tier: 'wood' },
   47: { name: 'Obsidian', faces: [T.obsidian, T.obsidian, T.obsidian], solid: true, opaque: true, hardness: 8.0, tool: 'pickaxe', tier: 'wood' },
   48: { name: 'Packed Ice', faces: [T.packed_ice, T.packed_ice, T.packed_ice], solid: true, opaque: true, hardness: 0.6, tool: 'pickaxe', tier: 'wood' },
+  55: { name: 'Lantern', faces: [T.lantern, T.lantern, T.lantern], solid: true, opaque: true, hardness: 1.5, tool: 'pickaxe', tier: null, light: 14 },
   49: { name: 'Bookshelf', faces: [T.bookshelf, T.bookshelf, T.bookshelf], solid: true, opaque: true, hardness: 1.5, tool: 'axe', tier: null },
   50: { name: 'Hay Bale', faces: [T.hay_bale, T.hay_bale, T.hay_bale], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
   51: { name: 'Spruce Planks', faces: [T.spruce_planks, T.spruce_planks, T.spruce_planks], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
@@ -139,6 +141,10 @@ export function isSolid(id) {
 }
 export function isLiquid(id) {
   return id !== 0 && BLOCKS[id] && BLOCKS[id].liquid;
+}
+// Returns the block-light emission level (0..15) for the given block id.
+export function blockLightEmit(id) {
+  return (id !== 0 && BLOCKS[id] && BLOCKS[id].light) ? BLOCKS[id].light : 0;
 }
 
 // --- procedural tile painting -------------------------------------------
@@ -498,6 +504,17 @@ const painters = {
     // grain heads near the top
     c.fillStyle = 'rgb(230,202,96)';
     for (let x = 2; x < TILE; x += 3) c.fillRect(x - 1, 1, 3, 3);
+  },
+  [T.lantern]: (c) => {
+    // Warm amber glow: golden centre square with bright orange halo
+    noisePx(c, [70, 58, 40], 14);
+    c.fillStyle = '#e09020'; c.fillRect(4, 4, 8, 8);
+    c.fillStyle = '#ffd060'; c.fillRect(6, 6, 4, 4);
+    c.fillStyle = '#fff0a0'; c.fillRect(7, 7, 2, 2); // hot core
+    // decorative cage bars
+    c.strokeStyle = 'rgba(40,30,20,0.85)';
+    c.strokeRect(3.5, 3.5, 9, 9);
+    c.beginPath(); c.moveTo(8, 3); c.lineTo(8, 13); c.moveTo(3, 8); c.lineTo(13, 8); c.stroke();
   },
   [T.veg_crop]: (c) => {
     // leafy green base with a few coloured veg dots

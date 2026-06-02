@@ -11,6 +11,7 @@ const LB = {
   BIRCH_PLANKS: 52, DRY_GRASS: 27, SANDSTONE: 39, SMOOTH_STONE: 41, CALCITE: 46,
   WHITE_WOOL: 31, BLUE_WOOL: 33, GREEN_WOOL: 35, BLACK_WOOL: 36, GRAVEL: 37, HAY: 50, STONE_BRICKS: 29,
   WATER: 7, WHEAT_CROP: 53, VEG_CROP: 54, FURNACE: 21, CRAFTING_TABLE: 20, PLANK: 9, PUMPKIN: 14,
+  LANTERN: 55,
 };
 // Fixed world placement of the Petit Hermès landmark (centred in front of spawn).
 // Chosen so the entrance is at world x=8 and the facade plane at world z=-24
@@ -18,7 +19,7 @@ const LB = {
 // wider in x and deeper toward -z. Local coords are >=0, so the facade sits at the
 // MAX local z (=26) and LM_Z is pushed back to -50 to give depth room.
 const LM_X = -36, LM_Y = 29, LM_Z = -50;
-import { BLOCKS, isOpaque, isSolid, tileUV } from './blocks.js';
+import { BLOCKS, isOpaque, isSolid, tileUV, blockLightEmit } from './blocks.js';
 
 export const CHUNK = 16;
 export const HEIGHT = 64;
@@ -33,6 +34,7 @@ const AIR = 0, GRASS = 1, DIRT = 2, STONE = 3, SAND = 4, WOOD = 5,
   LEAVES = 6, WATER = 7, BEDROCK = 8, SNOW = 11;
 const COAL_ORE = 15, IRON_ORE = 16, GOLD_ORE = 17, DIAMOND_ORE = 18, REDSTONE_ORE = 19;
 const BIRCH_LOG = 23, BIRCH_LEAVES = 24, SPRUCE_LOG = 25, SPRUCE_LEAVES = 26, DRY_GRASS = 27, CACTUS = 28;
+const LANTERN = 55; // glowing lantern block (blockLight 14)
 // Satoyama valley block aliases (palette ids from LB)
 const SMOOTH_STONE = 41, CALCITE = 46, WHITE_WOOL = 31, GREEN_WOOL = 35, GRAVEL = 37, HAY = 50;
 const WHEAT_CROP = 53, VEG_CROP = 54, BRICK = 13, COBBLE = 10, GLASS = 12;
@@ -146,6 +148,14 @@ const dirs = [
   { d: [0, 0, -1], shade: 0.8, face: 2 },
 ];
 const AO_BRIGHT = [0.5, 0.7, 0.86, 1.0];
+
+// ── Lighting constants ───────────────────────────────────────────────────────
+// CAVE_DARK: minimum skylight factor in fully enclosed spaces (0..1).
+const CAVE_DARK = 0.08;
+// SKYLIGHT_FALLOFF: how many blocks of soft falloff below the first opaque block.
+const SKYLIGHT_FALLOFF = 4;
+// MAX_BLOCK_LIGHT: maximum blocklight level (like Minecraft's 15).
+const MAX_BLOCK_LIGHT = 15;
 
 // ── Petit Hermès landmark stamp cache ───────────────────────────────────────
 // The landmark is STATIC (its geometry is seed-independent), but it overlaps
@@ -602,6 +612,124 @@ export class World {
     return isSolid(this.getBlock(wx, wy, wz));
   }
 
+  // --- light field -----------------------------------------------------------
+  // Builds a Float32Array of per-voxel combined light values [0..1] for the
+  // chunk plus a 1-voxel border on all sides (needed for smooth corner averaging).
+  // Dimensions: (CHUNK+2) * (CHUNK+2) * HEIGHT, indexed by lightIdx(lx,y,lz)
+  // where lx and lz run from -1 to CHUNK.
+  //
+  // Two channels are computed and combined:
+  //   SKYLIGHT  – 1.0 at/above the highest opaque block, falls off with a soft
+  //               SKYLIGHT_FALLOFF-block gradient below it, floors at CAVE_DARK.
+  //               Scales with the global day/night sun via the material colour in
+  //               main.js — we bake it as a 0..1 term here.
+  //   BLOCKLIGHT – BFS flood-fill from emitter blocks (Furnace=13, Lantern=14);
+  //               decrement 1 per block, stops at opaque, converted to [0..1].
+  //               NOT dimmed by day/night; remains constant regardless of sun.
+  //
+  // Final per-voxel light = max(skylight, blocklight_term) so lanterns/ovens
+  // illuminate their surroundings even underground or at night.
+  buildLightField(cx, cz) {
+    const W = CHUNK + 2; // border size: 1 each side
+    const size = W * W * HEIGHT;
+    const sky   = new Float32Array(size);
+    const block = new Float32Array(size); // blocklight as 0..MAX_BLOCK_LIGHT integer stored as float
+
+    // Local-space index: lx,lz in [-1..CHUNK], y in [0..HEIGHT-1]
+    const LI = (lx, y, lz) => (lx + 1) + (lz + 1) * W + y * (W * W);
+
+    // Build skylight from heightmap — sample world coords for border columns
+    for (let lz = -1; lz <= CHUNK; lz++) {
+      for (let lx = -1; lx <= CHUNK; lx++) {
+        const wx = cx * CHUNK + lx, wz = cz * CHUNK + lz;
+        // Find highest opaque block in this column (using getBlock for border cols)
+        let topY = -1;
+        for (let y = HEIGHT - 1; y >= 0; y--) {
+          if (isOpaque(this.getBlock(wx, y, wz))) { topY = y; break; }
+        }
+        // Fill column: above topY = full sky (1.0), soft gradient below
+        for (let y = 0; y < HEIGHT; y++) {
+          let s;
+          if (y > topY) {
+            s = 1.0; // open sky
+          } else {
+            // Soft falloff: SKYLIGHT_FALLOFF blocks of linear decay below surface
+            const depth = topY - y;
+            if (depth < SKYLIGHT_FALLOFF) {
+              s = CAVE_DARK + (1.0 - CAVE_DARK) * (1.0 - depth / SKYLIGHT_FALLOFF);
+            } else {
+              s = CAVE_DARK;
+            }
+          }
+          sky[LI(lx, y, lz)] = s;
+        }
+      }
+    }
+
+    // BFS blocklight: seed from emitters within the padded volume, flood outward
+    // Using a simple typed array queue for performance
+    const rawBlock = new Uint8Array(size); // integer 0..MAX_BLOCK_LIGHT
+    const queue = new Int32Array(size); // packed indices
+    let qHead = 0, qTail = 0;
+
+    // Seed all emitter blocks in the padded volume
+    for (let lz = -1; lz <= CHUNK; lz++) {
+      for (let y = 0; y < HEIGHT; y++) {
+        for (let lx = -1; lx <= CHUNK; lx++) {
+          const wx = cx * CHUNK + lx, wz = cz * CHUNK + lz;
+          const id = this.getBlock(wx, y, wz);
+          const emit = blockLightEmit(id);
+          if (emit > 0) {
+            const li = LI(lx, y, lz);
+            rawBlock[li] = emit;
+            queue[qTail++] = li;
+          }
+        }
+      }
+    }
+
+    // BFS flood fill — 6-connected, decrements by 1 each step, stops at opaque.
+    // Direction encoding d=0..5: ±lx, ±lz, ±y.
+    const WW = W * W;
+
+    while (qHead < qTail) {
+      const li = queue[qHead++];
+      const lv = rawBlock[li] - 1;
+      if (lv <= 0) continue;
+
+      // Decode lx, lz, y from li (reverse of LI)
+      const y   =  Math.floor(li / WW);
+      const rem =  li % WW;
+      const lz  =  Math.floor(rem / W) - 1;
+      const lx  =  (rem % W) - 1;
+
+      for (let d = 0; d < 6; d++) {
+        const ny2 = y + (d === 4 ? 1 : d === 5 ? -1 : 0);
+        if (ny2 < 0 || ny2 >= HEIGHT) continue;
+        const nlx = lx + (d === 0 ? 1 : d === 1 ? -1 : 0);
+        const nlz = lz + (d === 2 ? 1 : d === 3 ? -1 : 0);
+        if (nlx < -1 || nlx > CHUNK || nlz < -1 || nlz > CHUNK) continue;
+        // Don't propagate INTO opaque blocks (but emitters placed in opaque blocks are fine)
+        const wx = cx * CHUNK + nlx, wz = cz * CHUNK + nlz;
+        if (isOpaque(this.getBlock(wx, ny2, wz))) continue;
+        const nli = LI(nlx, ny2, nlz);
+        if (rawBlock[nli] < lv) {
+          rawBlock[nli] = lv;
+          queue[qTail++] = nli;
+        }
+      }
+    }
+
+    // Convert rawBlock int 0..15 -> float 0..1 and combine with skylight
+    const light = new Float32Array(size);
+    for (let i = 0; i < size; i++) {
+      const bl = rawBlock[i] / MAX_BLOCK_LIGHT;
+      light[i] = Math.max(sky[i], bl);
+    }
+
+    return { light, LI, W };
+  }
+
   // --- mesher ------------------------------------------------------------
   buildGeometry(cx, cz) {
     const c = this.ensureData(cx, cz);
@@ -616,25 +744,19 @@ export class World {
 
     const occ = (x, y, z) => (isOpaque(this.getBlock(x, y, z)) ? 1 : 0);
 
-    // sky-exposure heightmap: highest opaque block per column. A face that opens
-    // into an air cell with no opaque block above it is sky-lit; otherwise it's
-    // inside a cave/overhang and gets darkened. (Cheap fake lighting.)
-    // This is a cozy bakery (no hostile caves), and the whole point is to walk
-    // INTO プチヘルメース and SEE the shop — so indoor spaces stay clearly
-    // readable rather than pitch black.
-    const CAVE_DARK = 0.6;
-    const skyH = new Int16Array(CHUNK * CHUNK).fill(-1);
-    for (let lz = 0; lz < CHUNK; lz++) {
-      for (let lx = 0; lx < CHUNK; lx++) {
-        for (let y = HEIGHT - 1; y >= 0; y--) {
-          if (isOpaque(data[idx(lx, y, lz)])) { skyH[lx + lz * CHUNK] = y; break; }
-        }
-      }
-    }
-    const litMul = (nlx, ny, nlz) => {
-      const lx2 = nlx < 0 ? 0 : nlx >= CHUNK ? CHUNK - 1 : nlx; // clamp at chunk border
-      const lz2 = nlz < 0 ? 0 : nlz >= CHUNK ? CHUNK - 1 : nlz;
-      return ny > skyH[lx2 + lz2 * CHUNK] ? 1 : CAVE_DARK;
+    // Build the per-chunk light field (skylight + blocklight BFS).
+    // The field covers lx,lz in [-1..CHUNK], y in [0..HEIGHT-1].
+    const { light, LI } = this.buildLightField(cx, cz);
+
+    // Sample the combined light at a world position.
+    // Clamps border reads to the padded range already covered by buildLightField.
+    const sampleLight = (wx, wy, wz) => {
+      if (wy < 0 || wy >= HEIGHT) return 1.0;
+      const lx = wx - ox, lz = wz - oz;
+      // clamp to the padded range [-1..CHUNK]
+      const clx = Math.max(-1, Math.min(CHUNK, lx));
+      const clz = Math.max(-1, Math.min(CHUNK, lz));
+      return light[LI(clx, wy, clz)];
     };
 
     for (let y = 0; y < HEIGHT; y++) {
@@ -654,7 +776,7 @@ export class World {
             if (isOpaque(nId) || nId === id) continue; // face hidden
 
             const tile = def.faces[dir.face];
-            this._emitFace(g, wx, y, wz, dir, tile, occ, litMul(lx + dx, y + dy, lz + dz));
+            this._emitFace(g, wx, y, wz, dir, tile, occ, sampleLight);
           }
         }
       }
@@ -662,7 +784,15 @@ export class World {
     return groups;
   }
 
-  _emitFace(g, x, y, z, dir, tile, occ, lightMul = 1) {
+  // Emit a quad for one visible face, baking smooth lighting + AO into vertex colors.
+  //
+  // Smooth lighting: for each of the 4 face corners, we average the combined
+  // light value of the 4 voxels that share that corner (Minecraft-style smooth
+  // lighting). This produces soft gradients across surfaces — the single biggest
+  // visual upgrade toward a Minecraft look. The result is multiplied by
+  // dir.shade (directional tint) and AO_BRIGHT (corner AO) and baked into the
+  // vertex color attribute; the GPU interpolates across the quad.
+  _emitFace(g, x, y, z, dir, tile, occ, sampleLight) {
     const [nx, ny, nz] = dir.d;
     // choose axis layout
     let uAxis, vAxis, nAxis, ncoord;
@@ -670,7 +800,6 @@ export class World {
     else if (ny !== 0) { nAxis = 1; uAxis = 0; vAxis = 2; ncoord = ny > 0 ? 1 : 0; }
     else { nAxis = 2; uAxis = 0; vAxis = 1; ncoord = nz > 0 ? 1 : 0; }
 
-    const { texture } = this;
     const uvrect = tileUV(tile, this.atlasCols, this.atlasRows);
 
     const corners = [[0, 0], [1, 0], [1, 1], [0, 1]];
@@ -683,11 +812,11 @@ export class World {
       p[vAxis] = vv;
       const vx = x + p[0], vy = y + p[1], vz = z + p[2];
 
-      // AO neighbours on the outer layer
+      // AO neighbours on the outer layer (unchanged from original)
       const tu = uu ? 1 : -1;
       const tv = vv ? 1 : -1;
       const base = [x, y, z];
-      base[nAxis] += nx + ny + nz; // move to neighbour layer (only one is nonzero)
+      base[nAxis] += nx + ny + nz; // move to neighbour layer (only one axis nonzero)
       const s1 = base.slice(); s1[uAxis] += tu;
       const s2 = base.slice(); s2[vAxis] += tv;
       const cc = base.slice(); cc[uAxis] += tu; cc[vAxis] += tv;
@@ -696,12 +825,23 @@ export class World {
       const soc = occ(cc[0], cc[1], cc[2]);
       const ao = so1 && so2 ? 0 : 3 - (so1 + so2 + soc);
 
+      // ── Smooth lighting: average light of the 4 voxels sharing this vertex ──
+      // The face normal points outward; sample the 4 voxels on the outer side
+      // of the face at this corner: centre-out (base), +u, +v, +u+v.
+      // base[] is already set to the neighbour cell (base[nAxis] shifted by dir).
+      const lBase  = sampleLight(base[0],    base[1],    base[2]);
+      const lSide1 = sampleLight(s1[0],      s1[1],      s1[2]);
+      const lSide2 = sampleLight(s2[0],      s2[1],      s2[2]);
+      const lCorner = sampleLight(cc[0],      cc[1],      cc[2]);
+      // Standard 4-sample corner average (same as Minecraft's smooth lighting)
+      const smoothL = (lBase + lSide1 + lSide2 + lCorner) * 0.25;
+
       const uvc = [uu ? uvrect.u1 : uvrect.u0, vv ? uvrect.v1 : uvrect.v0];
-      verts.push({ p: [vx, vy, vz], uv: uvc, ao });
+      verts.push({ p: [vx, vy, vz], uv: uvc, ao, smoothL });
       aoVals.push(ao);
     }
 
-    // triangulation flip to keep AO gradient symmetric
+    // triangulation flip to keep AO gradient symmetric (unchanged)
     const flip = aoVals[0] + aoVals[2] < aoVals[1] + aoVals[3];
     const order = flip ? [1, 2, 3, 1, 3, 0].map((i) => verts[i]) : [0, 1, 2, 0, 2, 3].map((i) => verts[i]);
 
@@ -709,7 +849,8 @@ export class World {
       g.pos.push(v.p[0], v.p[1], v.p[2]);
       g.norm.push(nx, ny, nz);
       g.uv.push(v.uv[0], v.uv[1]);
-      const b = dir.shade * AO_BRIGHT[v.ao] * lightMul;
+      // Combine directional shade * corner AO * smooth per-vertex light
+      const b = dir.shade * AO_BRIGHT[v.ao] * v.smoothL;
       g.col.push(b, b, b);
     }
   }

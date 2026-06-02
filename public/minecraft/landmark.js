@@ -510,4 +510,24 @@ export function buildPetitHermes(stamp, B) {
   for (let fz = fz0; fz <= fz1; fz++) {
     stamp(fx0 - 1, 0, fz, B.GRASS); stamp(fx1 + 1, 0, fz, B.GRASS);
   }
+
+  // ==========================================================================
+  // 14) LANTERNS — warm interior lighting (uses the new block-light system).
+  //     Hung just under each floor's ceiling so the bakery, corridor and every
+  //     classroom stay cosy and readable day AND night (renovated-school vibe).
+  // ==========================================================================
+  if (B.LANTERN != null) {
+    const bayCenters = [16, 27, 38, 50, 62, 73]; // classroom/bakery bay x-centres
+    const roomZ = 11;        // mid-depth of the z3..19 room zone
+    const corrZ = 23;        // corridor centre (z21..25)
+    for (const [ly, name] of [[f1Hi - 1, 'f1'], [f2Hi - 1, 'f2']]) { // hang below each ceiling
+      // one lantern per room (2 per big bay for even light)
+      for (const bxC of bayCenters) {
+        stamp(bxC, ly, roomZ - 3, B.LANTERN);
+        stamp(bxC, ly, roomZ + 4, B.LANTERN);
+      }
+      // a row of lanterns down the corridor
+      for (let lx = bx0 + 6; lx <= bx1 - 6; lx += 10) stamp(lx, ly, corrZ, B.LANTERN);
+    }
+  }
 }
