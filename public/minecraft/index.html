@@ -128,6 +128,30 @@
       pointer-events: none; }
     #toast.show { opacity: 1; }
 
+    /* Held-item name popup (Minecraft-style, shown above hotbar on slot change) */
+    #item-name-popup {
+      position: fixed;
+      left: 50%; transform: translateX(-50%);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+      z-index: 10; pointer-events: none;
+      background: rgba(0,0,0,0.70); color: #fff;
+      font-size: 14px; font-weight: 600;
+      padding: 5px 14px; border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.25);
+      text-shadow: 0 1px 3px #000; letter-spacing: 0.03em;
+      opacity: 0; transition: opacity 0.15s ease;
+      white-space: nowrap; max-width: 80vw;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    /* On small screens bring the popup up slightly more so it clears the taller slots */
+    @media (max-width: 520px) {
+      #item-name-popup {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 66px);
+        font-size: 12px;
+        padding: 4px 10px;
+      }
+    }
+
     /* Start / pause overlay */
     #overlay { position: fixed; inset: 0; z-index: 10; display: flex;
       flex-direction: column; align-items: center; justify-content: center;

@@ -40,20 +40,31 @@ export function createInventory(opts) {
       const tile = BLOCKS[def.block].faces[2];
       const tw = texture.image.width / cols;
       ctx.imageSmoothingEnabled = false;
+      // subtle drop-shadow behind block icons for depth
+      ctx.shadowColor = 'rgba(0,0,0,0.55)';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 2;
       ctx.drawImage(texture.image, (tile % cols) * tw, Math.floor(tile / cols) * tw, tw, tw, 2, 2, 28, 28);
+      ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
     } else if (def) {
       const c = def.color ?? 0x888888;
       ctx.fillStyle = `#${c.toString(16).padStart(6, '0')}`;
       if (def.tool) { // draw a little handle+head so tools read as tools
+        ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 2; ctx.shadowOffsetX = 1; ctx.shadowOffsetY = 1;
         ctx.fillStyle = '#6b4a1e'; ctx.fillRect(14, 12, 4, 16);
         ctx.fillStyle = `#${c.toString(16).padStart(6, '0')}`; ctx.fillRect(8, 4, 16, 8);
+        ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
       } else {
+        ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 3; ctx.shadowOffsetX = 1; ctx.shadowOffsetY = 1;
         ctx.beginPath(); ctx.arc(16, 16, 11, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
       }
     }
   }
 
   // --- a single slot element ---------------------------------------------
+  // onClick receives the raw pointer/click event so callers can inspect shiftKey.
   function makeSlot(onClick, scrollable) {
     const el = document.createElement('div');
     Object.assign(el.style, {
@@ -82,14 +93,78 @@ export function createInventory(opts) {
   }
   function paintSlot(el, cell) {
     drawIcon(el._cv, cell && cell.item);
-    el._cnt.textContent = cell && cell.count > 1 ? cell.count : '';
+    const n = cell && cell.count > 1 ? cell.count : '';
+    el._cnt.textContent = n;
+    // high-contrast badge background for readability
+    el._cnt.style.background = n ? 'rgba(0,0,0,0.45)' : '';
+    el._cnt.style.borderRadius = n ? '2px' : '';
+    el._cnt.style.padding = n ? '0 1px' : '';
   }
 
   // --- stack logic -------------------------------------------------------
   function cellGet(store, i) { return store === 'main' ? main[i] : craft[i]; }
   function cellSet(store, i, v) { if (store === 'main') main[i] = v; else craft[i] = v; }
 
-  function clickSlot(store, i) {
+  // shiftQuickMove: move an entire stack from slot (store,i) to the other area.
+  // hotbar = slots 0..8; storage = slots 9..35.
+  // From hotbar -> fills storage (9..35) first; from storage -> fills hotbar (0..8) first.
+  // From craft -> moves to hotbar then storage.
+  function shiftQuickMove(store, i) {
+    const cell = cellGet(store, i);
+    if (!cell) return;
+    let left = cell.count;
+    const id = cell.item;
+    const max = MAXSTACK(id);
+
+    function tryFill(lo, hi) {
+      // pass 1: fill existing stacks
+      for (let j = lo; j < hi && left > 0; j++) {
+        const c = main[j];
+        if (c && c.item === id && c.count < max) {
+          const m = Math.min(left, max - c.count);
+          c.count += m; left -= m;
+        }
+      }
+      // pass 2: fill empty slots
+      for (let j = lo; j < hi && left > 0; j++) {
+        if (!main[j]) {
+          const m = Math.min(left, max);
+          main[j] = { item: id, count: m }; left -= m;
+        }
+      }
+    }
+
+    if (store === 'craft') {
+      tryFill(0, 9);  // hotbar first, then storage
+      tryFill(9, MAIN);
+    } else if (store === 'main') {
+      if (i < 9) {
+        // hotbar slot -> move to storage
+        tryFill(9, MAIN);
+      } else {
+        // storage slot -> move to hotbar
+        tryFill(0, 9);
+        if (left > 0) tryFill(9, MAIN); // overflow back to storage
+      }
+    }
+
+    // update the source cell
+    if (left <= 0) {
+      cellSet(store, i, null);
+    } else {
+      cell.count = left;
+      cellSet(store, i, cell);
+    }
+    sfx && sfx.select();
+    refreshCraftResult();
+    renderAll();
+  }
+
+  function clickSlot(store, i, shiftKey) {
+    if (shiftKey && !creative) {
+      shiftQuickMove(store, i);
+      return;
+    }
     const cell = cellGet(store, i);
     if (cursor == null) {
       if (cell) { cursor = cell; cellSet(store, i, null); }
@@ -115,6 +190,26 @@ export function createInventory(opts) {
     // consume one of each ingredient
     for (let i = 0; i < 9; i++) if (craft[i]) { craft[i].count--; if (craft[i].count <= 0) craft[i] = null; }
     if (cursor) cursor.count += r.count; else cursor = { item: r.id, count: r.count };
+    sfx && sfx.break(0);
+    refreshCraftResult();
+    renderAll();
+  }
+
+  // shift+click on craft result: take result directly into inventory (hotbar first, then storage)
+  function shiftTakeResult() {
+    const r = craftResult(craft.map((c) => (c ? c.item : null)));
+    if (!r) return;
+    // consume ingredients
+    for (let i = 0; i < 9; i++) if (craft[i]) { craft[i].count--; if (craft[i].count <= 0) craft[i] = null; }
+    // add result directly to inventory (hotbar 0..8, then storage 9..35)
+    let left = r.count;
+    const id = r.id; const max = MAXSTACK(id);
+    for (let j = 0; j < MAIN && left > 0; j++) {
+      const c = main[j]; if (c && c.item === id && c.count < max) { const m = Math.min(left, max - c.count); c.count += m; left -= m; }
+    }
+    for (let j = 0; j < MAIN && left > 0; j++) {
+      if (!main[j]) { main[j] = { item: id, count: Math.min(left, max) }; left -= main[j].count; }
+    }
     sfx && sfx.break(0);
     refreshCraftResult();
     renderAll();
@@ -166,6 +261,55 @@ export function createInventory(opts) {
     renderHotbar();
   }
 
+  // --- held-item name popup ----------------------------------------------
+  let namePopupEl = null, namePopupTimer = null;
+  function ensureNamePopup() {
+    if (namePopupEl) return;
+    namePopupEl = document.createElement('div');
+    namePopupEl.id = 'item-name-popup';
+    Object.assign(namePopupEl.style, {
+      position: 'fixed',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      // Positioned just above the hotbar (hotbar bottom ~14px + ~54px height + 6px gap)
+      bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+      zIndex: '10',
+      pointerEvents: 'none',
+      background: 'rgba(0,0,0,0.70)',
+      color: '#fff',
+      fontSize: '14px',
+      fontWeight: '600',
+      padding: '5px 14px',
+      borderRadius: '4px',
+      border: '1px solid rgba(255,255,255,0.25)',
+      textShadow: '0 1px 3px #000',
+      letterSpacing: '0.03em',
+      opacity: '0',
+      transition: 'opacity 0.15s ease',
+      whiteSpace: 'nowrap',
+      maxWidth: '80vw',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+    });
+    document.body.appendChild(namePopupEl);
+  }
+  function showNamePopup(itemId) {
+    // guard: document.body may not have appendChild in all stub environments
+    if (!document.body || typeof document.body.appendChild !== 'function') return;
+    ensureNamePopup();
+    if (namePopupTimer) { clearTimeout(namePopupTimer); namePopupTimer = null; }
+    const def = itemId ? itemDef(itemId) : null;
+    const name = def && def.name ? def.name : itemId || '';
+    if (!name) { namePopupEl.style.opacity = '0'; return; }
+    namePopupEl.textContent = name;
+    namePopupEl.style.opacity = '1';
+    // hold for 1s, then fade out over 0.5s (transition handles the fade)
+    namePopupTimer = setTimeout(() => {
+      if (namePopupEl) namePopupEl.style.opacity = '0';
+      namePopupTimer = null;
+    }, 1500);
+  }
+
   // --- hotbar rendering --------------------------------------------------
   let hotbarEl = null, hotbarSlots = [];
   function mountHotbar(el) {
@@ -187,7 +331,14 @@ export function createInventory(opts) {
       s.style.background = i === selected ? 'rgba(255,255,255,.22)' : 'rgba(255,255,255,.08)';
     });
   }
-  function setSelected(i) { selected = (i + 9) % 9; renderHotbar(); sfx && sfx.select(); opts.onSelect && opts.onSelect(); }
+  function setSelected(i) {
+    selected = (i + 9) % 9;
+    renderHotbar();
+    sfx && sfx.select();
+    opts.onSelect && opts.onSelect();
+    // show the item-name popup whenever the selection changes (Minecraft-style)
+    showNamePopup(main[selected] ? main[selected].item : null);
+  }
   function scroll(dir) { setSelected(selected + (dir > 0 ? 1 : -1)); }
 
   // --- inventory screen --------------------------------------------------
@@ -220,13 +371,13 @@ export function createInventory(opts) {
     grid.style.display = 'grid'; grid.style.gap = '3px';
     craftSlots = [];
     for (let i = 0; i < 9; i++) {
-      const s = makeSlot(() => clickSlot('craft', i));
+      const s = makeSlot((e) => clickSlot('craft', i, e && e.shiftKey));
       craftSlots.push(s); grid.appendChild(s);
     }
     craftRow.appendChild(grid);
     const arrow = document.createElement('div'); arrow.textContent = '➜';
     Object.assign(arrow.style, { color: '#fff', fontSize: '22px' }); craftRow.appendChild(arrow);
-    resultSlot = makeSlot(() => takeResult());
+    resultSlot = makeSlot((e) => { if (e && e.shiftKey && !creative) shiftTakeResult(); else takeResult(); });
     resultSlot.style.borderColor = 'rgba(255,220,120,.6)';
     craftRow.appendChild(resultSlot);
     panel.appendChild(craftRow);
@@ -259,14 +410,14 @@ export function createInventory(opts) {
     const store = document.createElement('div');
     store.style.display = 'grid'; store.style.gridTemplateColumns = 'repeat(9, 1fr)'; store.style.gap = '3px';
     storageSlots = [];
-    for (let i = 9; i < MAIN; i++) { const s = makeSlot(() => clickSlot('main', i)); storageSlots.push([i, s]); store.appendChild(s); }
+    for (let i = 9; i < MAIN; i++) { const s = makeSlot((e) => clickSlot('main', i, e && e.shiftKey)); storageSlots.push([i, s]); store.appendChild(s); }
     panel.appendChild(store); screen._store = store;
     const hotRow = document.createElement('div');
     hotRow.style.display = 'grid'; hotRow.style.gridTemplateColumns = 'repeat(9, 1fr)'; hotRow.style.gap = '3px'; hotRow.style.marginTop = '6px';
     hotRowSlots = [];
     for (let i = 0; i < 9; i++) {
       // creative: tap a hotbar slot to SELECT it; survival: normal move
-      const s = makeSlot(() => { if (creative) { selected = i; renderAll(); sfx && sfx.select(); } else clickSlot('main', i); });
+      const s = makeSlot((e) => { if (creative) { selected = i; renderAll(); sfx && sfx.select(); } else clickSlot('main', i, e && e.shiftKey); });
       storageSlots.push([i, s]); hotRowSlots.push([i, s]); hotRow.appendChild(s);
     }
     panel.appendChild(hotRow);
