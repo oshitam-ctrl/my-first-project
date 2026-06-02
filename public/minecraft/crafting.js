@@ -108,6 +108,26 @@ export const RECIPES = [
 
   // トースト: 食パンを焼く: pain_de_mie -> toast x2
   shapeless(['pain_de_mie'], { id: 'toast', count: 2 }),
+
+  // --- 食品ロス救済パン (新ライン) ---
+
+  // 天然酵母: 発酵液(levain)＋完熟フルーツで培養 → 天然酵母種菌
+  shapeless(['levain', 'ripe_fruit'], { id: 'natural_yeast', count: 1 }),
+
+  // フルーツカンパーニュ: 天然酵母＋小麦粉＋ripe_fruit で贅沢ハードパン
+  shapeless(['natural_yeast', 'flour', 'ripe_fruit'], { id: 'fruit_campagne', count: 1 }),
+
+  // フルーツカンパーニュ (摘果りんごバージョン): 天然酵母＋小麦粉＋摘果りんご
+  shapeless(['natural_yeast', 'flour', 'thinned_apple'], { id: 'fruit_campagne', count: 1 }),
+
+  // ライ麦ハードパン: levain＋小麦粉＋小麦（ライ麦の代わりに小麦2種で表現）
+  shapeless(['levain', 'flour', 'flour', 'wheat'], { id: 'rye_hard_bread', count: 1 }),
+
+  // 規格外フォカッチャ: levain＋小麦粉＋規格外野菜 — "もったいない→おいしい"
+  shapeless(['levain', 'flour', 'surplus_veg'], { id: 'rescued_focaccia', count: 1 }),
+
+  // ロスパン袋: campagne＋rye_hard_bread＋rescued_focaccia を詰め合わせ
+  shapeless(['campagne', 'rye_hard_bread', 'rescued_focaccia'], { id: 'rescue_bag', count: 1 }),
 ];
 
 // Tools for each material tier.

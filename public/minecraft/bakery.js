@@ -14,14 +14,33 @@
 // Flattened one-tap bakes (mirror crafting.js, minus the levain step which is
 // time-based fermentation below). Ordered easiest → signature.
 const BAKES = [
-  { result: 'flour',         count: 1, emoji: '🌾', need: [['wheat', 3]] },
-  { result: 'bread',         count: 2, emoji: '🍞', need: [['levain', 1], ['wheat', 1]] },
-  { result: 'baguette',      count: 1, emoji: '🥖', need: [['flour', 1], ['levain', 1]] },
-  { result: 'campagne',      count: 1, emoji: '🍞', need: [['levain', 1], ['flour', 2]] },
-  { result: 'pain_de_mie',   count: 1, emoji: '🍞', need: [['levain', 1], ['flour', 1], ['wheat', 1]] },
-  { result: 'rosemary_bread', count: 1, emoji: '🌿', need: [['campagne', 1], ['rosemary', 1]] },
-  { result: 'apple_bread',   count: 1, emoji: '🍎', need: [['campagne', 1], ['thinned_apple', 1]] },
-  { result: 'fruit_bread',   count: 1, emoji: '🍇', need: [['campagne', 1], ['ripe_fruit', 1]] },
+  { result: 'flour',           count: 1, emoji: '🌾', need: [['wheat', 3]] },
+  { result: 'bread',           count: 2, emoji: '🍞', need: [['levain', 1], ['wheat', 1]] },
+  { result: 'baguette',        count: 1, emoji: '🥖', need: [['flour', 1], ['levain', 1]] },
+  { result: 'campagne',        count: 1, emoji: '🍞', need: [['levain', 1], ['flour', 2]] },
+  { result: 'pain_de_mie',     count: 1, emoji: '🍞', need: [['levain', 1], ['flour', 1], ['wheat', 1]] },
+  { result: 'rosemary_bread',  count: 1, emoji: '🌿', need: [['campagne', 1], ['rosemary', 1]] },
+  { result: 'apple_bread',     count: 1, emoji: '🍎', need: [['campagne', 1], ['thinned_apple', 1]] },
+  { result: 'fruit_bread',     count: 1, emoji: '🍇', need: [['campagne', 1], ['ripe_fruit', 1]] },
+
+  // --- 食品ロス救済ライン ---
+  // 天然酵母: 発酵液＋完熟フルーツで培養した種菌（中間素材）
+  { result: 'natural_yeast',   count: 1, emoji: '🧫', need: [['levain', 1], ['ripe_fruit', 1]] },
+  // フルーツカンパーニュ: 天然酵母で仕込む贅沢なフルーツ入りハードパン
+  { result: 'fruit_campagne',  count: 1, emoji: '🍑', need: [['natural_yeast', 1], ['flour', 1], ['ripe_fruit', 1]] },
+  // ライ麦ハードパン: levain＋小麦粉多め → 噛み応えある田舎パン
+  { result: 'rye_hard_bread',  count: 1, emoji: '🫓', need: [['levain', 1], ['flour', 2], ['wheat', 1]] },
+  // 規格外フォカッチャ: surplus_veg＋小麦粉＋levain — "もったいない→おいしい"
+  { result: 'rescued_focaccia', count: 1, emoji: '🫓', need: [['levain', 1], ['flour', 1], ['surplus_veg', 1]] },
+  // ロスパン袋: 3種のパンを詰め合わせて"おまかせ袋"を作る
+  { result: 'rescue_bag',      count: 1, emoji: '🛍️', need: [['campagne', 1], ['rye_hard_bread', 1], ['rescued_focaccia', 1]] },
+];
+
+// Breads that can appear when you open a ロスパン袋.
+const RESCUE_BAG_POOL = [
+  'bread', 'baguette', 'campagne', 'pain_de_mie',
+  'rosemary_bread', 'apple_bread', 'fruit_bread',
+  'fruit_campagne', 'rye_hard_bread', 'rescued_focaccia',
 ];
 
 const FERMENT_NEED = [['empty_jar', 1], ['surplus_veg', 1]];
@@ -119,6 +138,34 @@ export function createBakery({ inv, ferment, sfx, toast, itemDef, onBake, now = 
     render();
   }
 
+  // --- ロスパン袋「開ける」セクション ---
+  const bagSec = document.createElement('div');
+  Object.assign(bagSec.style, {
+    background: 'rgba(0,0,0,.22)', border: '1px solid #5c4a36',
+    borderRadius: '12px', padding: '12px', marginTop: '14px',
+  });
+  const bagHead = document.createElement('div');
+  bagHead.innerHTML = '🛍️ <b>ロスパン袋を開ける</b> <span style="opacity:.7;font-size:12px">— おまかせ袋からランダムなパン登場！</span>';
+  bagHead.style.marginBottom = '8px';
+  bagSec.appendChild(bagHead);
+  const openBagBtn = document.createElement('button');
+  Object.assign(openBagBtn.style, bigBtnStyle('#b07a2a'));
+  openBagBtn.textContent = '🛍️ 袋を開ける';
+  openBagBtn.addEventListener('click', openRescueBag);
+  bagSec.appendChild(openBagBtn);
+  panel.appendChild(bagSec);
+
+  function openRescueBag() {
+    if (inv.count('rescue_bag') < 1) { toast('🛍️ ロスパン袋がありません'); return; }
+    inv.take('rescue_bag', 1);
+    const prize = RESCUE_BAG_POOL[Math.floor(Math.random() * RESCUE_BAG_POOL.length)];
+    inv.collect(prize, 1);
+    sfx && sfx.craft && sfx.craft();
+    toast(`🎉 ロスパン袋から ${name(prize)} が出てきた！`);
+    onBake && onBake(prize, 1);
+    render();
+  }
+
   // ---- render -------------------------------------------------------------
   function render() {
     startBtn.disabled = !has(FERMENT_NEED);
@@ -164,6 +211,11 @@ export function createBakery({ inv, ferment, sfx, toast, itemDef, onBake, now = 
       btn.disabled = !affordable;
       btn.style.opacity = affordable ? '1' : '.4';
     }
+    // ロスパン袋ボタン
+    const hasBag = inv.count('rescue_bag') >= 1;
+    openBagBtn.disabled = !hasBag;
+    openBagBtn.style.opacity = hasBag ? '1' : '.4';
+    openBagBtn.textContent = `🛍️ 袋を開ける（手持ち: ${inv.count('rescue_bag')}個）`;
   }
 
   function open() { root.style.display = 'flex'; render(); }

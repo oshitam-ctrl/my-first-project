@@ -182,6 +182,48 @@ check('pain_de_mie->toast x2', craftResult([N, N, N, N, 'pain_de_mie', N, N, N, 
   count: 2,
 });
 
+// --- 食品ロス救済パン (新ライン) ---
+
+// levain + ripe_fruit -> natural_yeast
+check('levain+ripe_fruit->natural_yeast', craftResult(['levain', 'ripe_fruit', N, N]), {
+  id: 'natural_yeast', count: 1,
+});
+
+// natural_yeast + flour + ripe_fruit -> fruit_campagne (完熟バージョン)
+check(
+  'natural_yeast+flour+ripe_fruit->fruit_campagne',
+  craftResult(['natural_yeast', 'flour', 'ripe_fruit', N]),
+  { id: 'fruit_campagne', count: 1 }
+);
+
+// natural_yeast + flour + thinned_apple -> fruit_campagne (摘果りんごバージョン)
+check(
+  'natural_yeast+flour+thinned_apple->fruit_campagne',
+  craftResult(['natural_yeast', 'flour', 'thinned_apple', N]),
+  { id: 'fruit_campagne', count: 1 }
+);
+
+// levain + flour + flour + wheat -> rye_hard_bread
+check(
+  'levain+flour+flour+wheat->rye_hard_bread',
+  craftResult(['levain', 'flour', 'flour', 'wheat', N, N, N, N, N]),
+  { id: 'rye_hard_bread', count: 1 }
+);
+
+// levain + flour + surplus_veg -> rescued_focaccia ("もったいない→おいしい")
+check(
+  'levain+flour+surplus_veg->rescued_focaccia',
+  craftResult(['levain', 'flour', 'surplus_veg', N]),
+  { id: 'rescued_focaccia', count: 1 }
+);
+
+// campagne + rye_hard_bread + rescued_focaccia -> rescue_bag
+check(
+  'campagne+rye_hard_bread+rescued_focaccia->rescue_bag',
+  craftResult(['campagne', 'rye_hard_bread', 'rescued_focaccia', N]),
+  { id: 'rescue_bag', count: 1 }
+);
+
 // empty grid -> null
 check('empty', craftResult([N, N, N, N, N, N, N, N, N]), null);
 check('empty 2x2', craftResult([N, N, N, N]), null);
