@@ -1032,26 +1032,35 @@ window.__mobCount = () => mobs.count(); // debug/verification hook
 // the yard — townsfolk, kids, and a few "various-worldview" heroes (diamond /
 // netherite / gold knights, an enchanter, an adventurer…) so kids, grown-ups and
 // Minecraft fans all find someone fun. Each has a name + a personality line.
+// A barista also stands inside the "South in North" cafe room (world -19,31,-39).
 let baker = null;
+let barista = null;
 const customers = []; // (every spawned yard NPC; used for the delivery hearts)
 // type, world (x,z), name, line — spread across the open schoolyard (ground y31),
 // in front of the facade (z=-24), clear of the harvest field (x -8..0, z -8..2).
 const NPC_ROSTER = [
-  ['villager', 10, -8, 'みどりさん', '今日はどのパンにしようかしら🥖'],
-  ['child', 16, -6, 'はると', 'おにいちゃん、パン作るの！？すごい！'],
-  ['child', 24, -8, 'ゆい', 'かけっこしよ〜！'],
-  ['farmer', 32, -12, 'たけぞうさん', 'うちの規格外野菜、よかったら使ってな'],
-  ['customer', -14, -10, 'さとう先生', '昔ここで教えとったんよ。懐かしいねぇ'],
-  ['knight_diamond', 28, -16, 'ダイヤの騎士アル', 'この校舎、見事な砦…いや、パン屋か。'],
-  ['knight_netherite', 36, -8, 'ネザライトの勇者', 'ネザーの業火で鍛えた鎧だ。焼きたての香りには敵わんがな'],
-  ['knight_gold', -18, -6, '黄金の騎士', '金より価値あるのは、焼きたてのパンよ'],
-  ['adventurer', 4, -18, '旅人リン', '各地を巡ってきた。ここの天然酵母は絶品と聞いて'],
-  ['wizard', -10, -16, '魔法使いミント', '発酵は小さな魔法じゃよ。ぷくぷく…ほぅ'],
-  ['miner', 20, -20, '鉱夫ゴロウ', 'ダイヤも掘ったが、結局パンが一番うまい'],
-  ['ninja', 40, -14, '影', '……（こくり）'],
+  ['villager', 10, -8,  'みどりさん', '今日のパン、どれにしようかな。天然酵母っていい香りねぇ🥖'],
+  ['child', 16, -6,    'はると', 'ここ、昔おじいちゃんが通った学校なんだって！すごくない！？'],
+  ['child', 24, -8,    'ゆい', '校庭でかけっこしよ〜！広いね〜！'],
+  ['farmer', 32, -12,  'たけぞうさん', '規格外の野菜、捨てるのがもったいなくてなぁ。ここで酵母にしてくれると聞いて'],
+  ['customer', -14, -10, 'さとう先生', '昔ここで教えとったんよ。廃校になって寂しかったが、またにぎやかになってよかった'],
+  ['knight_diamond', 28, -16, 'ダイヤの騎士アル', 'この旧校舎、見事な地域の砦じゃ。パンの香りで胸が和む'],
+  ['knight_netherite', 36, -8, 'ネザライトの勇者', 'ネザーの業火で鍛えた鎧だ。だが発酵の香りには、どんな魔法も敵わん'],
+  ['knight_gold', -18, -6, '黄金の騎士', '金より価値あるもの——それは地域の人がつながる場所よ'],
+  ['adventurer', 4, -18, '旅人リン', '各地を巡ってきた。廃校の再生と食品ロスのパン屋——ここは本物の宝地だ'],
+  ['wizard', -10, -16, '魔法使いミント', '発酵は小さな魔法じゃよ。もったいないをおいしいに変える——これぞ里山の知恵'],
+  ['miner', 20, -20,   '鉱夫ゴロウ', 'ダイヤも掘ったが、結局パンが一番うまい。天然酵母はひと味ちがうな'],
+  ['ninja', 40, -14,   '影', '……（校庭を見回し、こくりとうなずく）'],
 ];
 if (settings.mobs !== false) {
   baker = mobs.spawnAt('baker', 14, 31, -32);
+  // Barista inside the "South in North" cafe room (local x17,y2,z11 → world -19,31,-39)
+  barista = mobs.spawnAt('customer', -19, 31, -39);
+  if (barista) {
+    barista.npcName = 'South in North のマスター';
+    barista.npcLine = 'コーヒーいかが？ここ、昔の理科室なんだ。校庭で飲むと最高だよ☕';
+    customers.push(barista);
+  }
   for (const [type, x, z, name, line] of NPC_ROSTER) {
     const m = mobs.spawnAt(type, x, 31, z);
     if (m) { m.npcName = name; m.npcLine = line; customers.push(m); }
@@ -1106,10 +1115,18 @@ function updateQuest() {
   quest.update({ wheat: inv.count('wheat'), veg: inv.count('surplus_veg'), levain: inv.count('levain'), bread, nearBaker });
   if (nearBaker) {
     speechEl.style.display = 'block';
+    // Baker greeting lines — warm, mission-driven voice
+    const BAKER_GREET = [
+      'いらっしゃい！今日のカンパーニュ、いい感じに焼けたよ🥖',
+      'この酵母ね、畑で捨てられるはずだった果物からおこしたんよ。もったいないでしょう？',
+      '昔ここ、子どもたちの教室だったんよ。今はパンの香りでいっぱい。',
+      '「もったいない」を「おいしい」に——それがうちのパン作りです🌾',
+    ];
+    const greetIdx = Math.floor(performance.now() / 8000) % BAKER_GREET.length;
     speechEl.textContent = questDone
-      ? `👩‍🍳 ありがとう！${deliveredTo ? `${deliveredTo}も喜んでた。` : ''}“もったいない”を“おいしい”に。本日も開店です🥖`
+      ? `👩‍🍳 ありがとう！${deliveredTo ? `${deliveredTo}も喜んでた。` : ''}”もったいない”を”おいしい”に。本日も開店です🥖`
       : (bread > 0 ? '👩‍🍳 わぁ、焼けたのね！こっちに届けてくれる？🥖'
-        : '👩‍🍳 いらっしゃい。畑の余り野菜と小麦で、パンを焼いてみてね🥖');
+        : `👩‍🍳 ${BAKER_GREET[greetIdx]}`);
   } else {
     const npc = playing ? nearestNpc(3.0) : null;
     if (npc) { speechEl.style.display = 'block'; speechEl.textContent = `🧑 ${npc.npcName}：${npc.npcLine}`; }

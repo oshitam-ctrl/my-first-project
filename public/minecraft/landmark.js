@@ -10,6 +10,7 @@
 // World mapping: world = (LM_X+x, LM_Y+y, LM_Z+z)
 //   where LM_X=-36, LM_Y=29, LM_Z=-50.
 //   Baker NPC stands at world (14,31,-32) = local (50,2,18) — kept clear (behind counter).
+//   Barista NPC stands at world (-19,31,-39) = local (17,2,11) — inside the cafe.
 //   Player spawns at world (8.5,31,-12) = local (44.5,2,38) facing -z (toward building).
 //   Front facade plane: local z=26 = world z=-24.
 //
@@ -20,7 +21,7 @@
 //   ROOM zone: z3..19 (17 deep). Divider walls at x=11,22,33,44,57,68,79.
 //   BAY breakdown:
 //     West stair tower:  x5..10
-//     Classroom 1 (GF):  x12..21
+//     CAFE "South in North" (GF):  x12..21  ← 旧教室をカフェに改装
 //     Classroom 2 (GF):  x23..32
 //     Classroom 3 (GF):  x34..43
 //     BAKERY:            x45..56
@@ -246,8 +247,62 @@ export function buildPetitHermes(stamp, B) {
     //  and side wall windows on z>2 provide natural light from the sides.)
   };
 
-  // Classrooms 1-5 (ground floor)
-  classroom_gf(12, 21);  // Classroom 1 — west side
+  // ==========================================================================
+  // 7b) CAFE "South in North" — x12..21, z3..19 (旧Classroom 1の改装).
+  //     Same校舎 inner room, converted from classroom to a cozy cafe.
+  //     Serves coffee, curry, and local-vegetable dishes.
+  //     Counter along z=19 (corridor-facing). Chalkboard menu on back wall z=2.
+  //     Tables/chairs mid-room; lanterns for warmth; potted plants; teal accent.
+  //     Barista NPC at local (17,2,11) = world (-19,31,-39).
+  // ==========================================================================
+  const cfX0 = 12, cfX1 = 21; // cafe bay x extents
+  const cfCounterZ = 19;       // counter faces the corridor
+
+  // TEAL accent wall on west (inner corridor side): paint the corridor-face at z=20
+  // Actually: paint the back wall z=2 with teal accent (BLUE_WOOL) + chalkboard menu
+  fillBox(cfX0, 2, 2, cfX1, f1Hi, 2, B.BLUE_WOOL);
+  // CHALKBOARD MENU (BLACK_WOOL) on back wall z=2, mid-height — "COFFEE" board
+  fillBox(cfX0 + 1, 3, 2, cfX1 - 1, 6, 2, B.BLACK_WOOL);
+
+  // SERVING COUNTER along z=19 (SPRUCE_PLANKS bar, y2..3), x13..20
+  fillBox(cfX0 + 1, 2, cfCounterZ, cfX1 - 1, 3, cfCounterZ, B.SPRUCE_PLANKS);
+  // Keep barista cell clear: local (17,2,11) = mid-room
+  // Coffee/cups on counter (HAY mugs at y=4)
+  for (let bx2 = cfX0 + 1; bx2 <= cfX1 - 1; bx2 += 3) stamp(bx2, 4, cfCounterZ, B.HAY);
+
+  // TEAL side accent strip on west wall x=12, z3..19 (thin pillar/wainscot)
+  for (let az = 3; az <= 19; az += 2) stamp(cfX0, 3, az, B.BLUE_WOOL);
+
+  // CAFE TABLES (small 1×1 SPRUCE_PLANKS tops) + BIRCH_PLANKS chairs around them
+  // Table cluster 1: around z=7
+  stamp(cfX0 + 2, 2, 7,  B.SPRUCE_PLANKS); // table
+  stamp(cfX0 + 4, 2, 7,  B.SPRUCE_PLANKS); // table
+  stamp(cfX0 + 2, 2, 8,  B.BIRCH_PLANKS);  // chair (south)
+  stamp(cfX0 + 2, 2, 6,  B.BIRCH_PLANKS);  // chair (north)
+  stamp(cfX0 + 4, 2, 8,  B.BIRCH_PLANKS);
+  stamp(cfX0 + 4, 2, 6,  B.BIRCH_PLANKS);
+  // Table cluster 2: around z=13
+  stamp(cfX0 + 2, 2, 13, B.SPRUCE_PLANKS);
+  stamp(cfX0 + 5, 2, 13, B.SPRUCE_PLANKS);
+  stamp(cfX0 + 2, 2, 14, B.BIRCH_PLANKS);
+  stamp(cfX0 + 2, 2, 12, B.BIRCH_PLANKS);
+  stamp(cfX0 + 5, 2, 14, B.BIRCH_PLANKS);
+  stamp(cfX0 + 5, 2, 12, B.BIRCH_PLANKS);
+
+  // POTTED PLANTS (OAK_LEAVES pots) in two corners for warmth
+  stamp(cfX0 + 1, 2, 3, B.OAK_LEAVES); // back-west corner
+  stamp(cfX1 - 1, 2, 3, B.OAK_LEAVES); // back-east corner
+  stamp(cfX0 + 1, 3, 3, B.GREEN_WOOL); // second leaf layer
+  stamp(cfX1 - 1, 3, 3, B.GREEN_WOOL);
+
+  // LANTERNS over the cafe (warm amber, just below ceiling y=f1Hi-1=6)
+  if (B.LANTERN != null) {
+    stamp(cfX0 + 2, f1Hi - 1, 7,  B.LANTERN); // above table cluster 1
+    stamp(cfX0 + 2, f1Hi - 1, 13, B.LANTERN); // above table cluster 2
+    stamp(cfX0 + 4, f1Hi - 1, 18, B.LANTERN); // near counter
+  }
+
+  // Classrooms 2-5 (ground floor); Classroom 1 is now the cafe above
   classroom_gf(23, 32);  // Classroom 2
   classroom_gf(34, 43);  // Classroom 3
   classroom_gf(58, 67);  // Classroom 4
