@@ -564,8 +564,8 @@ let dragMoved = 0;
 
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Space' && e.target === document.body) e.preventDefault();
-  if (inv.isOpen()) { if (e.code === 'Escape' || e.code === 'KeyE') toggleInv(); return; }
-  if (e.code === 'KeyE' && playing) { toggleInv(2); return; }
+  if (inv.isOpen()) { if (e.code === 'Escape' || e.code === 'KeyE' || e.code === 'KeyI') toggleInv(); return; }
+  if ((e.code === 'KeyE' || e.code === 'KeyI') && playing) { toggleInv(2); return; }
   if (e.code === 'Escape' && playing && !locked) { // pause when not using pointer lock
     playing = false; breakHeld = false; overlay.style.display = 'flex'; return;
   }
@@ -583,11 +583,18 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
 const overlay = document.getElementById('overlay');
+let shownDesktopHint = false;
 function startPlay() {
   sfx.resume();
   playing = true;                 // start regardless of pointer lock support
   overlay.style.display = 'none';
   if (!isTouch) { try { canvas.requestPointerLock(); } catch (e) {} } // mouse-look enhancement only
+  // One-time desktop controls hint: the 🎒 button can't be clicked while the
+  // mouse is pointer-locked, so make the keyboard shortcut obvious.
+  if (!isTouch && !shownDesktopHint) {
+    shownDesktopHint = true;
+    toast('⌨️ 移動:WASD ／ アイテム:E または I ／ 工房:🥖（右上）／ 飛ぶ:Space×2');
+  }
 }
 overlay.addEventListener('click', startPlay);
 // iOS Safari may not synthesize a `click` on a non-interactive <div> when
@@ -732,13 +739,43 @@ const mobs = createMobs({
 });
 window.__mobCount = () => mobs.count(); // debug/verification hook
 
-// Populate the shop: the baker behind the counter + a few named regulars in the yard.
+// Populate the world: the baker behind the counter + a lively, varied cast in
+// the yard — townsfolk, kids, and a few "various-worldview" heroes (diamond /
+// netherite / gold knights, an enchanter, an adventurer…) so kids, grown-ups and
+// Minecraft fans all find someone fun. Each has a name + a personality line.
 let baker = null;
-const customers = [];
+const customers = []; // (every spawned yard NPC; used for the delivery hearts)
+// type, world (x,z), name, line — placed around the open schoolyard (ground y31).
+const NPC_ROSTER = [
+  ['villager', 2, -8, 'みどりさん', '今日はどのパンにしようかしら🥖'],
+  ['child', 6, -6, 'はると', 'おにいちゃん、パン作るの！？すごい！'],
+  ['child', 14, -7, 'ゆい', 'かけっこしよ〜！'],
+  ['farmer', 16, -14, 'たけぞうさん', 'うちの規格外野菜、よかったら使ってな'],
+  ['customer', 0, -14, 'さとう先生', '昔ここで教えとったんよ。懐かしいねぇ'],
+  ['knight_diamond', 18, -4, 'ダイヤの騎士アル', 'この校舎、見事な砦…いや、パン屋か。'],
+  ['knight_netherite', 22, -12, 'ネザライトの勇者', 'ネザーの業火で鍛えた鎧だ。焼きたての香りには敵わんがな'],
+  ['knight_gold', -2, -4, '黄金の騎士', '金より価値あるのは、焼きたてのパンよ'],
+  ['adventurer', 20, -18, '旅人リン', '各地を巡ってきた。ここの天然酵母は絶品と聞いて'],
+  ['wizard', 4, -2, '魔法使いミント', '発酵は小さな魔法じゃよ。ぷくぷく…ほぅ'],
+  ['miner', -4, -12, '鉱夫ゴロウ', 'ダイヤも掘ったが、結局パンが一番うまい'],
+  ['ninja', 12, 2, '影', '……（こくり）'],
+];
 if (settings.mobs !== false) {
   baker = mobs.spawnAt('baker', 8, 31, -29);
-  customers.push(mobs.spawnAt('customer', 4, 31, -11));
-  customers.push(mobs.spawnAt('customer', 12, 31, -10));
+  for (const [type, x, z, name, line] of NPC_ROSTER) {
+    const m = mobs.spawnAt(type, x, 31, z);
+    if (m) { m.npcName = name; m.npcLine = line; customers.push(m); }
+  }
+}
+// nearest named yard NPC to the player (for proximity speech bubbles)
+function nearestNpc(maxD) {
+  let best = null, bestD = maxD;
+  for (const m of customers) {
+    if (!m || !m.npcLine) continue;
+    const d = Math.hypot(player.pos.x - m.pos.x, player.pos.z - m.pos.z);
+    if (d < bestD) { bestD = d; best = m; }
+  }
+  return best;
 }
 // 常連さん — the delivery payoff names a regular who lights up when you hand over bread.
 const REGULARS = ['みどりさん', 'たけしさん', 'ご近所のゆいちゃん', '常連のさとうさん'];
@@ -784,7 +821,9 @@ function updateQuest() {
       : (bread > 0 ? '👩‍🍳 わぁ、焼けたのね！こっちに届けてくれる？🥖'
         : '👩‍🍳 いらっしゃい。畑の余り野菜と小麦で、パンを焼いてみてね🥖');
   } else {
-    speechEl.style.display = 'none';
+    const npc = playing ? nearestNpc(3.0) : null;
+    if (npc) { speechEl.style.display = 'block'; speechEl.textContent = `🧑 ${npc.npcName}：${npc.npcLine}`; }
+    else speechEl.style.display = 'none';
   }
   updateGuide(bread);
 }

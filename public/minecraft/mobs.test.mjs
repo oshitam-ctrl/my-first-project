@@ -18,6 +18,7 @@ class Color {
 class Vector3 {
   constructor(x = 0, y = 0, z = 0) { this.x = x; this.y = y; this.z = z; }
   set(x, y, z) { this.x = x; this.y = y; this.z = z; return this; }
+  setScalar(s) { this.x = s; this.y = s; this.z = s; return this; }
 }
 class BoxGeometry { constructor(w, h, d) { this.w = w; this.h = h; this.d = d; } }
 class MeshBasicMaterial { constructor(o = {}) { this.color = new Color(o.color || 0); } }

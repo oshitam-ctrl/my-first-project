@@ -55,11 +55,12 @@ export function createSky(opts) {
   celestial.add(moonMesh);
 
   // -------------------------------------------------------------------- stars
-  const STAR_COUNT = 600;
+  const STAR_COUNT = 320;
   const starPos = new Float32Array(STAR_COUNT * 3);
   for (let i = 0; i < STAR_COUNT; i++) {
-    // Uniform-ish points on a sphere of radius R.
-    const u = Math.random() * 2 - 1;
+    // Points on the UPPER hemisphere only (u in ~0..1) so stars never sit below
+    // the horizon where they'd float over the ground.
+    const u = 0.08 + Math.random() * 0.92;
     const t = Math.random() * Math.PI * 2;
     const r = Math.sqrt(1 - u * u);
     starPos[i * 3] = Math.cos(t) * r * R;
@@ -70,11 +71,13 @@ export function createSky(opts) {
   starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
   const starMat = new THREE.PointsMaterial({
     color: new THREE.Color(0xffffff),
-    size: Math.max(1, R * 0.004),
+    size: Math.max(0.8, R * 0.003),
     sizeAttenuation: true,
     transparent: true,
     opacity: 0,
-    depthTest: false,
+    // depthTest ON so terrain/hills occlude stars — they only show in open sky,
+    // not as white squares floating over the ground.
+    depthTest: true,
     depthWrite: false,
     fog: false,
   });

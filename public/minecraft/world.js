@@ -29,6 +29,92 @@ const AIR = 0, GRASS = 1, DIRT = 2, STONE = 3, SAND = 4, WOOD = 5,
   LEAVES = 6, WATER = 7, BEDROCK = 8, SNOW = 11;
 const COAL_ORE = 15, IRON_ORE = 16, GOLD_ORE = 17, DIAMOND_ORE = 18, REDSTONE_ORE = 19;
 const BIRCH_LOG = 23, BIRCH_LEAVES = 24, SPRUCE_LOG = 25, SPRUCE_LEAVES = 26, DRY_GRASS = 27, CACTUS = 28;
+// Satoyama valley block aliases (palette ids from LB)
+const SMOOTH_STONE = 41, CALCITE = 46, WHITE_WOOL = 31, GREEN_WOOL = 35, GRAVEL = 37, HAY = 50;
+const WHEAT_CROP = 53, VEG_CROP = 54, BRICK = 13, COBBLE = 10, GLASS = 12;
+const SANDSTONE = 39, STONE_BRICKS = 29, SPRUCE_PLANKS = 51;
+
+// ─── 里山バレー constants ────────────────────────────────────────────────────
+// Valley centre, floor height, radii (world coords)
+const VCX = 8, VCZ = -12;          // valley centre (near school)
+const VFLOOR = 29;                  // valley floor y (matches landmark ground y=29)
+const VRAD_FLAT = 82;               // inner radius — fully flat farmland
+const VRAD_BLEND = 110;             // outer radius — blends back to natural terrain
+// Exclusion box — landmark owns this; we skip all scenery features here
+const EX0 = -16, EX1 = 32, EZ0 = -42, EZ1 = 14;
+
+// Country road: runs roughly north–south on the west side of the valley.
+// Road centre x = -32; road width ±2 (total 5 cols); shoulder ±3.
+const ROAD_X = -32;                 // road centre world-x
+const ROAD_Z0 = -100;               // road south end
+const ROAD_Z1 = 50;                 // road north end
+// School drive: short east–west connector from road to school front gate
+const DRIVE_Z = 18;                 // z of drive centre (just south of exclusion box)
+const DRIVE_X0 = ROAD_X + 3;       // drive west end (road shoulder)
+const DRIVE_X1 = EX0 - 1;          // drive east end (up to exclusion box)
+
+// Gate pillars: flank the school drive where it meets the yard
+const GATE_X = EX0 - 1;            // world x of pillar pair (−17)
+const GATE_Z = DRIVE_Z;            // z centre of drive
+
+// Sunflower strip: south face of the yard, just outside exclusion box (z > EZ1)
+const SUN_Z = EZ1 + 2;             // z = 16 — front of sunflower strip
+const SUN_X0 = EX0 + 4;            // x = -12, giving room past gate
+const SUN_X1 = EX1 - 4;            // x = 28
+
+// Paddy cell sizes (paddy content + levee)
+const PADDY_CELL = 9;              // grid repeat (8 paddy + 1 levee)
+
+// Helper: is a world column inside the landmark exclusion box?
+function inExclusionBox(wx, wz) {
+  return wx >= EX0 && wx <= EX1 && wz >= EZ0 && wz <= EZ1;
+}
+
+// Helper: valley blend factor 0=outside valley 1=fully flat inside
+function valleyFactor(wx, wz) {
+  const dx = wx - VCX, dz = wz - VCZ;
+  const dist = Math.sqrt(dx * dx + dz * dz);
+  if (dist <= VRAD_FLAT) return 1.0;
+  if (dist >= VRAD_BLEND) return 0.0;
+  const t = (dist - VRAD_FLAT) / (VRAD_BLEND - VRAD_FLAT);
+  return 1.0 - t * t * (3 - 2 * t); // smoothstep
+}
+
+// Helper: is a column on the main road (returns 'road', 'shoulder', or null)
+function roadZone(wx, wz) {
+  if (wz < ROAD_Z0 || wz > ROAD_Z1) return null;
+  const d = Math.abs(wx - ROAD_X);
+  if (d <= 2) return 'road';
+  if (d <= 3) return 'shoulder';
+  return null;
+}
+
+// Helper: is a column on the school drive (east–west connector)
+function driveZone(wx, wz) {
+  if (wz < DRIVE_Z - 2 || wz > DRIVE_Z + 2) return null;
+  if (wx < DRIVE_X0 || wx > DRIVE_X1) return null;
+  const dz = Math.abs(wz - DRIVE_Z);
+  if (dz <= 1) return 'road';
+  return 'shoulder';
+}
+
+// Helper: paddy patchwork surface for flat valley columns outside exclusion +road
+// Returns 'water','levee','crop','field', or null (outside paddy zone)
+function paddyZone(wx, wz) {
+  // vary cell size slightly by region (two zones)
+  const zone = (Math.floor(wx / 40) + Math.floor(wz / 40)) & 1;
+  const cell = zone ? PADDY_CELL : PADDY_CELL + 2; // alternates 9 and 11
+  const px = ((wx % cell) + cell) % cell;
+  const pz = ((wz % cell) + cell) % cell;
+  if (px === 0 || pz === 0) return 'levee';   // 1-wide levee (畦)
+  // paddy type: hash to decide water / field / vegcrop variety
+  const cellX = Math.floor(wx / cell);
+  const cellZ = Math.floor(wz / cell);
+  const r = hash2(cellX, cellZ, 0x54321);
+  if (r < 0.70) return 'water';   // 70% rice paddies
+  if (r < 0.88) return 'field';   // 18% dry grass field
+  return 'crop';                   // 12% vegetable / mixed crop
+}
 
 // Deterministic per-voxel hash in [0,1) for ore placement.
 function oreRoll(wx, y, wz, seed) {
@@ -86,7 +172,24 @@ export class World {
       h = SEA_LEVEL + 4 + (cont + 0.25) * 11 + hills * 5;
       if (mtn > 0.22) h += (mtn - 0.22) * 105; // mountains rise sharply (more frequent + taller)
     }
-    return Math.max(1, Math.min(HEIGHT - 3, Math.floor(h)));
+    const rawH = Math.max(1, Math.min(HEIGHT - 3, Math.floor(h)));
+    // ── 里山バレー flattening ──────────────────────────────────────────────
+    // Blend the surface smoothly toward VFLOOR (y=29) inside the valley radius.
+    const vf = valleyFactor(wx, wz);
+    if (vf > 0) {
+      // Boost hills slightly at the valley rim (VRAD_FLAT..VRAD_BLEND) so the
+      // valley feels encircled by forested 里山 hillsides.
+      const dx = wx - VCX, dz = wz - VCZ;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+      let hTarget = VFLOOR;
+      if (dist > VRAD_FLAT) {
+        // rim boost: add up to +12 extra height at the blend boundary
+        const rim = (dist - VRAD_FLAT) / (VRAD_BLEND - VRAD_FLAT);
+        hTarget = VFLOOR + rim * 12;
+      }
+      return Math.max(1, Math.min(HEIGHT - 3, Math.round(rawH * (1 - vf) + hTarget * vf)));
+    }
+    return rawH;
   }
 
   // climate -> [temperature, humidity] in [0,1] (contrast-stretched for variety)
@@ -171,6 +274,70 @@ export class World {
           }
           if (id !== AIR) data[idx(lx, y, lz)] = id;
         }
+
+        // ── 里山バレー surface features (per-column, in-valley only) ────────
+        // Only apply inside the flat valley region; skip the landmark exclusion box.
+        const vf = valleyFactor(wx, wz);
+        if (vf < 0.95) continue;         // only fully-flat columns
+        if (inExclusionBox(wx, wz)) continue; // landmark owns this area
+
+        // Road (main + drive) take priority over paddy features
+        const rz = roadZone(wx, wz);
+        const dz2 = driveZone(wx, wz);
+        const surf = rz || dz2;
+        if (surf) {
+          // Lay road surface at VFLOOR, clear one above
+          data[idx(lx, VFLOOR, lz)] = (surf === 'road') ? SMOOTH_STONE : GRAVEL;
+          data[idx(lx, VFLOOR + 1, lz)] = AIR;
+          // Dashed white centre line: road centre only, every 3rd block in z
+          if (surf === 'road' && wx === ROAD_X && (((wz % 6) + 6) % 6) < 3 && rz === 'road') {
+            data[idx(lx, VFLOOR, lz)] = CALCITE;
+          }
+          // Drive centre line
+          if (dz2 === 'road' && wz === DRIVE_Z && (((wx % 5) + 5) % 5) < 3) {
+            data[idx(lx, VFLOOR, lz)] = CALCITE;
+          }
+          continue;
+        }
+
+        // Sunflower fence row: orange brick fence + HAY/GREEN_WOOL stalks
+        // Strip at z=SUN_Z..SUN_Z+3, x=SUN_X0..SUN_X1, just south of the yard
+        if (wz >= SUN_Z && wz <= SUN_Z + 3 && wx >= SUN_X0 && wx <= SUN_X1) {
+          if (wz === SUN_Z) {
+            // Front fence row: orange brick posts every 2nd block
+            data[idx(lx, VFLOOR, lz)] = GRASS;
+            data[idx(lx, VFLOOR + 1, lz)] = (((wx - SUN_X0) % 2) === 0) ? BRICK : AIR;
+          } else {
+            // Sunflower stalks (z=SUN_Z+1..+3): alternate green/hay columns
+            data[idx(lx, VFLOOR, lz)] = DIRT;
+            const stalkH = 2 + (((wx + wz) & 1)); // 2 or 3 tall
+            for (let s = 1; s <= stalkH - 1; s++) data[idx(lx, VFLOOR + s, lz)] = GREEN_WOOL;
+            data[idx(lx, VFLOOR + stalkH, lz)] = HAY; // flower head
+          }
+          continue;
+        }
+
+        // Rice paddy patchwork (outside road, sunflower strip, exclusion box)
+        const pz = paddyZone(wx, wz);
+        if (!pz) continue;
+        if (pz === 'levee') {
+          // Raised dirt levee (畦) at valley floor level
+          data[idx(lx, VFLOOR, lz)] = DIRT;
+          data[idx(lx, VFLOOR + 1, lz)] = AIR;
+        } else if (pz === 'water') {
+          // Paddy: sunken 1 below VFLOOR → water + wheat-crop sticking up
+          data[idx(lx, VFLOOR - 1, lz)] = WATER;
+          data[idx(lx, VFLOOR, lz)] = AIR;
+          // Sparse wheat-crop "rice" blades (deterministic ~60%)
+          if (hash2(wx, wz, 0xabcde) < 0.60) data[idx(lx, VFLOOR, lz)] = WHEAT_CROP;
+        } else if (pz === 'field') {
+          // Dry-grass field
+          data[idx(lx, VFLOOR, lz)] = DRY_GRASS;
+          data[idx(lx, VFLOOR + 1, lz)] = AIR;
+        } else { // crop
+          data[idx(lx, VFLOOR, lz)] = GRASS;
+          data[idx(lx, VFLOOR + 1, lz)] = (hash2(wx, wz, 0xbcdef) < 0.5) ? VEG_CROP : AIR;
+        }
       }
     }
 
@@ -181,6 +348,9 @@ export class World {
         const wz = oz + lz;
         const h = this.heightAt(wx, wz);
         if (h <= SEA_LEVEL + 1) continue; // none on beach/water
+        // No wild trees inside the flat valley (they'd poke through paddies).
+        // Allow them on the hill rim (vf<0.8).
+        if (valleyFactor(wx, wz) >= 0.8) continue;
         const biome = this.biomeAt(wx, wz, h);
         let density = 0, baseH = 5;
         if (biome === 'forest') density = 0.045;
@@ -226,6 +396,57 @@ export class World {
       }
     }
 
+    // ── 里山バレー multi-block features ────────────────────────────────────────
+    // Power-line poles: every 14 blocks along the road (west side), 7 tall + cross-arm.
+    // Iterate columns in a margin-extended window so straddled poles stamp fully.
+    for (let lz = -2; lz < CHUNK + 2; lz++) {
+      for (let lx = -2; lx < CHUNK + 2; lx++) {
+        const wx = ox + lx, wz = oz + lz;
+        // Pole positions: road shoulder (wx = ROAD_X - 4), every 14 z
+        if (wx !== ROAD_X - 4) continue;
+        if (wz < ROAD_Z0 || wz > ROAD_Z1) continue;
+        if (((wz - ROAD_Z0) % 14) !== 0) continue;
+        const py = VFLOOR;
+        for (let t = 1; t <= 7; t++) this._stamp(data, lx, py + t, lz, SPRUCE_LOG, true);
+        // Cross-arm (2 blocks each side at height 7)
+        for (let arm = -2; arm <= 2; arm++) this._stamp(data, lx + arm, py + 7, lz, SPRUCE_LOG, true);
+      }
+    }
+
+    // Gate pillars: pair of SMOOTH_STONE columns flanking the school drive entrance.
+    // Pillars at (GATE_X, DRIVE_Z ± 2), height 3; small SPRUCE "pine" tree beside each.
+    {
+      const gx = GATE_X, gz = GATE_Z;
+      for (const dz of [-2, 2]) {
+        const lxp = gx - ox, lzp = gz + dz - oz;
+        for (let t = 0; t <= 3; t++) this._stamp(data, lxp, VFLOOR + t, lzp, SMOOTH_STONE, true);
+        // Tiny spruce tree (2 trunk + compact canopy) just west of each pillar
+        const txl = lxp - 2;
+        for (let t = 1; t <= 3; t++) this._stamp(data, txl, VFLOOR + t, lzp, SPRUCE_LOG, true);
+        for (let dy = 0; dy <= 1; dy++) {
+          const cr = dy === 0 ? 1 : 0;
+          for (let ddz = -cr; ddz <= cr; ddz++) {
+            for (let ddx = -cr; ddx <= cr; ddx++) {
+              this._stamp(data, txl + ddx, VFLOOR + 3 + dy, lzp + ddz, SPRUCE_LEAVES, false);
+            }
+          }
+        }
+      }
+    }
+
+    // Countryside houses: 3 fixed positions in the valley, well clear of exclusion box.
+    // Each is a small sandstone/plank cottage with brick roof, distinct from village huts.
+    const VALLEY_HOUSES = [
+      [-55, -30], // west side, near road
+      [50, -50],  // east side of valley
+      [30, 40],   // south of valley, beyond drive
+    ];
+    for (const [hx, hz] of VALLEY_HOUSES) {
+      if (!inExclusionBox(hx, hz) && valleyFactor(hx, hz) > 0.8) {
+        this._stampCountryHouse(data, ox, oz, hx, hz);
+      }
+    }
+
     // Villages: clusters of small huts on flat grassy ground (deterministic per region)
     const R = 80;
     for (let rx = Math.floor((ox - 8) / R); rx <= Math.floor((ox + CHUNK + 8) / R); rx++) {
@@ -237,7 +458,8 @@ export class World {
         for (let hi = 0; hi < nHuts; hi++) {
           const hx = ax + Math.round((hash2(rx * 7 + hi, rz, this.seed ^ 4) - 0.5) * 30);
           const hz = az + Math.round((hash2(rx, rz * 7 + hi, this.seed ^ 5) - 0.5) * 30);
-          this._stampHut(data, ox, oz, hx, hz);
+          // Don't stamp village huts in the 里山 valley — country houses are placed explicitly.
+          if (valleyFactor(hx, hz) < 0.8) this._stampHut(data, ox, oz, hx, hz);
         }
       }
     }
@@ -295,6 +517,30 @@ export class World {
         this._stamp(data, lx, g + 4, lz, PLANK, true); // roof
       }
     }
+  }
+
+  // A countryside farmhouse: sandstone/plank walls, glass windows, brick gable
+  // roof. Placed at world (hx,hz) on the valley floor (y=VFLOOR).
+  _stampCountryHouse(data, ox, oz, hx, hz) {
+    const g = VFLOOR;
+    for (let dz = -3; dz <= 3; dz++) {
+      for (let dx = -3; dx <= 3; dx++) {
+        const lx = hx + dx - ox, lz = hz + dz - oz;
+        this._stamp(data, lx, g, lz, SMOOTH_STONE, true); // floor
+        const edge = Math.abs(dx) === 3 || Math.abs(dz) === 3;
+        for (let wy = 1; wy <= 3; wy++) {
+          if (!edge) { this._stamp(data, lx, g + wy, lz, AIR, true); continue; }
+          const isDoor = dz === 3 && dx === 0 && wy <= 2;
+          if (isDoor) { this._stamp(data, lx, g + wy, lz, AIR, true); continue; }
+          const isWin = wy === 2 && ((Math.abs(dx) === 3 && dz === 0) || (Math.abs(dz) === 3 && dx === 0));
+          this._stamp(data, lx, g + wy, lz, isWin ? GLASS : SANDSTONE, true);
+        }
+        // Gable: brick "red" roof covering floor+1
+        this._stamp(data, lx, g + 4, lz, BRICK, true);
+      }
+    }
+    // Peaked roof cap (+5) — only centre strip
+    for (let dx = -2; dx <= 2; dx++) this._stamp(data, hx + dx - ox, g + 5, hz - oz, BRICK, true);
   }
 
   // --- block access ------------------------------------------------------
