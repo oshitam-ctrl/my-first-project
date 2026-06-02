@@ -41,12 +41,13 @@ await page.evaluate(() => window.__time && window.__time(0.5));
 await page.evaluate(() => window.__view && window.__view(8, 36, 16, 0, -0.18));
 await page.waitForTimeout(12000);
 await page.screenshot({ path: `/tmp/mc-ext-${TAG}.png` });
-// interior — stand near the baker so the greeting shows
-await page.evaluate(() => { if (window.__view) window.__view(8, 31, -27, 0, 0.02); if (window.__view) {} });
-await page.waitForTimeout(4500);
-const speech = await page.evaluate(() => { const els = [...document.querySelectorAll('body>div')].filter((e) => /いらっしゃい|ありがとう|届けて/.test(e.textContent || '')); return els.length && getComputedStyle(els[0]).display !== 'none' ? els[0].textContent.slice(0, 30) : 'hidden'; });
-console.log('baker speech:', speech);
-await page.screenshot({ path: `/tmp/mc-int-${TAG}.png` });
+// interior rooms: sales (near baker), workshop, 2F classroom
+const views = { sales: [8, 31, -26, 0, 0.02], workshop: [8, 31, -30, 0, 0.05], classroom: [8, 35, -27, 0, 0.0] };
+for (const [name, [x, y, z, yaw, pit]] of Object.entries(views)) {
+  await page.evaluate(([x, y, z, yaw, pit]) => window.__view && window.__view(x, y, z, yaw, pit), [x, y, z, yaw, pit]);
+  await page.waitForTimeout(3500);
+  await page.screenshot({ path: `/tmp/mc-${name}-${TAG}.png` });
+}
 
 const hud = await page.evaluate(() => document.getElementById('hud').textContent);
 console.log(`[${TAG}] hud: ${hud} | pageerrors: ${errs.length}`);

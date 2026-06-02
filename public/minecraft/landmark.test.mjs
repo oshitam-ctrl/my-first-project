@@ -11,6 +11,7 @@ const B = {
   SANDSTONE: 39, SMOOTH_STONE: 41, CALCITE: 46, WHITE_WOOL: 31, BLUE_WOOL: 33,
   GREEN_WOOL: 35, BLACK_WOOL: 36, GRAVEL: 37, HAY: 50, STONE_BRICKS: 29,
   WATER: 7, WHEAT_CROP: 53, VEG_CROP: 54,
+  FURNACE: 60, CRAFTING_TABLE: 61, PLANK: 9, PUMPKIN: 62,
 };
 
 const { w, d, clearH } = LANDMARK;
@@ -43,6 +44,11 @@ assert.ok(has(B.BLUE_WOOL), 'expected some BLUE_WOOL');
 assert.ok(has(B.SANDSTONE), 'expected some SANDSTONE');
 assert.ok(has(B.SPRUCE_PLANKS), 'expected some SPRUCE_PLANKS');
 assert.ok(has(B.HAY), 'expected some HAY');
+assert.ok(has(B.FURNACE), 'expected some FURNACE (workshop ovens)');
+assert.ok(has(B.CRAFTING_TABLE), 'expected some CRAFTING_TABLE (prep tables / teacher desk)');
+assert.ok(has(B.STONE_BRICKS), 'expected some STONE_BRICKS (partition wall)');
+assert.ok(has(B.SMOOTH_STONE), 'expected some SMOOTH_STONE (interior staircase)');
+assert.ok(has(B.OAK_PLANKS), 'expected some OAK_PLANKS (interior floors)');
 
 // all coords within [0..w] x [0..clearH] x [0..d]
 for (const key of grid.keys()) {
