@@ -59,7 +59,7 @@ const REGISTRY = {
   // marks them harmless (player attacks can hit but won't kill them).
   baker: {
     // パン屋の店主: cream apron-y look, mostly stands still.
-    kind: 'passive', hp: 40, w: 0.6, h: 1.8, speed: 1.0,
+    kind: 'passive', hp: 40, w: 0.6, h: 1.8, speed: 1.0, natural: false,
     model: 'humanoid', friendly: true, calm: true, invincible: true,
     // legs = apron/torso (teal apron), head = skin tone, limb = cream sleeves
     colors: { body: 0xfff4e0, head: 0xf0c8a0, limb: 0xfff4e0, legs: 0x4fb3a6, hair: 0x5a4634 },
@@ -70,6 +70,68 @@ const REGISTRY = {
     kind: 'passive', hp: 30, w: 0.6, h: 1.8, speed: 1.8,
     model: 'humanoid', friendly: true, invincible: true,
     colors: { body: 0xc05a5a, head: 0xe8b890, limb: 0xc05a5a, legs: 0x3a5a8a, hair: 0x2a2018 },
+    drop: null,
+  },
+  // -- townsfolk (roam naturally; varied looks so the village feels alive) --
+  villager: {
+    kind: 'passive', hp: 30, w: 0.6, h: 1.8, speed: 1.6,
+    model: 'humanoid', friendly: true, invincible: true,
+    colors: { body: 0x8a6e52, head: 0xc9a07a, limb: 0x6e5440, legs: 0x6e5440, hair: 0x4a3a2a },
+    drop: null,
+  },
+  child: {
+    kind: 'passive', hp: 20, w: 0.5, h: 1.25, speed: 2.6, scale: 0.66,
+    model: 'humanoid', friendly: true, invincible: true,
+    colors: { body: 0xe85d5d, head: 0xf0c8a0, limb: 0xe85d5d, legs: 0x3a6ad0, hair: 0x2a2018 },
+    drop: null,
+  },
+  farmer: {
+    kind: 'passive', hp: 30, w: 0.6, h: 1.8, speed: 1.6,
+    model: 'humanoid', friendly: true, invincible: true,
+    colors: { body: 0x9aa45a, head: 0xe8b890, limb: 0x9aa45a, legs: 0x3a5a8a, hair: 0x3a2a1a, helmet: 0xd9c25a, brim: true },
+    drop: null,
+  },
+  // -- "various worldviews": armored / enchanted heroes (curated, not random) --
+  knight_diamond: {
+    kind: 'passive', hp: 30, w: 0.6, h: 1.85, speed: 1.4, natural: false,
+    model: 'humanoid', friendly: true, invincible: true,
+    colors: { head: 0xe8b890, limb: 0x4fd6c8, legs: 0x2a3a8a, body: 0x57e0d2, chest: 0x57e0d2, helmet: 0x57e0d2, cape: 0x2a6ad0 },
+    drop: null,
+  },
+  knight_netherite: { // enchanted netherite — the マイクラ厨 easter egg
+    kind: 'passive', hp: 30, w: 0.6, h: 1.85, speed: 1.4, natural: false,
+    model: 'humanoid', friendly: true, invincible: true,
+    colors: { head: 0xd8a888, limb: 0x3a3438, legs: 0x2a2428, body: 0x46403f, chest: 0x46403f, helmet: 0x46403f, cape: 0x6a2a2a, glint: 0xb070ff },
+    drop: null,
+  },
+  knight_gold: {
+    kind: 'passive', hp: 30, w: 0.6, h: 1.85, speed: 1.4, natural: false,
+    model: 'humanoid', friendly: true, invincible: true,
+    colors: { head: 0xe8b890, limb: 0xe8c33a, legs: 0x7a5a1a, body: 0xe8c33a, chest: 0xe8c33a, helmet: 0xe8c33a, cape: 0x8a1a1a },
+    drop: null,
+  },
+  adventurer: { // iron armor + green cape
+    kind: 'passive', hp: 30, w: 0.6, h: 1.85, speed: 1.6, natural: false,
+    model: 'humanoid', friendly: true, invincible: true,
+    colors: { head: 0xe8b890, limb: 0x5a5a6a, legs: 0x3a3a4a, body: 0xcfd2d6, chest: 0xcfd2d6, helmet: 0xcfd2d6, cape: 0x2a8a4a },
+    drop: null,
+  },
+  wizard: { // enchanter: purple robe, pointed hat, sparkles
+    kind: 'passive', hp: 30, w: 0.6, h: 1.85, speed: 1.5, natural: false,
+    model: 'humanoid', friendly: true, invincible: true,
+    colors: { head: 0xe8c0a0, limb: 0x6a3ac0, legs: 0x4a2a8a, body: 0x6a3ac0, helmet: 0x4a2a8a, hatPeak: true, hair: 0xdddddd, glint: 0x70f0ff },
+    drop: null,
+  },
+  miner: {
+    kind: 'passive', hp: 30, w: 0.6, h: 1.8, speed: 1.7, natural: false,
+    model: 'humanoid', friendly: true, invincible: true,
+    colors: { head: 0xe8b890, limb: 0x5a4a3a, legs: 0x3a3a40, body: 0x5a4a3a, helmet: 0xe8c020, hair: 0x2a2018 },
+    drop: null,
+  },
+  ninja: {
+    kind: 'passive', hp: 30, w: 0.6, h: 1.8, speed: 2.4, natural: false,
+    model: 'humanoid', friendly: true, invincible: true,
+    colors: { head: 0x2a2a30, limb: 0x222226, legs: 0x222226, body: 0x2a2a30 },
     drop: null,
   },
   // HOSTILE -----------------------------------------------------------------
@@ -99,7 +161,9 @@ const REGISTRY = {
   },
 };
 
-const PASSIVE_IDS = Object.keys(REGISTRY).filter((k) => REGISTRY[k].kind === 'passive');
+// Natural day spawns = animals + townsfolk only. Curated heroes (knights, wizard,
+// the baker, …) are marked `natural:false` so they appear only where placed.
+const PASSIVE_IDS = Object.keys(REGISTRY).filter((k) => REGISTRY[k].kind === 'passive' && REGISTRY[k].natural !== false);
 const HOSTILE_IDS = Object.keys(REGISTRY).filter((k) => REGISTRY[k].kind === 'hostile');
 
 // ---------------------------------------------------------------------------
@@ -298,6 +362,25 @@ export function createMobs(opts) {
       for (const px of [0.13, -0.13]) {
         legs.push(track(box(group, c.legs, 0.2, 0.7, 0.2, px, 0.35, 0)));
       }
+      // --- optional costume / armor overlays (knights, wizards, farmers, kids) ---
+      // The face is added later at the head's front, so helmets are top-caps that
+      // leave the face open; chestplates/capes sit over the torso/back.
+      if (c.chest) {
+        track(box(group, c.chest, 0.56, 0.5, 0.34, 0, 1.22, 0));     // chestplate
+        track(box(group, c.chest, 0.22, 0.2, 0.24, 0.34, 1.42, 0));  // L pauldron
+        track(box(group, c.chest, 0.22, 0.2, 0.24, -0.34, 1.42, 0)); // R pauldron
+      }
+      if (c.cape) track(box(group, c.cape, 0.5, 0.85, 0.06, 0, 1.18, -0.2)); // cape on the back
+      if (c.helmet) {
+        track(box(group, c.helmet, 0.52, 0.22, 0.52, 0, 1.9, 0));      // crown
+        track(box(group, c.helmet, 0.52, 0.18, 0.12, 0, 1.78, -0.22)); // back guard
+        if (c.brim) track(box(group, c.helmet, 0.78, 0.06, 0.78, 0, 1.8, 0));     // straw-hat brim
+        if (c.hatPeak) track(box(group, c.helmet, 0.18, 0.55, 0.18, 0, 2.2, 0));  // wizard point
+      }
+      if (c.glint) { // enchant shimmer: a couple of bright floating sparks
+        track(box(group, c.glint, 0.07, 0.07, 0.07, 0.32, 1.55, 0.22));
+        track(box(group, c.glint, 0.06, 0.06, 0.06, -0.28, 1.3, 0.24));
+      }
       head.userData.isHead = true;
     } else if (def.model === 'creeper') {
       track(box(group, c.body, 0.5, 1.0, 0.4, 0, 0.95, 0)); // body
@@ -398,6 +481,7 @@ export function createMobs(opts) {
     const def = REGISTRY[id];
     if (!def) return null;
     const { group, parts } = buildModel(def);
+    if (def.scale) group.scale.setScalar(def.scale); // smaller silhouette for kids
     group.position.set(x, y, z);
     scene.add(group);
     const mob = {
