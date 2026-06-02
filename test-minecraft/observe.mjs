@@ -41,11 +41,27 @@ await page.evaluate(() => window.__time && window.__time(0.5));
 await page.evaluate(() => window.__view && window.__view(8, 36, 16, 0, -0.18));
 await page.waitForTimeout(12000);
 await page.screenshot({ path: `/tmp/mc-ext-${TAG}.png` });
-// interior rooms: sales (near baker), workshop, 2F classroom
-const views = { sales: [8, 31, -26, 0, 0.02], workshop: [8, 31, -30, 0, 0.05], classroom: [8, 35, -27, 0, 0.0] };
+
+// 5 interior views (world coords):
+//   LM_X=-12, LM_Y=29, LM_Z=-36; local→world: wx=lx-12, wy=ly+29, wz=lz-36
+//   yaw=0 faces -z (into building/toward back); yaw=PI faces +z (toward entrance)
+//   yaw=-PI/2 = facing east (+x); yaw=PI/2 = facing west (-x)
+//
+// 1. CORRIDOR: local(8,3,10)=world(-4,32,-26), facing east (yaw=-PI/2) — see corridor length & 3 doorways
+// 2. BAKERY counter: local(20,3,9)=world(8,32,-27), facing -z (yaw=0) — in corridor doorway, see counter
+// 3. WORKSHOP: local(16,3,4)=world(4,32,-32), facing -z (yaw=0) — in front of oven at x=16,z=2
+// 4. GF WEST CLASSROOM: local(9,3,7)=world(-3,32,-29), facing -z (yaw=0) — see blackboard at z=2
+// 5. 2F CENTER CLASSROOM: local(20,9,7)=world(8,38,-29), facing -z (yaw=0) — blackboard + desks
+const views = {
+  corridor:   [-4,  32, -26, -1.57, 0.05],  // in corridor looking east: three doorways + bakery blue
+  bakery:     [8,   32, -27,  0,    0.05],  // at bakery doorway in corridor, look -z at teal wall+counter
+  workshop:   [4,   32, -32,  0,    0.05],  // in front of oven (local x=16,z=4), facing -z at ovens
+  gf_class:   [-3,  32, -29,  0,    0.05],  // GF west classroom, facing -z, blackboard fills back wall
+  f2_class:   [8,   38, -29,  0,    0.05],  // 2F center classroom, facing -z, blackboard + wood desks
+};
 for (const [name, [x, y, z, yaw, pit]] of Object.entries(views)) {
   await page.evaluate(([x, y, z, yaw, pit]) => window.__view && window.__view(x, y, z, yaw, pit), [x, y, z, yaw, pit]);
-  await page.waitForTimeout(3500);
+  await page.waitForTimeout(4000);
   await page.screenshot({ path: `/tmp/mc-${name}-${TAG}.png` });
 }
 
