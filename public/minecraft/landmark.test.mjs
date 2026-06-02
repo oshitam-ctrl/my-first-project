@@ -12,6 +12,7 @@ const B = {
   GREEN_WOOL: 35, BLACK_WOOL: 36, GRAVEL: 37, HAY: 50, STONE_BRICKS: 29,
   WATER: 7, WHEAT_CROP: 53, VEG_CROP: 54,
   FURNACE: 60, CRAFTING_TABLE: 61, PLANK: 9, PUMPKIN: 62,
+  LANTERN: 55,
 };
 
 const { w, d, clearH } = LANDMARK;
@@ -113,13 +114,29 @@ for (let z = 21; z <= 25; z++) {
 }
 assert.ok(corridorAir >= 4, `corridor should have >=4 walkable z-cells at x=44, got ${corridorAir}`);
 
-// ── Blackboard present in classrooms ─────────────────────────────────────────
-// Classroom 1 back wall z=2: check for BLACK_WOOL somewhere x12..21, y3..6
+// ── Blackboard / chalkboard present in x12..21 bay ───────────────────────────
+// Bay x12..21 is now the "South in North" cafe: the chalkboard menu board
+// (BLACK_WOOL) is placed on the back wall z=2, y3..6 — same position as a
+// classroom blackboard, so the same assertion catches both uses.
 let bbFound = false;
 for (let x = 12; x <= 21 && !bbFound; x++)
   for (let y = 3; y <= 6 && !bbFound; y++)
     if (get(x, y, 2) === B.BLACK_WOOL) bbFound = true;
-assert.ok(bbFound, 'expected BLACK_WOOL blackboard on classroom 1 back wall (z=2)');
+assert.ok(bbFound, 'expected BLACK_WOOL chalkboard menu on cafe bay back wall (z=2)');
+
+// ── Cafe "South in North" has SPRUCE_PLANKS counter at z=19 ─────────────────
+let cafeCounterFound = false;
+for (let x = 13; x <= 20 && !cafeCounterFound; x++)
+  if (get(x, 2, 19) === B.SPRUCE_PLANKS || get(x, 3, 19) === B.SPRUCE_PLANKS) cafeCounterFound = true;
+assert.ok(cafeCounterFound, 'expected SPRUCE_PLANKS cafe counter at z=19, x12..21');
+
+// ── Cafe has BLUE_WOOL teal accent ────────────────────────────────────────────
+let cafeTealFound = false;
+for (let x = 12; x <= 21 && !cafeTealFound; x++)
+  for (let y = 2; y <= 7 && !cafeTealFound; y++)
+    for (let z = 2; z <= 19 && !cafeTealFound; z++)
+      if (get(x, y, z) === B.BLUE_WOOL) cafeTealFound = true;
+assert.ok(cafeTealFound, 'expected BLUE_WOOL teal accent in cafe bay');
 
 // ── Workshop ovens (FURNACE) on back wall z=2 ────────────────────────────────
 let ovenFound = false;
