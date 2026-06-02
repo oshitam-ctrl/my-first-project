@@ -22,12 +22,20 @@
 //   BAY breakdown:
 //     West stair tower:  x5..10
 //     CAFE "South in North" (GF):  x12..21  ← 旧教室をカフェに改装
-//     Classroom 2 (GF):  x23..32
+//     理科室 (science room) (GF):  x23..32  ← lab benches, sinks, stools
 //     Classroom 3 (GF):  x34..43
 //     BAKERY:            x45..56
 //     Classroom 4 (GF):  x58..67
-//     Classroom 5 (GF):  x69..78
+//     図書室 (library) (GF):  x69..78  ← bookshelves, reading tables
 //     East stair tower:  x80..82
+//
+//   FLOOR 2:
+//     2F Classroom 1:    x12..21
+//     音楽室 (music room) (2F): x23..32  ← piano, music stands, chairs
+//     2F Classroom 3:    x34..43
+//     2F Classroom 4:    x45..56  (above bakery)
+//     2F Classroom 5:    x58..67
+//     2F Classroom 6:    x69..78
 //
 //   VERTICAL:
 //     y=0  foundation (SANDSTONE)
@@ -302,11 +310,112 @@ export function buildPetitHermes(stamp, B) {
     stamp(cfX0 + 4, f1Hi - 1, 18, B.LANTERN); // near counter
   }
 
-  // Classrooms 2-5 (ground floor); Classroom 1 is now the cafe above
-  classroom_gf(23, 32);  // Classroom 2
-  classroom_gf(34, 43);  // Classroom 3
-  classroom_gf(58, 67);  // Classroom 4
-  classroom_gf(69, 78);  // Classroom 5 — east side
+  // ==========================================================================
+  // 7c) 理科室 (science room) — GF x23..32 (replaces generic Classroom 2).
+  //     Lab benches (CRAFTING_TABLE rows) + sinks (CALCITE basin + WATER) +
+  //     round stools (BIRCH_PLANKS) + periodic-table blackboard on z=2.
+  // ==========================================================================
+  const scX0 = 23, scX1 = 32; // science room bay x extents
+  // Blackboard (periodic table / 理科) on back wall z=2, y3..6
+  fillBox(scX0 + 1, 3, 2, scX1 - 1, 6, 2, B.BLACK_WOOL);
+  // Teacher demo bench (CRAFTING_TABLE pair) at z=3
+  const scMid = Math.floor((scX0 + scX1) / 2);
+  stamp(scMid - 1, 2, 3, B.CRAFTING_TABLE);
+  stamp(scMid,     2, 3, B.CRAFTING_TABLE);
+  stamp(scMid - 1, 2, 4, B.SPRUCE_PLANKS); // teacher stool
+  stamp(scMid,     2, 4, B.SPRUCE_PLANKS);
+  // Lab bench rows: 2 rows of CRAFTING_TABLE pairs at z=7 and z=12
+  // Row 1 (z=7): two benches across the bay
+  stamp(scX0 + 1, 2, 7,  B.CRAFTING_TABLE);
+  stamp(scX0 + 2, 2, 7,  B.CRAFTING_TABLE);
+  stamp(scX0 + 5, 2, 7,  B.CRAFTING_TABLE);
+  stamp(scX0 + 6, 2, 7,  B.CRAFTING_TABLE);
+  // Stools behind each bench (z=8), BIRCH_PLANKS
+  stamp(scX0 + 1, 2, 8,  B.BIRCH_PLANKS);
+  stamp(scX0 + 2, 2, 8,  B.BIRCH_PLANKS);
+  stamp(scX0 + 5, 2, 8,  B.BIRCH_PLANKS);
+  stamp(scX0 + 6, 2, 8,  B.BIRCH_PLANKS);
+  // Row 2 (z=12): same layout
+  stamp(scX0 + 1, 2, 12, B.CRAFTING_TABLE);
+  stamp(scX0 + 2, 2, 12, B.CRAFTING_TABLE);
+  stamp(scX0 + 5, 2, 12, B.CRAFTING_TABLE);
+  stamp(scX0 + 6, 2, 12, B.CRAFTING_TABLE);
+  stamp(scX0 + 1, 2, 13, B.BIRCH_PLANKS);
+  stamp(scX0 + 2, 2, 13, B.BIRCH_PLANKS);
+  stamp(scX0 + 5, 2, 13, B.BIRCH_PLANKS);
+  stamp(scX0 + 6, 2, 13, B.BIRCH_PLANKS);
+  // Sinks: CALCITE basin + WATER block at z=16..17 on east wall x=31
+  stamp(scX1 - 1, 2, 16, B.CALCITE); // sink basin
+  stamp(scX1 - 1, 2, 17, B.WATER);   // water in sink
+  stamp(scX1 - 2, 2, 16, B.CALCITE); // second basin
+  stamp(scX1 - 2, 2, 17, B.WATER);
+  // Round stools by sinks (BIRCH_PLANKS)
+  stamp(scX1 - 1, 2, 15, B.BIRCH_PLANKS);
+  stamp(scX1 - 2, 2, 15, B.BIRCH_PLANKS);
+  // Storage shelves (SPRUCE_PLANKS) on west wall x=23
+  fillBox(scX0, 3, 8, scX0, 5, 11, B.SPRUCE_PLANKS);
+  // LANTERNS for lab lighting
+  if (B.LANTERN != null) {
+    stamp(scX0 + 3, f1Hi - 1, 7,  B.LANTERN);
+    stamp(scX0 + 3, f1Hi - 1, 14, B.LANTERN);
+  }
+
+  // Generic GF classrooms (3 and 4 remain standard)
+  classroom_gf(34, 43);  // Classroom 3 (GF)
+  // Classroom 2 (23-32) replaced by 理科室 above
+  classroom_gf(58, 67);  // Classroom 4 (GF)
+
+  // ==========================================================================
+  // 7d) 図書室 (library) — GF x69..78 (replaces generic Classroom 5).
+  //     Bookshelves along walls + reading tables + LANTERN reading lamps.
+  //     Bookshelves = SPRUCE_PLANKS shelf base with BLUE/GREEN/BLACK_WOOL "books".
+  // ==========================================================================
+  const lbX0 = 69, lbX1 = 78; // library bay x extents
+  // No blackboard — whiteboard (WHITE_WOOL) on back wall z=2 instead
+  fillBox(lbX0 + 1, 3, 2, lbX1 - 1, 5, 2, B.WHITE_WOOL);
+  // Title banner in WHITE_WOOL above: use BLACK_WOOL "books" band at y=6 for contrast
+  fillBox(lbX0 + 1, 6, 2, lbX1 - 1, 6, 2, B.BLACK_WOOL);
+  // BOOKSHELVES on west wall (x=69): alternating book-colour rows, z4..18, y3..5
+  for (let bz2 = 4; bz2 <= 18; bz2++) {
+    const bookCol = (((bz2 - 4) % 3) === 0) ? B.BLUE_WOOL
+                  : (((bz2 - 4) % 3) === 1) ? B.GREEN_WOOL
+                  : B.BLACK_WOOL;
+    stamp(lbX0, 3, bz2, B.SPRUCE_PLANKS); // shelf plank
+    stamp(lbX0, 4, bz2, bookCol);          // book colour band
+    stamp(lbX0, 5, bz2, B.SPRUCE_PLANKS); // upper shelf
+  }
+  // BOOKSHELVES on east wall (x=78): same pattern but shifted
+  for (let bz2 = 4; bz2 <= 18; bz2++) {
+    const bookCol = (((bz2 - 4) % 3) === 2) ? B.BLUE_WOOL
+                  : (((bz2 - 4) % 3) === 0) ? B.GREEN_WOOL
+                  : B.BLACK_WOOL;
+    stamp(lbX1, 3, bz2, B.SPRUCE_PLANKS);
+    stamp(lbX1, 4, bz2, bookCol);
+    stamp(lbX1, 5, bz2, B.SPRUCE_PLANKS);
+  }
+  // Reading tables (SPRUCE_PLANKS) with chairs (BIRCH_PLANKS)
+  // Table 1: z=7..8 mid-bay
+  const lbMid = Math.floor((lbX0 + lbX1) / 2);
+  stamp(lbMid - 1, 2, 7,  B.SPRUCE_PLANKS);
+  stamp(lbMid,     2, 7,  B.SPRUCE_PLANKS);
+  stamp(lbMid - 1, 2, 8,  B.BIRCH_PLANKS); // chair south side
+  stamp(lbMid,     2, 8,  B.BIRCH_PLANKS);
+  stamp(lbMid - 1, 2, 6,  B.BIRCH_PLANKS); // chair north side
+  stamp(lbMid,     2, 6,  B.BIRCH_PLANKS);
+  // Table 2: z=13..14
+  stamp(lbMid - 1, 2, 13, B.SPRUCE_PLANKS);
+  stamp(lbMid,     2, 13, B.SPRUCE_PLANKS);
+  stamp(lbMid - 1, 2, 14, B.BIRCH_PLANKS);
+  stamp(lbMid,     2, 14, B.BIRCH_PLANKS);
+  stamp(lbMid - 1, 2, 12, B.BIRCH_PLANKS);
+  stamp(lbMid,     2, 12, B.BIRCH_PLANKS);
+  // LANTERN reading lamps over each table
+  if (B.LANTERN != null) {
+    stamp(lbMid - 1, f1Hi - 1, 7,  B.LANTERN);
+    stamp(lbMid - 1, f1Hi - 1, 13, B.LANTERN);
+    // Cozy corner lamp near entry
+    stamp(lbX0 + 1, f1Hi - 1, 17, B.LANTERN);
+  }
 
   // ==========================================================================
   // 8) BAKERY (パン屋) — ground floor, x45..56, z3..19.
@@ -371,6 +480,57 @@ export function buildPetitHermes(stamp, B) {
   }
   // CALCITE + WATER sink in east corner of workshop
   stamp(55, 2, 2, B.CALCITE); stamp(55, 2, 3, B.WATER);
+
+  // ==========================================================================
+  // 8b) BAKERY CORRIDOR DOORWAY MARKER — so players spot the bakery entrance.
+  //     Bakery doorway in z=20 wall: x49..50, y2..5 (AIR already opened above).
+  //     Add a distinct teal 暖簾 lintel (BLUE_WOOL) at y=6 spanning x48..51,
+  //     HAY "bread" emblems flanking the doorway at y=2, and a LANTERN above.
+  //     Corridor side (z=21) gets the decorative elements.
+  // ==========================================================================
+  // 暖簾 lintel: BLUE_WOOL row at y=6, x48..51, z=20 (top of doorway arch)
+  fillBox(48, 6, 20, 51, 6, 20, B.BLUE_WOOL);
+  // HAY bread emblems flanking doorway at y=2, z=20 (corridor wall face)
+  // placed on the SANDSTONE wall cells to either side of the doorway (x48, x51 still solid)
+  stamp(48, 2, 20, B.HAY); // west emblem on wall (already solid here, so overwrites)
+  stamp(51, 2, 20, B.HAY); // east emblem
+  stamp(48, 3, 20, B.HAY); // second tier west
+  stamp(51, 3, 20, B.HAY); // second tier east
+  // LANTERN just inside/above corridor doorway, z=21 (corridor side)
+  if (B.LANTERN != null) {
+    stamp(49, 6, 21, B.LANTERN); // lantern above bakery doorway, corridor side
+    stamp(50, 6, 21, B.LANTERN); // pair for width
+  }
+  // Teal pilaster stripes on wall beside bakery doorway (corridor face z=20)
+  // west pilaster: x47, y2..5
+  for (let py = 2; py <= 5; py++) {
+    const col = (py % 2 === 0) ? B.BLUE_WOOL : B.WHITE_WOOL;
+    stamp(47, py, 20, col); // west pilaster (overwrites wall)
+    stamp(52, py, 20, col); // east pilaster
+  }
+
+  // ==========================================================================
+  // 8c) WORKSHOP PARTITION DOOR MARKER — so players know z=11 is passable.
+  //     Partition door opening: x50..51, y2..4, z=11 (AIR already opened above).
+  //     Add a STONE_BRICKS lintel at y=5 + LANTERN above + WHITE_WOOL "→" arrow.
+  // ==========================================================================
+  // Lintel above partition door: y=5, x49..52, z=11 (STONE_BRICKS strip over door)
+  fillBox(49, 5, 11, 52, 5, 11, B.STONE_BRICKS);
+  // Keep door AIR (y2..4 at x50..51)
+  fillBox(50, 2, 11, 51, 4, 11, B.AIR);
+  // LANTERN over the door on the sales side (z=12): hangs from lintel
+  if (B.LANTERN != null) {
+    stamp(50, 5, 12, B.LANTERN);
+    stamp(51, 5, 12, B.LANTERN);
+  }
+  // "→ 工房" arrow marker: WHITE_WOOL arrow on east face of teal partition wall (z=11)
+  // place arrow at x=53, y=3..4, z=12 (workshop side, points east into workshop)
+  // Arrow tip: single block
+  stamp(53, 3, 12, B.WHITE_WOOL);
+  stamp(53, 4, 12, B.WHITE_WOOL);
+  // Arrow tail: two blocks forming a horizontal shaft
+  stamp(54, 3, 12, B.WHITE_WOOL);
+  stamp(55, 3, 12, B.WHITE_WOOL);
 
   // ==========================================================================
   // 9) WEST STAIR TOWER — x5..10, z3..19, y1..8+.
@@ -484,13 +644,103 @@ export function buildPetitHermes(stamp, B) {
     }
   };
 
-  // Floor-2: 6 classrooms (incl. above bakery = classroom)
+  // ==========================================================================
+  // 11b) 音楽室 (music room) — 2F x23..32 (replaces 2F Classroom 2).
+  //      Piano (BLACK_WOOL body + WHITE_WOOL keys) against z=2,
+  //      music stands (SPRUCE_LOG post + SPRUCE_PLANKS top), chairs (BIRCH_PLANKS)
+  //      in a semicircle facing the piano.
+  // ==========================================================================
+  const muX0 = 23, muX1 = 32; // music room bay x extents (2F)
+  // Back wall z=2 stays as-is (SANDSTONE), piano sits against it
+  // PIANO BODY: BLACK_WOOL, x24..27, y9..11, z2..3
+  fillBox(muX0 + 1, g1, 2, muX0 + 4, g1 + 2, 3, B.BLACK_WOOL);
+  // PIANO KEYS: WHITE_WOOL row across top of piano at y=g1+2 (y=11), z=2
+  fillBox(muX0 + 1, g1 + 2, 2, muX0 + 4, g1 + 2, 2, B.WHITE_WOOL); // keys row
+  // Piano lid: BLACK_WOOL at y=g1+3 above keys
+  fillBox(muX0 + 1, g1 + 3, 2, muX0 + 4, g1 + 3, 2, B.BLACK_WOOL);
+  // Piano bench: BIRCH_PLANKS in front of piano
+  stamp(muX0 + 2, g1, 4, B.BIRCH_PLANKS);
+  stamp(muX0 + 3, g1, 4, B.BIRCH_PLANKS);
+  // MUSIC STANDS: SPRUCE_LOG post (y=g1) + SPRUCE_PLANKS lectern top (y=g1+1)
+  // 4 stands arranged in a 2×2 arc facing the piano
+  const standPos = [[muX0 + 2, 8], [muX0 + 4, 8], [muX0 + 6, 10], [muX0 + 8, 10]];
+  for (const [sx, sz2] of standPos) {
+    stamp(sx, g1,     sz2, B.SPRUCE_LOG);    // post
+    stamp(sx, g1 + 1, sz2, B.SPRUCE_PLANKS); // lectern top
+  }
+  // CHAIRS (BIRCH_PLANKS) behind each stand
+  for (const [sx, sz2] of standPos) {
+    stamp(sx, g1, sz2 + 1, B.BIRCH_PLANKS);
+  }
+  // LANTERNS for music room
+  if (B.LANTERN != null) {
+    stamp(muX0 + 3, g2 - 1, 8,  B.LANTERN);
+    stamp(muX0 + 6, g2 - 1, 14, B.LANTERN);
+  }
+
+  // Floor-2: remaining classrooms (音楽室 replaces 2F Classroom 2 at x23..32)
   classroom_2f(12, 21);  // 2F Classroom 1
-  classroom_2f(23, 32);  // 2F Classroom 2
+  // 音楽室 at x23..32 (defined above)
   classroom_2f(34, 43);  // 2F Classroom 3
   classroom_2f(45, 56);  // 2F Classroom 4 (above bakery)
   classroom_2f(58, 67);  // 2F Classroom 5
   classroom_2f(69, 78);  // 2F Classroom 6
+
+  // ==========================================================================
+  // 11c) STAIR DOORWAY MARKERS — placed AFTER floor-2 hollowing so they survive.
+  //      West stair: corridor doorway x6..9, z=20.
+  //      East stair: corridor doorway x80..82, z=20.
+  //      Each gets: BLUE_WOOL frame lintel at y=6, a LANTERN above (z=21 side),
+  //      an UP-ARROW motif (WHITE_WOOL "↑") on the corridor z=20 wall above the
+  //      doorway, and a "2F" two-block marker in BLUE_WOOL higher up.
+  //      Also LANTERN at each stair LANDING (top of stairs, deck y=8).
+  //      NOTE: floor-2 hollow clears y=9..14 at z=2..25, so markers at y≥9
+  //      must go here; markers at y=6..8 survive the GF-shell range and are safe.
+  // ==========================================================================
+  // ── WEST STAIR MARKER ──────────────────────────────────────────────────────
+  // Lintel: BLUE_WOOL span at y=6, x5..10, z=20 (top of west stair doorway)
+  fillBox(5, 6, 20, 10, 6, 20, B.BLUE_WOOL);
+  // LANTERN above west stair doorway, corridor side z=21
+  if (B.LANTERN != null) {
+    stamp(7, 6, 21, B.LANTERN);
+    stamp(8, 6, 21, B.LANTERN);
+  }
+  // UP-ARROW motif on corridor back wall (z=20) above west stair doorway.
+  // The floor-2 corridor back wall (SANDSTONE) at y=9..14 covers z=20 but
+  // we can paint over it with the arrow after it's placed.
+  // Base row: y=7 (floor-1 ceiling zone is y=7 = f1Hi; wall exists there already)
+  fillBox(6, 7, 20, 9, 7, 20, B.WHITE_WOOL);   // arrow base row (y=7 is f1Hi)
+  // Mid: x7, x8 at y=8 (deck level, floor is OAK_PLANKS but wall at x5/x10 is SANDSTONE;
+  // at interior x6..9 the deck sits at y=8, but z=20 is wall — paint it)
+  stamp(7, 8, 20, B.WHITE_WOOL);
+  stamp(8, 8, 20, B.WHITE_WOOL);
+  // Tip at y=9: floor-2 corridor back wall (SANDSTONE) already set above; paint it
+  stamp(7, 9, 20, B.WHITE_WOOL);
+  // "2F" marker at y=10: paint over the floor-2 corridor back wall
+  stamp(7, 10, 20, B.BLUE_WOOL);
+  stamp(8, 10, 20, B.BLUE_WOOL);
+
+  // ── EAST STAIR MARKER ──────────────────────────────────────────────────────
+  // Lintel: BLUE_WOOL span at y=6, x79..82, z=20
+  fillBox(79, 6, 20, 82, 6, 20, B.BLUE_WOOL);
+  if (B.LANTERN != null) {
+    stamp(80, 6, 21, B.LANTERN);
+    stamp(81, 6, 21, B.LANTERN);
+  }
+  // UP-ARROW above east stair doorway
+  fillBox(80, 7, 20, 82, 7, 20, B.WHITE_WOOL); // arrow base row
+  stamp(80, 8, 20, B.WHITE_WOOL);
+  stamp(81, 8, 20, B.WHITE_WOOL);
+  stamp(81, 9, 20, B.WHITE_WOOL); // arrow tip
+  // "2F" marker
+  stamp(80, 10, 20, B.BLUE_WOOL);
+  stamp(81, 10, 20, B.BLUE_WOOL);
+
+  // Landing LANTERNs at top of stairs (floor-2 deck y=8, z=12)
+  if (B.LANTERN != null) {
+    stamp(7,  deck, 12, B.LANTERN); // west stair landing local (7,8,12)
+    stamp(81, deck, 12, B.LANTERN); // east stair landing local (81,8,12)
+  }
 
   // ==========================================================================
   // 12) FRONT YARD (local z>26) — deterministic props.

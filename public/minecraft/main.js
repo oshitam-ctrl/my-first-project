@@ -246,6 +246,31 @@ window.__view = (x, y, z, yaw = 0, pitch = -0.85) => {
 };
 window.__time = (t) => { dayTime = t; }; // debug: set time of day [0,1) (0.25=morning,0.5=noon,0.0/1.0=midnight)
 window.__weather = (w) => sky.setWeather(w);
+// Scripted-movement debug hook for headless escape tests.
+// Usage: window.__sim.place(x, y, z) to teleport; __sim.pressKeys({Space,KeyW,...}) for up to N frames.
+window.__sim = {
+  // Teleport player into position (disables fly so physics apply)
+  place(x, y, z, yaw = 0) {
+    player.pos.set(x, y, z);
+    player.vel.set(0, 0, 0);
+    player.yaw = yaw;
+    player.fly = false;
+    player.onGround = false;
+  },
+  // Simulate pressing a set of keys for `frames` physics frames at dt seconds each.
+  // keysDown: object like { Space: true, KeyW: true }
+  pressKeys(keysDown, frames = 60, dt = 1 / 20) {
+    Object.assign(keys, keysDown);
+    playing = true;
+    for (let i = 0; i < frames; i++) movePlayer(dt);
+    // Clear the injected keys
+    for (const k of Object.keys(keysDown)) keys[k] = false;
+  },
+  // Return a snapshot of player state
+  state() {
+    return { x: player.pos.x, y: player.pos.y, z: player.pos.z, vy: player.vel.y, onGround: player.onGround };
+  },
+};
 
 const GRAVITY = 28;
 const WALK = 5.2, SPRINT = 8.5, FLY = 11, JUMP = 9.2;
@@ -261,6 +286,81 @@ function collidesAt(px, py, pz) {
         if (world.isSolidAt(x, y, z)) return true;
   return false;
 }
+
+// Y-axis-only collision check: only tests the block slab introduced by the
+// vertical movement from prevY to newY. Moving up checks only the new top row;
+// moving down checks only the new bottom row. This prevents horizontal walls
+// (that were already overlapping before the move) from blocking vertical movement,
+// which matches Minecraft behavior and lets the player swim up past levee walls.
+function collidesAtY(px, prevY, newY, pz) {
+  const hw = player.width / 2;
+  const x0 = Math.floor(px - hw), x1 = Math.floor(px + hw);
+  const z0 = Math.floor(pz - hw), z1 = Math.floor(pz + hw);
+  const h = player.height - 0.001;
+  if (newY > prevY) {
+    // Moving up: check only the new top layer(s)
+    const oldTopY = Math.floor(prevY + h);
+    const newTopY = Math.floor(newY + h);
+    for (let y = oldTopY + 1; y <= newTopY; y++)
+      for (let z = z0; z <= z1; z++)
+        for (let x = x0; x <= x1; x++)
+          if (world.isSolidAt(x, y, z)) return true;
+    return false;
+  } else if (newY < prevY) {
+    // Moving down: check only the new bottom layer(s)
+    const oldBotY = Math.floor(prevY);
+    const newBotY = Math.floor(newY);
+    for (let y = newBotY; y < oldBotY; y++)
+      for (let z = z0; z <= z1; z++)
+        for (let x = x0; x <= x1; x++)
+          if (world.isSolidAt(x, y, z)) return true;
+    return false;
+  }
+  return false; // no movement
+}
+
+// Returns true if the player's AABB at (px,py,pz) overlaps any WATER block (id 7).
+function inWaterAt(px, py, pz) {
+  const hw = player.width / 2;
+  const x0 = Math.floor(px - hw), x1 = Math.floor(px + hw);
+  const y0 = Math.floor(py), y1 = Math.floor(py + player.height - 0.001);
+  const z0 = Math.floor(pz - hw), z1 = Math.floor(pz + hw);
+  for (let y = y0; y <= y1; y++)
+    for (let z = z0; z <= z1; z++)
+      for (let x = x0; x <= x1; x++)
+        if (world.getBlock(x, y, z) === 7) return true;
+  return false;
+}
+
+// Attempt auto-step-up: if horizontally blocked at current Y but clear one
+// block higher, snap the player up onto the ledge (max step height 1.0).
+// Only active when on or near the ground (not while airborne / jumping high).
+// Returns true if the step succeeded.
+function tryStepUp(newX, newZ) {
+  const p = player.pos;
+  // Only step when near the ground (prevents climbing walls mid-air)
+  if (player.vel.y > 1.0) return false;
+  const STEP_MAX = 1.0;
+  // Find the exact height to step to: scan upward from current foot + epsilon
+  for (let s = 0.25; s <= STEP_MAX; s += 0.25) {
+    const stepY = p.y + s;
+    if (!collidesAt(newX, stepY, newZ) && !collidesAt(newX, stepY, p.z) && !collidesAt(p.x, stepY, newZ)) {
+      // Make sure head has clearance at the new position
+      if (!collidesAt(newX, stepY, newZ)) {
+        p.y = stepY;
+        player.vel.y = 0;
+        player.onGround = true;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Buoyancy / swim-up constants
+const SWIM_UP_VEL   = 4.5;  // upward velocity when holding jump in water
+const BUOYANCY_ACC  = 10.0; // upward acceleration countering gravity (makes sinking slow)
+const BUOYANCY_DAMP = 0.7;  // horizontal drag factor while in water (per second)
 
 let stepTimer = 0;
 function movePlayer(dt) {
@@ -281,28 +381,61 @@ function movePlayer(dt) {
   player.vel.z = input.z * speed;
 
   const jumpHeld = keys['Space'] || touchJump;
+
+  // Check if the player is currently inside water (feet or body)
+  const p = player.pos;
+  const swimming = !player.fly && inWaterAt(p.x, p.y, p.z);
+
   if (player.fly) {
     let vy = 0;
     if (jumpHeld || touchVert > 0) vy += FLY;
     if (keys['ShiftLeft'] || touchVert < 0) vy -= FLY;
     player.vel.y = vy;
+  } else if (swimming) {
+    // In water: apply buoyancy to slow sinking, swim up on jump.
+    // Buoyancy partially counters gravity so the player sinks slowly.
+    player.vel.y += (-GRAVITY + BUOYANCY_ACC) * dt;
+    // Clamp downward velocity so sinking is slow (not freefall)
+    if (player.vel.y < -2.0) player.vel.y = -2.0;
+    // Swim up when jump is held
+    if (jumpHeld) {
+      player.vel.y = SWIM_UP_VEL;
+    }
+    // Light horizontal drag in water
+    const drag = Math.pow(BUOYANCY_DAMP, dt);
+    player.vel.x *= drag;
+    player.vel.z *= drag;
   } else {
     player.vel.y -= GRAVITY * dt;
     if (jumpHeld && player.onGround) { player.vel.y = JUMP; player.onGround = false; }
   }
 
-  const p = player.pos;
+  // --- X movement with auto-step-up ---
   p.x += player.vel.x * dt;
-  if (collidesAt(p.x, p.y, p.z)) { p.x -= player.vel.x * dt; player.vel.x = 0; }
+  if (collidesAt(p.x, p.y, p.z)) {
+    // Try to step up over a ≤1-block ledge before reverting
+    if (!tryStepUp(p.x, p.z)) {
+      p.x -= player.vel.x * dt; player.vel.x = 0;
+    }
+  }
+  // --- Z movement with auto-step-up ---
   p.z += player.vel.z * dt;
-  if (collidesAt(p.x, p.y, p.z)) { p.z -= player.vel.z * dt; player.vel.z = 0; }
+  if (collidesAt(p.x, p.y, p.z)) {
+    if (!tryStepUp(p.x, p.z)) {
+      p.z -= player.vel.z * dt; player.vel.z = 0;
+    }
+  }
 
   player.onGround = false;
   const vyBefore = player.vel.y;
+  const prevY = p.y;
   p.y += player.vel.y * dt;
-  if (collidesAt(p.x, p.y, p.z)) {
+  // Y-collision: only check the new block layer swept by the move (not side walls
+  // that were already overlapping before the move). This lets the player swim up
+  // past a levee wall they're already touching horizontally.
+  if (collidesAtY(p.x, prevY, p.y, p.z)) {
     if (player.vel.y <= 0) player.onGround = true;
-    p.y -= player.vel.y * dt;
+    p.y = prevY;
     player.vel.y = 0;
   }
   // fall damage on landing (survival; applyDamage no-ops in creative/fly)
@@ -1144,10 +1277,26 @@ Object.assign(speechEl.style, {
 document.body.appendChild(speechEl);
 const guide = createGuide(); // bottom-center wayfinding compass
 const BREADS = ['bread', 'campagne', 'baguette', 'pain_de_mie', 'rosemary_bread', 'apple_bread', 'fruit_bread', 'toast'];
+// Bakery doorway world position — the entrance to the shop bay (easier to find than the baker NPC deep inside).
+const BAKERY_DOOR = { x: 13.5, z: -30 };
+// One-time “stairs hint” shown after bakery is found (2F wayfinding).
+let stairsHintShown = false;
 function updateQuest() {
   const bread = BREADS.reduce((s, id) => s + inv.count(id), 0);
   const nearBaker = !!(baker && playing && Math.hypot(player.pos.x - baker.pos.x, player.pos.z - baker.pos.z) < 3.5);
-  if (nearBaker && !bakeryFound) { bakeryFound = true; toast('🥖 プチヘルメースに到着！畑で材料を集めてパンを焼こう'); }
+  // Trigger bakeryFound when player enters the bakery bay (near doorway OR near baker NPC)
+  const nearDoor = playing && Math.hypot(player.pos.x - BAKERY_DOOR.x, player.pos.z - BAKERY_DOOR.z) < 4;
+  if ((nearBaker || nearDoor) && !bakeryFound) {
+    bakeryFound = true;
+    toast('🥖 パン屋はここ！奥の扉が工房だよ');
+    // Show 2F stairs hint shortly after arriving at the bakery
+    setTimeout(() => {
+      if (!stairsHintShown) {
+        stairsHintShown = true;
+        toast('🪜 校舎の両端の階段から2階（教室）へ行けるよ');
+      }
+    }, 3500);
+  }
   quest.update({ wheat: inv.count('wheat'), veg: inv.count('surplus_veg'), levain: inv.count('levain'), bread, nearBaker });
   if (nearBaker) {
     speechEl.style.display = 'block';
@@ -1173,13 +1322,13 @@ function updateQuest() {
 
 // Wayfinding: choose the next target/label from the player's progress.
 const FIELD = { x: -4, z: -3 };          // schoolyard farm plot (harvest)
-let bakeryFound = false;                  // becomes true once the player reaches the shop counter
+let bakeryFound = false;                  // becomes true once the player enters the bakery bay
 function updateGuide(bread) {
   if (!playing || questDone) { guide.hide(); return; }
-  // Onboarding: first send the visitor INTO the shop to meet the baker, so
-  // "where's the bakery?" is answered before anything else.
-  if (!bakeryFound && baker) {
-    guide.update({ player, target: { x: baker.pos.x, z: baker.pos.z }, label: '🥖 まずは校舎入口の「プチヘルメース」へ' });
+  // Onboarding: first guide points to the BAKERY DOORWAY (world ~x13.5, z-30)
+  // so first-timers find the entrance before anything else.
+  if (!bakeryFound) {
+    guide.update({ player, target: BAKERY_DOOR, label: '🥖 パン屋はこちら（校舎内）' });
     return;
   }
   const wheat = inv.count('wheat'), veg = inv.count('surplus_veg'), levain = inv.count('levain');
