@@ -189,12 +189,31 @@ export function buildPetitHermes(stamp, B) {
   // ==========================================================================
   // Corridor interior: x5..82, z21..25, y2..7 — already cleared by site prep
   // Lay OAK_PLANKS floor on corridor (y=1 already done by floor-1 plank fill above)
-  // Corridor back wall at z=20 (between corridor and room zone)
+
+  // Corridor COIR mat just inside entrance
+  fillBox(cx - 1, f1, 23, cx, f1, 25, B.DRY_GRASS);
+
+  // ==========================================================================
+  // 6) GROUND FLOOR INTERIORS — hollow THEN walls (FIX A: hollow first so
+  //    dividers placed afterwards survive).
+  //    Order mirrors the correct 2F sequence: hollow → dividers → corridor
+  //    back wall → doorways.  Previously the dividers were stamped BEFORE the
+  //    hollow, so the hollow erased them across z3..19.
+  // ==========================================================================
+  // Step 6-a: Hollow out all bays (room zone z3..19 y2..7)
+  fillBox(5, 2, 3, 82, f1Hi, 19, B.AIR);
+
+  // Step 6-b: BAY DIVIDER WALLS — SANDSTONE, full room depth z2..19, y2..f1Hi.
+  //    Positions: x11, x22, x33, x44, x57, x68, x79.
+  //    Placed AFTER hollow so they are not erased.
+  for (const divX of [11, 22, 33, 44, 57, 68, 79]) {
+    fillBox(divX, 2, 2, divX, f1Hi, 19, B.SANDSTONE);
+  }
+
+  // Step 6-c: Corridor back wall at z=20, full width x5..82, y2..f1Hi.
   fillBox(5, 2, 20, 82, f1Hi, 20, B.SANDSTONE); // corridor back wall, full width
 
-  // Doorways per bay through the corridor back wall (z=20): 2-wide × 4-tall (y2..5)
-  // Bay centres: Classroom1 cx=16, Class2 cx=27, Class3 cx=38, Bakery cx=50, Class4 cx=62, Class5 cx=73
-  // Each doorway: 2 wide, centered in bay
+  // Step 6-d: Doorways per bay through the corridor back wall (z=20): 2-wide × 4-tall (y2..5)
   // West stair bay — single opening
   fillBox(6, 2, 20, 9, 5, 20, B.AIR); // west stair bay doorway
   // Classrooms 1-5 and Bakery
@@ -205,23 +224,9 @@ export function buildPetitHermes(stamp, B) {
   // East stair bay doorway
   fillBox(80, 2, 20, 82, 5, 20, B.AIR);
 
-  // Corridor COIR mat just inside entrance
-  fillBox(cx - 1, f1, 23, cx, f1, 25, B.DRY_GRASS);
-
   // ==========================================================================
-  // 6) BAY DIVIDER WALLS — SANDSTONE, z2..19 (room depth), y2..7.
-  //    Positions: x11, x22, x33, x44, x57, x68, x79.
+  // 7) GROUND FLOOR ROOM FURNISHINGS — individual bay fit-outs.
   // ==========================================================================
-  for (const divX of [11, 22, 33, 44, 57, 68, 79]) {
-    fillBox(divX, 2, 2, divX, f1Hi, 19, B.SANDSTONE);
-  }
-
-  // ==========================================================================
-  // 7) GROUND FLOOR INTERIORS — hollow room zones.
-  //    Room zone: z3..19, y2..7 interior.
-  // ==========================================================================
-  // Hollow out all bays (the dividers + corridor back wall are already solid)
-  fillBox(5, 2, 3, 82, f1Hi, 19, B.AIR);
 
   // ── Classroom helper (ground floor) ────────────────────────────────────────
   const classroom_gf = (rx0, rx1) => {
@@ -419,45 +424,90 @@ export function buildPetitHermes(stamp, B) {
 
   // ==========================================================================
   // 8) BAKERY (パン屋) — ground floor, x45..56, z3..19.
-  //    Baker NPC stands at local (50,2,18) = world (14,31,-32).
+  //    Baker NPC stands at local (50,2,18) = world (14,31,-32) — MUST stay AIR.
   //    Counter along z=19 (facing corridor at z=20). Baker behind counter at z=18.
   //    Partition wall at z=11: SALES front z12..19, WORKSHOP back z3..10.
-  //    Teal accent wall (BLUE_WOOL) on z=11 sales-face.
+  //    Teal accent wall (BLUE_WOOL) on sales-face of partition z=11.
+  //    FIX C: genuine artisan bakery feel — glass display case, pendant lamps,
+  //    proofing baskets, bread shelf, chalkboard menu, kraft tags.
   // ==========================================================================
   const bkX0 = 45, bkX1 = 56;           // bakery bay x extents
   const bkPartZ = 11;                    // partition wall between sales and workshop
   const bakerZ  = 18;                    // baker standing z (local)
   const counterZ = 19;                   // counter z (between baker and corridor)
 
-  // Already hollowed by room hollow above. Add partition wall (STONE_BRICKS)
+  // ── PARTITION WALL (STONE_BRICKS base, teal face on sales side) ───────────
   fillBox(bkX0, 2, bkPartZ, bkX1, f1Hi, bkPartZ, B.STONE_BRICKS);
-  // 2-wide × 3-tall door through partition at bay centre
+  // 2-wide × 3-tall passageway from sales to workshop (centred)
   fillBox(50, 2, bkPartZ, 51, 4, bkPartZ, B.AIR);
-
-  // TEAL ACCENT WALL: paint sales-face of partition (z=bkPartZ) BLUE_WOOL
+  // TEAL (BLUE_WOOL) sales-face of partition — covers stone face toward corridor
   fillBox(bkX0, 2, bkPartZ, bkX1, f1Hi, bkPartZ, B.BLUE_WOOL);
-  fillBox(50, 2, bkPartZ, 51, 4, bkPartZ, B.AIR); // re-open door
+  fillBox(50, 2, bkPartZ, 51, 4, bkPartZ, B.AIR); // re-open passageway
 
-  // CHALKBOARD MENU on teal wall: BLACK_WOOL strip, mid-height
-  // x=46..49 (stays west of door at x=50..51), y=3..5
+  // ── CHALKBOARD MENU (BLACK_WOOL) west of doorway on teal wall, y=3..5 ─────
+  // x=46..49 (leaves the doorway x=50..51 open, and x=45 is bay divider wall)
   fillBox(bkX0 + 1, 3, bkPartZ, 49, 5, bkPartZ, B.BLACK_WOOL);
+  // Chalk-title row at y=6 (WHITE_WOOL strip: "MENU" header texture impression)
+  fillBox(bkX0 + 1, 6, bkPartZ, 49, 6, bkPartZ, B.WHITE_WOOL);
+  // Kraft/price tag accents east of doorway on teal wall: alternating CALCITE spots
+  for (let kx = 52; kx <= 55; kx += 2) stamp(kx, 4, bkPartZ, B.CALCITE);
 
-  // SALES COUNTER: SPRUCE_PLANKS bar along z=19 (x46..55), y2..3
+  // ── SALES COUNTER (SPRUCE_PLANKS bar) — x46..55, z=19, y2..3 ─────────────
+  // Customer-facing side: z=20 corridor sees the warm wood front.
+  // Baker side: z=18 (baker NPC stands here — kept AIR below y=5).
   fillBox(bkX0 + 1, 2, counterZ, bkX1 - 1, 3, counterZ, B.SPRUCE_PLANKS);
-  // Keep baker cell CLEAR: local x=50, y=2..7, z=18
+  // Keep baker NPC cell clear: x=50, y=2..f1Hi, z=18
   fillBox(50, 2, bakerZ, 50, f1Hi, bakerZ, B.AIR);
-  // Bread loaves (HAY) on top of counter, y=4
-  for (let bx2 = bkX0 + 1; bx2 <= bkX1 - 1; bx2 += 2) stamp(bx2, 4, counterZ, B.HAY);
 
-  // GLASS bread display case on counter (east end): y2..4, z=19 face
-  fillBox(bkX1 - 3, 2, counterZ, bkX1 - 1, 4, counterZ, B.GLASS);
-  stamp(bkX1 - 3, 2, counterZ - 1, B.HAY); // bread inside case
-  stamp(bkX1 - 2, 2, counterZ - 1, B.HAY);
+  // ── GLASS-FRONTED BREAD DISPLAY CASE (FIX C core feature) ────────────────
+  // A 4-wide glass case built into the east end of the counter (x52..55, z=19)
+  // replaces the plain hay-on-counter there.  Glass front at z=19 y2..4,
+  // HAY loaves packed inside at z=18 (behind glass), SPRUCE_PLANKS case sides.
+  fillBox(52, 2, counterZ, 55, 4, counterZ, B.GLASS);   // glass front panel
+  fillBox(52, 2, counterZ, 52, 4, counterZ, B.SPRUCE_PLANKS); // west case wall
+  // HAY loaves filling the case (at z=18 = counterZ-1, between east bay wall z=55
+  // and the passageway area; baker cell x=50 is clear)
+  for (let cx2 = 53; cx2 <= 55; cx2++) {
+    stamp(cx2, 2, counterZ - 1, B.HAY);  // bottom row of loaves
+    stamp(cx2, 3, counterZ - 1, B.HAY);  // upper row of loaves
+  }
+  // CALCITE case top (marble-effect display surface)
+  fillBox(52, 4, counterZ, 55, 4, counterZ, B.CALCITE);
 
-  // PENDANT LAMPS over counter (sales zone): HAY shade + CALCITE bulb, y7 (ceiling)
-  for (let lx = bkX0 + 2; lx <= bkX1 - 2; lx += 4) {
-    stamp(lx, 6, counterZ - 1, B.HAY);    // warm shade
-    stamp(lx, 7, counterZ - 1, B.CALCITE); // bulb at ceiling
+  // ── BREAD LOAVES on the open (west) counter top: HAY on SPRUCE top ────────
+  // West section of counter x=46..51, tops at y=4 (above y=3 plank)
+  for (let bx2 = bkX0 + 1; bx2 <= 51; bx2 += 2) stamp(bx2, 4, counterZ, B.HAY);
+
+  // ── BREAD DISPLAY SHELF on east bay wall (x=56) — sales zone z=12..18 ─────
+  // Two SPRUCE_PLANKS shelf planks at y=3 and y=5, lined with HAY loaves.
+  // Kraft price tags: CALCITE spots between loaves.
+  fillBox(bkX1, 3, 12, bkX1, 3, 18, B.SPRUCE_PLANKS); // lower shelf
+  fillBox(bkX1, 5, 12, bkX1, 5, 18, B.SPRUCE_PLANKS); // upper shelf
+  for (let sz = 12; sz <= 18; sz += 2) {
+    stamp(bkX1, 4, sz, B.HAY);           // bread on lower shelf
+    stamp(bkX1, 6, sz, B.HAY);           // bread on upper shelf
+    if (sz < 18) stamp(bkX1, 4, sz + 1, B.CALCITE); // kraft tag between loaves
+  }
+
+  // ── PROOFING BASKETS on a low shelf at the back of the sales area z=12 ────
+  // A short SPRUCE_PLANKS shelf on the west bay wall (x=45) at y=3, z=12..15.
+  // Baskets = CALCITE bowl (base) + HAY (dough) stacked.
+  fillBox(bkX0, 3, 12, bkX0, 3, 15, B.SPRUCE_PLANKS); // shelf plank on west wall
+  for (let bz2 = 12; bz2 <= 15; bz2 += 2) {
+    stamp(bkX0, 3, bz2,     B.CALCITE); // basket base (CALCITE "rattan" bowl)
+    stamp(bkX0, 4, bz2,     B.HAY);     // rising dough in basket
+    if (bz2 + 1 <= 15) stamp(bkX0, 3, bz2 + 1, B.CALCITE); // second basket
+  }
+
+  // ── PENDANT LAMPS over the sales counter (FIX C warm lighting) ───────────
+  // Three lamps hanging over the counter row, each: CALCITE "shade" at y=f1Hi-1=6,
+  // with a LANTERN below at y=5 casting warm amber glow.
+  // Positions: x47, x50, x53 (spread across the counter width above z=19).
+  if (B.LANTERN != null) {
+    for (const lx of [47, 50, 53]) {
+      stamp(lx, f1Hi - 1, counterZ - 1, B.CALCITE);  // lamp shade / housing
+      stamp(lx, f1Hi - 2, counterZ - 1, B.LANTERN);  // pendant lantern below shade
+    }
   }
 
   // ── WORKSHOP (工房) — z3..10 ──────────────────────────────────────────────
@@ -616,31 +666,64 @@ export function buildPetitHermes(stamp, B) {
   }
   fillBox(80, g1, 20, 82, g1 + 3, 20, B.AIR);
 
-  // ── Floor-2 classroom helper ───────────────────────────────────────────────
+  // ── Floor-2 classroom helper (FIX B: enriched furnishings) ───────────────
+  // Each 2F classroom now has: blackboard + teacher desk, a 4×3 student desk
+  // grid (more density than before), lockers along the side wall, coloured
+  // wool "poster" panels on the back wall, and LANTERN ceiling lights — so
+  // rooms feel lived-in rather than empty.
   const classroom_2f = (rx0, rx1) => {
     const rw = rx1 - rx0 + 1;
     const bbW = Math.min(rw - 2, 9);
     const bbX0 = rx0 + 1;
     const bbX1 = Math.min(rx1 - 1, bbX0 + bbW - 1);
-    // Blackboard on back wall z=2, y10..13
-    fillBox(bbX0, g1 + 1, 2, bbX1, g2 - 1, 2, B.BLACK_WOOL);
-    // Teacher desk + chair at z=3..4
     const tDx = Math.floor((rx0 + rx1) / 2) - 1;
+
+    // BLACKBOARD on back wall z=2, y=g1+1..g2-1 (y10..13)
+    fillBox(bbX0, g1 + 1, 2, bbX1, g2 - 1, 2, B.BLACK_WOOL);
+
+    // WALL POSTER left of blackboard (GREEN_WOOL panel, 2 wide × 2 tall, at y=g1+1..g2-2)
+    // Only if there's room west of the blackboard
+    if (bbX0 > rx0 + 1) {
+      stamp(rx0 + 1, g1 + 2, 2, B.GREEN_WOOL);
+      stamp(rx0 + 1, g1 + 3, 2, B.BLUE_WOOL);
+    }
+
+    // TEACHER DESK (CRAFTING_TABLE pair) at z=3, chair (SPRUCE_PLANKS) at z=4
     stamp(tDx,     g1, 3, B.CRAFTING_TABLE);
     stamp(tDx + 1, g1, 3, B.CRAFTING_TABLE);
-    stamp(tDx,     g1, 4, B.SPRUCE_PLANKS);
+    stamp(tDx,     g1, 4, B.SPRUCE_PLANKS);  // chair
     stamp(tDx + 1, g1, 4, B.SPRUCE_PLANKS);
-    // Student desk grid: 3 cols × 4 rows
-    const cols3 = [
-      rx0 + Math.floor(rw * 0.2),
-      rx0 + Math.floor(rw * 0.5),
-      rx0 + Math.floor(rw * 0.8),
+
+    // STUDENT DESK GRID: 4 cols × 3 rows for a well-populated classroom.
+    // Cols spread across bay width; rows at z=7, 10, 14.
+    const cols4 = [
+      rx0 + Math.floor(rw * 0.15),
+      rx0 + Math.floor(rw * 0.38),
+      rx0 + Math.floor(rw * 0.62),
+      rx0 + Math.floor(rw * 0.85),
     ];
-    for (const dz2 of [7, 10, 13, 16]) {
-      for (const dx of cols3) {
-        stamp(dx, g1, dz2, B.SPRUCE_PLANKS);
-        stamp(dx, g1, dz2 + 1, B.BIRCH_PLANKS);
+    for (const dz2 of [7, 11, 15]) {
+      for (const dx of cols4) {
+        stamp(dx, g1, dz2,     B.SPRUCE_PLANKS); // desk top
+        stamp(dx, g1, dz2 + 1, B.BIRCH_PLANKS);  // chair behind desk
       }
+    }
+
+    // LOCKERS along the west interior wall (rx0, z=6..18, y=g1..g1+2): pairs of
+    // SPRUCE_PLANKS columns with WHITE_WOOL "door" faces — evokes metal school lockers.
+    for (let lz = 6; lz <= 17; lz += 3) {
+      stamp(rx0, g1,     lz,     B.SPRUCE_PLANKS); // locker base
+      stamp(rx0, g1 + 1, lz,     B.WHITE_WOOL);    // locker door
+      stamp(rx0, g1 + 2, lz,     B.SPRUCE_PLANKS); // locker top
+      stamp(rx0, g1,     lz + 1, B.SPRUCE_PLANKS);
+      stamp(rx0, g1 + 1, lz + 1, B.WHITE_WOOL);
+      stamp(rx0, g1 + 2, lz + 1, B.SPRUCE_PLANKS);
+    }
+
+    // LANTERNS: 2 ceiling lanterns per classroom (just under roof, above desk rows)
+    if (B.LANTERN != null) {
+      stamp(tDx,         g2 - 1, 8,  B.LANTERN); // front-of-class light
+      stamp(tDx,         g2 - 1, 14, B.LANTERN); // back-of-class light
     }
   };
 

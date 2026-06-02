@@ -11,7 +11,7 @@ import { createInventory } from './inventory.js';
 import { createMobs } from './mobs.js';
 import { createQuest } from './quest.js';
 import { createSky } from './sky.js';
-import { itemDef, blockToItem } from './items.js';
+import { itemDef, blockToItem, isFood } from './items.js';
 import { createFermentation } from './fermentation.js';
 import { createBakery } from './bakery.js';
 import { createGuide } from './guide.js';
@@ -630,8 +630,123 @@ function canHarvest(id) {
 let breakTarget = null;
 let breakProgress = 0;
 let creativeBreakCD = 0;   // throttle for creative instant-break while held
+let _prevCrackStage = -1;  // track crack stage advances for per-hit feedback
 
 function sameBlock(a, b) { return b && a[0] === b[0] && a[1] === b[1] && a[2] === b[2]; }
+
+// ---------------------------------------------------------------------------
+// Eating animation state
+// ---------------------------------------------------------------------------
+// eatState: null when idle, or an object during the eat animation.
+// Lifecycle: startEat() -> updateEat(dt) each frame -> finishEat() / cancelEat()
+// ---------------------------------------------------------------------------
+const EAT_DUR = 1.25;           // total animation duration (seconds)
+const EAT_BITES = 3;            // number of bite bobs
+const EAT_BOB_FREQ = EAT_BITES / EAT_DUR; // bobs per second
+let eatState = null;            // null or { itemId, t, colorHex, slotAtStart, nextSfxT, nextPartT }
+
+// Exposed via window so the viewmodel (inside the IIFE) can read the eat pose offsets.
+// Returns null when not eating, or { raiseFrac, bobY } for viewmodel to apply.
+window._eatAnimPose = function () { return eatState ? eatState._pose : null; };
+
+function startEat() {
+  if (eatState) return;  // already eating
+  const itemId = inv.selectedItem();
+  if (!itemId || !isFood(itemId)) return;
+  const def = itemDef(itemId);
+  if (!def || !def.food) return;
+  // Don't eat if hunger is already full (survival mechanic like Minecraft)
+  if (!creative && player.hunger >= 20) return;
+  const colorHex = def.color != null ? def.color : 0xddaa55;
+  eatState = {
+    itemId,
+    t: 0,
+    colorHex,
+    slotAtStart: inv.selected,
+    nextSfxT: 0,      // time of next sfx.eat() call
+    nextPartT: 0,     // time of next particle burst
+    _pose: { raiseFrac: 0, bobY: 0 },
+  };
+}
+
+function cancelEat() {
+  eatState = null;
+}
+
+function updateEat(dt) {
+  if (!eatState) return;
+
+  // Cancel conditions: mining, UI open, slot change
+  if (breakHeld || inv.isOpen() ||
+      (typeof bakery !== 'undefined' && bakery && typeof bakery.isOpen === 'function' && bakery.isOpen()) ||
+      eatState.slotAtStart !== inv.selected) {
+    cancelEat();
+    return;
+  }
+
+  eatState.t += dt;
+  const frac = Math.min(1, eatState.t / EAT_DUR);  // 0→1 over animation
+
+  // --- raise-toward-center: lerp from base offset toward center top-of-screen
+  // We express as a 0→1 "raise fraction" that the viewmodel will interpolate
+  const raiseFrac = frac < 0.85 ? (frac / 0.85) : 1.0;
+
+  // --- bite bob: sinusoidal up-down, ~3 bobs during the animation
+  // Amplitude grows then fades at the end (last 15% = completion)
+  const bobAmp = frac < 0.85 ? Math.min(1, frac * 3) * 0.045 : 0;
+  const bobY = Math.sin(frac * EAT_BITES * Math.PI * 2) * bobAmp;
+
+  eatState._pose.raiseFrac = raiseFrac;
+  eatState._pose.bobY = bobY;
+
+  // --- sound: play sfx.eat() a couple times during the animation
+  if (eatState.t >= eatState.nextSfxT && frac < 0.9) {
+    if (typeof sfx.eat === 'function') sfx.eat();
+    eatState.nextSfxT = eatState.t + 0.38;
+  }
+
+  // --- particles: emit food-colored debris near camera each ~0.22s
+  if (eatState.t >= eatState.nextPartT && frac < 0.9) {
+    // Emit near the crosshair (slightly in front of camera)
+    const dir = new THREE.Vector3();
+    try { camera.getWorldDirection(dir); } catch (e) {}
+    const px = camera.position.x + dir.x * 0.5;
+    const py = camera.position.y + dir.y * 0.5 - 0.08;
+    const pz = camera.position.z + dir.z * 0.5;
+    try {
+      particles.burst(px, py, pz, eatState.colorHex, 4, 1.2);
+    } catch (e) {}
+    eatState.nextPartT = eatState.t + 0.22;
+  }
+
+  // --- finish: animation complete → apply food effect
+  if (eatState.t >= EAT_DUR) {
+    const def = itemDef(eatState.itemId);
+    const hunger = def && def.food ? def.food.hunger : 0;
+    // consume one item from the slot
+    if (inv.consumeSelected(1)) {
+      if (!creative) {
+        player.hunger = Math.min(20, player.hunger + hunger);
+        // Small health regen bonus like Minecraft
+        player.health = Math.min(20, player.health + 0.5);
+      }
+      // Celebratory particle burst + crosshair flash
+      try {
+        particles.burst(
+          camera.position.x + 0,
+          camera.position.y - 0.1,
+          camera.position.z + 0,
+          eatState.colorHex, 10, 1.8
+        );
+      } catch (e) {}
+      flashCrosshair('#' + (eatState.colorHex).toString(16).padStart(6, '0'));
+    }
+    cancelEat();
+  }
+}
+
+// Debug hook: allow tests to trigger eating (survival scenario)
+window.__eat = () => startEat();
 
 function applyEdit(cx, cz, wx, wy, wz) {
   markDirty(cx, cz);
@@ -662,6 +777,11 @@ function doBreak(x, y, z, id) {
 function placeBlock() {
   const sdef = inv.selectedDef();
   if (sdef && sdef.magic) { castMagic(sdef.magic); return; } // wands cast instead of placing
+
+  // --- Eating: if holding a food item, start the eat animation instead of placing ---
+  const heldId = inv.selectedItem();
+  if (heldId && isFood(heldId)) { startEat(); return; }
+
   const hit = currentTarget();
   if (!hit) return;
   // right-click / tap on an interactive block opens it instead of placing
@@ -697,10 +817,13 @@ function updateMining(dt) {
   }
 
   if (breakHeld && hit && playing && !inv.isOpen()) {
+    // Cancel any active eating when mining starts
+    if (eatState) cancelEat();
+
     const [x, y, z] = hit.block;
     const id = world.getBlock(x, y, z);
     const hard = breakTimeFor(id);
-    if (!isFinite(hard)) { breakProgress = 0; crackMesh.visible = false; return; } // bedrock
+    if (!isFinite(hard)) { breakProgress = 0; crackMesh.visible = false; _prevCrackStage = -1; return; } // bedrock
     if (creative) { // instant break with a small throttle while held
       creativeBreakCD -= dt;
       if (creativeBreakCD <= 0) { doBreak(x, y, z, id); creativeBreakCD = 0.18; vmSwing(); }
@@ -708,17 +831,46 @@ function updateMining(dt) {
       return;
     }
     if (!sameBlock(hit.block, breakTarget)) {
-      breakTarget = hit.block.slice(); breakProgress = 0;
+      breakTarget = hit.block.slice(); breakProgress = 0; _prevCrackStage = -1;
       vmSwing(); // viewmodel swing when starting to mine a new block
     }
     breakProgress += dt / hard;
     const s = Math.min(CRACK_STAGES - 1, Math.floor(breakProgress * CRACK_STAGES));
+
+    // --- Mining hit feedback: trigger on each new crack stage ---
+    if (s !== _prevCrackStage && _prevCrackStage >= 0) {
+      // Hand swing for each hit
+      vmSwing();
+      // Camera recoil — intensifies with progress (more shake at higher stages)
+      const recoilMag = 0.04 + breakProgress * 0.06;
+      if (settings.shake) shakeMag = Math.max(shakeMag, recoilMag);
+      // Debris particles flying off the hit block face toward the camera
+      // Use a modest count so it doesn't overwhelm; count grows with progress
+      const debrisCount = 2 + Math.floor(breakProgress * 4);
+      try {
+        // Shoot debris slightly toward the camera (biased away from block center)
+        const dir = new THREE.Vector3();
+        try { camera.getWorldDirection(dir); } catch (_e) {}
+        // Offset spawn slightly in the camera direction to avoid z-fighting
+        const px = x + 0.5 - dir.x * 0.3;
+        const py = y + 0.5 - dir.y * 0.3;
+        const pz = z + 0.5 - dir.z * 0.3;
+        // Spread is modest so debris feels like chips, not an explosion
+        const spread = 1.0 + breakProgress * 1.2;
+        particles.burst(px, py, pz, blockColorHex(id), debrisCount, spread);
+      } catch (_e) {}
+    }
+    _prevCrackStage = s;
+
     crackMat.map = crackTex[s];
     crackMesh.position.set(x + 0.5, y + 0.5, z + 0.5);
     crackMesh.visible = true;
-    if (breakProgress >= 1) { doBreak(x, y, z, id); breakProgress = 0; breakTarget = null; crackMesh.visible = false; }
+    if (breakProgress >= 1) {
+      doBreak(x, y, z, id);
+      breakProgress = 0; breakTarget = null; crackMesh.visible = false; _prevCrackStage = -1;
+    }
   } else {
-    breakProgress = 0; breakTarget = null; crackMesh.visible = false; creativeBreakCD = 0;
+    breakProgress = 0; breakTarget = null; crackMesh.visible = false; creativeBreakCD = 0; _prevCrackStage = -1;
   }
 }
 
@@ -1133,6 +1285,21 @@ function toggleInv(size = 2) {
       swingX  = sineArc *  0.05;  // slight rightward arc
     }
 
+    // ---- eat animation: raise item toward screen center with bite bobs ------
+    // Read pose from the eat state (exposed via window._eatAnimPose).
+    // raiseFrac 0→1 moves the item from the normal corner position toward center.
+    // bobY adds the per-bite vertical bob.
+    let eatOffX = 0, eatOffY = 0, eatRX = 0;
+    const eatPose = typeof window._eatAnimPose === 'function' ? window._eatAnimPose() : null;
+    if (eatPose) {
+      const rf = eatPose.raiseFrac;  // 0=normal, 1=raised-center
+      // Move item toward center: cancel the right-offset and raise it
+      eatOffX = -VM_X * rf * 0.85;       // slide toward horizontal center
+      eatOffY =  0.12 * rf;              // raise toward screen center
+      eatRX   = -0.35 * rf;             // tilt item toward camera (forward lean)
+      eatOffY += eatPose.bobY;           // add bite bob on top
+    }
+
     // ---- compute camera-local axes in world space ---------------------------
     // Camera faces -Z in local space; we derive right/up/fwd from yaw+pitch.
     const cosY = Math.cos(player.yaw),   sinY = Math.sin(player.yaw);
@@ -1146,8 +1313,8 @@ function toggleInv(size = 2) {
     const fx = -sinY * cosP, fy = sinP, fz = -cosY * cosP;
 
     // Target position: camera + offset in camera space
-    const ox = VM_X + bobX + swingX;
-    const oy = VM_Y + bobY + swingY;
+    const ox = VM_X + bobX + swingX + eatOffX;
+    const oy = VM_Y + bobY + swingY + eatOffY;
     const oz = VM_Z;
 
     const camX = camera.position.x;
@@ -1161,10 +1328,10 @@ function toggleInv(size = 2) {
         camZ + rz * ox + uz * oy + fz * oz
       );
 
-      // Orientation: match camera yaw+pitch, plus mesh's own pre-rotation
+      // Orientation: match camera yaw+pitch, plus mesh's own pre-rotation + eat tilt
       vmGroup.rotation.order = 'YXZ';
       vmGroup.rotation.y = -player.yaw;
-      vmGroup.rotation.x = -player.pitch + swingRX;
+      vmGroup.rotation.x = -player.pitch + swingRX + eatRX;
       vmGroup.rotation.z = bobRZ;
     } catch (e) { /* stub safety */ }
   }
@@ -1637,6 +1804,7 @@ function loop() {
   bakery.tick();
   sky.update(dt, curSun, dayTime);
   updateMining(dt);
+  if (playing && !inv.isOpen()) updateEat(dt);
   particles.update(dt);
   if (playing) mobs.update(dt);
 
