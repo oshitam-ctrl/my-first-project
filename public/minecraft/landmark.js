@@ -9,7 +9,8 @@
 //
 // World mapping: world = (LM_X+x, LM_Y+y, LM_Z+z)
 //   where LM_X=-36, LM_Y=29, LM_Z=-50.
-//   Baker NPC stands at world (14,31,-32) = local (50,2,18) — kept clear (behind counter).
+//   Baker NPC stands at world (11,31,-32) = local (47,2,18) — behind the west counter,
+//   beside the 2-wide customer walk-in (x49..50) so the entrance stays open.
 //   Barista NPC stands at world (-19,31,-39) = local (17,2,11) — inside the cafe.
 //   Player spawns at world (8.5,31,-12) = local (44.5,2,38) facing -z (toward building).
 //   Front facade plane: local z=26 = world z=-24.
@@ -456,8 +457,10 @@ export function buildPetitHermes(stamp, B) {
   // Customer-facing side: z=20 corridor sees the warm wood front.
   // Baker side: z=18 (baker NPC stands here — kept AIR below y=5).
   fillBox(bkX0 + 1, 2, counterZ, bkX1 - 1, 3, counterZ, B.SPRUCE_PLANKS);
-  // Keep baker NPC cell clear: x=50, y=2..f1Hi, z=18
-  fillBox(50, 2, bakerZ, 50, f1Hi, bakerZ, B.AIR);
+  // Baker NPC now stands at x=47 (WEST of the customer walk-in), behind the west
+  // counter segment — keep that cell clear. (main.js spawns the baker at world
+  // (11,31,-32) = local (47,2,18).)
+  fillBox(47, 2, bakerZ, 47, f1Hi, bakerZ, B.AIR);
 
   // ── GLASS-FRONTED BREAD DISPLAY CASE (FIX C core feature) ────────────────
   // A 4-wide glass case built into the east end of the counter (x52..55, z=19)
@@ -477,6 +480,16 @@ export function buildPetitHermes(stamp, B) {
   // ── BREAD LOAVES on the open (west) counter top: HAY on SPRUCE top ────────
   // West section of counter x=46..51, tops at y=4 (above y=3 plank)
   for (let bx2 = bkX0 + 1; bx2 <= 51; bx2 += 2) stamp(bx2, 4, counterZ, B.HAY);
+
+  // ── CUSTOMER WALK-IN ─────────────────────────────────────────────────────
+  // Open a 2-wide gap in the counter at the doorway columns (x49..50, z=19) so
+  // customers can step IN from the corridor doorway (z=20) into the sales floor
+  // and reach the workshop door (z=11). Without this the counter SEALED the
+  // bakery entrance (regression from enclosing the bays). Carved last so it
+  // clears the counter/loaves placed above.
+  fillBox(49, 2, counterZ, 50, 5, counterZ, B.AIR);
+  // Ensure the short path forward to the sales floor is clear too (z=18..12 at the
+  // walk-in columns is open floor already from the room hollow).
 
   // ── BREAD DISPLAY SHELF on east bay wall (x=56) — sales zone z=12..18 ─────
   // Two SPRUCE_PLANKS shelf planks at y=3 and y=5, lined with HAY loaves.
