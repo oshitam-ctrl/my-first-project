@@ -347,6 +347,13 @@ export function createInventory(opts) {
     toggleScreen, isOpen: () => screenVisible(),
     give(itemId, count) { add(itemId, count); },
     count(id) { let n = 0; for (const c of main) if (c && c.item === id) n += c.count; return n; },
+    collect(itemId, count = 1) { // like add() but always works (harvesting in creative too)
+      let left = count; const max = MAXSTACK(itemId);
+      for (let i = 0; i < MAIN && left > 0; i++) { const c = main[i]; if (c && c.item === itemId && c.count < max) { const m = Math.min(left, max - c.count); c.count += m; left -= m; } }
+      for (let i = 0; i < MAIN && left > 0; i++) { if (!main[i]) { const m = Math.min(left, max); main[i] = { item: itemId, count: m }; left -= m; } }
+      renderHotbar(); if (open) renderScreen();
+      return left;
+    },
     selectedDef() { const c = main[selected]; return c ? itemDef(c.item) : null; },
     holdingShield() { const d = this.selectedDef(); return !!(d && d.shield); },
     armorPoints() {
