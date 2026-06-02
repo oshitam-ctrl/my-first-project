@@ -85,15 +85,17 @@ export function buildPetitHermes(stamp, B) {
   }
 
   // 2nd-floor OPEN WALKWAY (balcony) one block deep in front of the facade,
-  // with a low railing of SMOOTH_STONE posts + GLASS infill.
+  // with a clearly-read WHITE railing: WHITE_WOOL posts + WHITE_WOOL top rail,
+  // GLASS infill between, exactly like the school's open corridor in the photo.
   const balZ = bz1 + 1; // z=13, just in front of the building
   fillBox(bx0, f1Top, balZ, bx1, f1Top, balZ, B.SMOOTH_STONE); // walkway deck
   for (let x = bx0; x <= bx1; x++) {
-    // posts every 3 blocks, glass between
-    if ((x - bx0) % 3 === 0) stamp(x, f1Top + 1, balZ, B.SMOOTH_STONE);
+    // white posts every 2 blocks, glass infill between (mid-height)
+    if ((x - bx0) % 2 === 0) stamp(x, f1Top + 1, balZ, B.WHITE_WOOL);
     else stamp(x, f1Top + 1, balZ, B.GLASS);
   }
-  fillBox(bx0, f1Top + 2, balZ, bx1, f1Top + 2, balZ, B.SMOOTH_STONE); // hand-rail cap
+  // continuous WHITE_WOOL hand-rail cap along the whole walkway
+  fillBox(bx0, f1Top + 2, balZ, bx1, f1Top + 2, balZ, B.WHITE_WOOL);
   // roof parapet edge (thin lip around the flat roof)
   wallRing(bx0, bz0, bx1, f2Top + 1, f2Top + 1, bz1, B.SMOOTH_STONE);
 
@@ -109,52 +111,84 @@ export function buildPetitHermes(stamp, B) {
   // lintel across the top of the opening
   fillBox(cx - 2, f1Top, dz, cx + 2, f1Top, dz, B.SMOOTH_STONE);
   fillBox(cx - 2, f1Top, dz + 1, cx + 2, f1Top, dz + 1, B.SMOOTH_STONE);
-  // doorway opening: 2 wide (cx-1..cx) x 3 tall, with GLASS doors
-  fillBox(cx - 1, f1, dz, cx, f1Top - 2, dz, B.AIR);   // clear the opening
-  fillBox(cx - 1, f1, dz, cx, f1Top - 2, dz, B.GLASS); // glass doors fill it
-  // STONE_BRICKS emblem above the door
-  fillBox(cx - 1, f1Top - 1, dz, cx, f1Top - 1, dz, B.STONE_BRICKS);
-  // RED BRICK steps leading down into the yard (3 tiers, getting wider/lower)
+  // doorway opening: 2 wide (cx-1..cx) x 3 tall — kept OPEN (air) so a player
+  // can walk straight in; glass "doors" only across the very top so the bakery
+  // room behind reads as enterable, not sealed.
+  fillBox(cx - 1, f1, dz, cx, f1Top - 1, dz, B.AIR);   // clear the opening fully
+  stamp(cx - 1, f1Top - 1, dz, B.GLASS);                // glass transom, left
+  stamp(cx, f1Top - 1, dz, B.GLASS);                    // glass transom, right
+  // school CREST + name plate above the door: a round CALCITE crest flanked by
+  // a STONE_BRICKS name plate, set in the lintel band.
+  fillBox(cx - 2, f1Top - 1, dz, cx + 2, f1Top - 1, dz, B.STONE_BRICKS); // name plate
+  // round CALCITE crest centered above the door (3-wide center reads as a disc)
+  fillBox(cx - 1, f1Top - 1, dz, cx + 1, f1Top - 1, dz, B.CALCITE);      // crest disc
+  stamp(cx, f1Top, dz, B.CALCITE);                       // crest crown above the band
+  // RED BRICK steps leading down into the yard (3 tiers, getting wider) — set
+  // BELOW the threshold (y=1) and stepping DOWN/OUT so they read as a stoop a
+  // player descends from the door into the gravel yard.
+  fillBox(cx - 2, 1, dz + 1, cx + 1, 1, dz + 2, B.BRICK); // landing in front of door
   for (let s = 1; s <= 3; s++) {
-    const sz = dz + 1 + s;
-    fillBox(cx - 1 - s, 1, sz, cx + s, 1, sz, B.BRICK); // step tread at y=1
-    // lay them slightly stepped down toward the yard by raising inner ones
+    const sz = dz + 2 + s;
+    fillBox(cx - 1 - s, 1, sz, cx + s, 1, sz, B.BRICK); // widening brick treads
   }
-  fillBox(cx - 1, 1, dz + 1, cx, 1, dz + 2, B.BRICK); // landing in front of door
 
   // ==========================================================================
   // 4) PETIT HERMÈS BAKERY — ground-floor room behind the entrance.
   // ==========================================================================
-  const rx0 = cx - 5, rx1 = cx + 5; // interior x span
-  const rz0 = bz0 + 1, rz1 = bz1 - 1; // interior z span (z3..11)
-  const ry0 = f1, ry1 = f1Top - 1;    // interior y1..4
-  // wood plank floor
+  // The room is a former classroom: it occupies the full depth of the
+  // ground floor behind the facade so the player walks straight in from the
+  // entrance. Interior spans the building's inner shell; the front wall is the
+  // facade plane (bz1) where the open doorway already sits.
+  const rx0 = cx - 6, rx1 = cx + 6;   // interior x span (wide classroom)
+  const rz0 = bz0 + 1, rz1 = bz1;     // interior z3..12 (front = facade)
+  const ry0 = f1, ry1 = f1Top - 1;    // interior y1..4 (waist..ceiling)
+  // hollow out the room interior so it is fully enterable
+  fillBox(rx0, ry0 + 1, rz0, rx1, ry1, rz1 - 1, B.AIR);
+  // WOODEN PLANK FLOOR (OAK_PLANKS) across the whole room
   fillBox(rx0, ry0, rz0, rx1, ry0, rz1, B.OAK_PLANKS);
-  // teal walls (BLUE_WOOL) lining the interior perimeter
-  wallRing(rx0, rz0, rx1, ry0 + 1, ry1, rz1, B.BLUE_WOOL);
-  // re-open the doorway (it sits in the front wall) so the room is enterable
-  fillBox(cx - 1, ry0 + 1, rz1, cx, ry1 - 1, rz1, B.AIR);
+  // TEAL back + side walls (BLUE_WOOL) — accents the bakery room, leaving the
+  // front (facade) wall as the cream sandstone exterior with its doorway.
+  fillBox(rx0, ry0 + 1, rz0, rx1, ry1, rz0, B.BLUE_WOOL);       // back wall (teal)
+  fillBox(rx0, ry0 + 1, rz0, rx0, ry1, rz1 - 1, B.BLUE_WOOL);   // west wall (teal)
+  fillBox(rx1, ry0 + 1, rz0, rx1, ry1, rz1 - 1, B.BLUE_WOOL);   // east wall (teal)
+  // COIR DOORMAT: a brown coir mat just inside the doorway threshold — a 2-wide
+  // by 2-deep patch of DRY_GRASS framed by a DIRT lip so it reads as a woven mat.
+  fillBox(cx - 1, ry0, rz1 - 2, cx, ry0, rz1 - 1, B.DRY_GRASS);
 
-  // long dark-wood counter (SPRUCE_PLANKS, 2 tall) across the back of the room
-  const counterZ = rz0 + 2;
-  fillBox(rx0 + 1, ry0 + 1, counterZ, rx1 - 1, ry0 + 2, counterZ, B.SPRUCE_PLANKS);
-  // loaves of bread (HAY) lined along the counter top
-  for (let x = rx0 + 2; x <= rx1 - 2; x += 2) stamp(x, ry0 + 3, counterZ, B.HAY);
-  // GLASS display case on one end of the counter
-  fillBox(rx0 + 1, ry0 + 3, counterZ, rx0 + 3, ry0 + 3, counterZ, B.GLASS);
-  // BLACK_WOOL chalkboard on the counter front face (faces the door)
-  fillBox(rx0 + 1, ry0 + 1, counterZ + 1, rx0 + 4, ry0 + 2, counterZ + 1, B.BLACK_WOOL);
-  // BLACK_WOOL chalkboard menu on a side wall (just inside the west wall)
-  fillBox(rx0 + 1, ry0 + 2, rz0 + 1, rx0 + 1, ry1, rz0 + 4, B.BLACK_WOOL);
+  // LONG RAW-WOOD COUNTER (SPRUCE_PLANKS, 2 tall, 2 deep) spanning the room, SET
+  // BACK from the door so the player can step in and stand in front of it. The
+  // photo's two-tone front is rendered with a SPRUCE upper body over a darker
+  // lower band; a hung BLACK_WOOL chalkboard sits on the customer-facing face.
+  const counterZ = rz0 + 3;           // a few blocks in from the back wall
+  // counter body: 2 tall, 2 deep (counterZ .. counterZ+1) so it has heft
+  fillBox(rx0 + 1, ry0 + 1, counterZ, rx1 - 1, ry0 + 2, counterZ + 1, B.SPRUCE_PLANKS);
+  // BREAD LOAVES (HAY) lined densely along the counter top, facing the door
+  for (let x = rx0 + 2; x <= rx1 - 3; x++) {
+    if (x % 2 === 0) stamp(x, ry0 + 3, counterZ + 1, B.HAY);
+  }
+  // WOOD-FRAMED GLASS BREAD DISPLAY CASE sitting on the counter top at one end:
+  // a SPRUCE_PLANKS frame (2 tall) around a GLASS box, raised above the counter.
+  const cax0 = rx1 - 4, cax1 = rx1 - 1, cayB = ry0 + 3, cayT = ry0 + 4;
+  fillBox(cax0, cayB, counterZ, cax1, cayT, counterZ + 1, B.SPRUCE_PLANKS); // frame
+  fillBox(cax0 + 1, cayB, counterZ + 1, cax1 - 1, cayT, counterZ + 1, B.GLASS); // glazed front
+  stamp(cax0 + 1, ry0 + 3, counterZ + 1, B.HAY); // a loaf visible inside the case
+  // BLACKBOARD menu panel (今日の旬味…) hung on the COUNTER FRONT face (counterZ+1
+  // is the counter body; the panel reads as a sign attached to its lower front).
+  fillBox(rx0 + 2, ry0 + 1, counterZ + 2, rx1 - 5, ry0 + 2, counterZ + 2, B.BLACK_WOOL);
+  // small CHALKBOARD on the LEFT (west) wall
+  fillBox(rx0, ry0 + 2, rz0 + 1, rx0, ry1, rz0 + 3, B.BLACK_WOOL);
 
-  // SPRUCE_PLANKS wall shelf on the back wall with CALCITE "cups"
-  const shelfZ = rz0;
-  fillBox(rx1 - 4, ry0 + 3, shelfZ, rx1 - 1, ry0 + 3, shelfZ, B.SPRUCE_PLANKS);
-  for (let x = rx1 - 4; x <= rx1 - 1; x++) stamp(x, ry0 + 4, shelfZ, B.CALCITE);
+  // WALL SHELF (SPRUCE_PLANKS) on the back wall with stacked KRAFT CUPS/bowls
+  // rendered as small CALCITE blocks.
+  const shelfZ = rz0 + 1;
+  fillBox(rx0 + 1, ry0 + 2, shelfZ, rx0 + 4, ry0 + 2, shelfZ, B.SPRUCE_PLANKS); // shelf board
+  for (let x = rx0 + 1; x <= rx0 + 4; x++) stamp(x, ry0 + 3, shelfZ, B.CALCITE); // stacked kraft cups
 
-  // BLACK_WOOL "display fridge / coffee machine" box with a GLASS front
-  fillBox(rx1 - 2, ry0 + 1, rz1 - 2, rx1 - 1, ry0 + 3, rz1 - 1, B.BLACK_WOOL);
-  fillBox(rx1 - 2, ry0 + 1, rz1 - 2, rx1 - 1, ry0 + 2, rz1 - 2, B.GLASS); // glass front
+  // TALL DARK DISPLAY FRIDGE / COFFEE MACHINE (BLACK_WOOL, full height) with a
+  // GLASS front, standing against the RIGHT (east) wall near the back.
+  const frX = rx1 - 1, frZ = rz0 + 1;
+  fillBox(frX, ry0 + 1, frZ, frX, ry1, frZ + 1, B.BLACK_WOOL); // fridge body
+  fillBox(frX, ry0 + 1, frZ, frX, ry0 + 3, frZ, B.GLASS);       // glass door front
 
   // ==========================================================================
   // 5) YARD DETAILS — a tree and stacked "tires" out on the gravel.
