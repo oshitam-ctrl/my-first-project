@@ -133,62 +133,152 @@ export function buildPetitHermes(stamp, B) {
   }
 
   // ==========================================================================
-  // 4) PETIT HERMÈS BAKERY — ground-floor room behind the entrance.
+  // 4) PETIT HERMÈS INTERIOR — ground floor: 工房 (workshop) at the back and
+  //    販売スペース (sales) at the front, split by a partition wall with a
+  //    doorway. Second floor: a preserved 教室 (classroom). An interior stair
+  //    links them. The building inner shell spans x ix0..ix1, z iz0..iz1.
   // ==========================================================================
-  // The room is a former classroom: it occupies the full depth of the
-  // ground floor behind the facade so the player walks straight in from the
-  // entrance. Interior spans the building's inner shell; the front wall is the
-  // facade plane (bz1) where the open doorway already sits.
-  const rx0 = cx - 6, rx1 = cx + 6;   // interior x span (wide classroom)
-  const rz0 = bz0 + 1, rz1 = bz1;     // interior z3..12 (front = facade)
-  const ry0 = f1, ry1 = f1Top - 1;    // interior y1..4 (waist..ceiling)
-  // hollow out the room interior so it is fully enterable
-  fillBox(rx0, ry0 + 1, rz0, rx1, ry1, rz1 - 1, B.AIR);
-  // WOODEN PLANK FLOOR (OAK_PLANKS) across the whole room
-  fillBox(rx0, ry0, rz0, rx1, ry0, rz1, B.OAK_PLANKS);
-  // TEAL back + side walls (BLUE_WOOL) — accents the bakery room, leaving the
-  // front (facade) wall as the cream sandstone exterior with its doorway.
-  fillBox(rx0, ry0 + 1, rz0, rx1, ry1, rz0, B.BLUE_WOOL);       // back wall (teal)
-  fillBox(rx0, ry0 + 1, rz0, rx0, ry1, rz1 - 1, B.BLUE_WOOL);   // west wall (teal)
-  fillBox(rx1, ry0 + 1, rz0, rx1, ry1, rz1 - 1, B.BLUE_WOOL);   // east wall (teal)
-  // COIR DOORMAT: a brown coir mat just inside the doorway threshold — a 2-wide
-  // by 2-deep patch of DRY_GRASS framed by a DIRT lip so it reads as a woven mat.
-  fillBox(cx - 1, ry0, rz1 - 2, cx, ry0, rz1 - 1, B.DRY_GRASS);
+  const ix0 = bx0 + 1, ix1 = bx1 - 1; // interior x 4..35
+  const iz0 = bz0 + 1, iz1 = bz1 - 1; // interior z 3..11
+  const fy0 = f1, fy1 = f1Top - 1;    // ground-floor interior y 1..4 (ceiling deck at f1Top)
 
-  // LONG RAW-WOOD COUNTER (SPRUCE_PLANKS, 2 tall, 2 deep) spanning the room, SET
-  // BACK from the door so the player can step in and stand in front of it. The
-  // photo's two-tone front is rendered with a SPRUCE upper body over a darker
-  // lower band; a hung BLACK_WOOL chalkboard sits on the customer-facing face.
-  const counterZ = rz0 + 3;           // a few blocks in from the back wall
-  // counter body: 2 tall, 2 deep (counterZ .. counterZ+1) so it has heft
-  fillBox(rx0 + 1, ry0 + 1, counterZ, rx1 - 1, ry0 + 2, counterZ + 1, B.SPRUCE_PLANKS);
-  // BREAD LOAVES (HAY) lined densely along the counter top, facing the door
-  for (let x = rx0 + 2; x <= rx1 - 3; x++) {
-    if (x % 2 === 0) stamp(x, ry0 + 3, counterZ + 1, B.HAY);
+  // Hollow out the whole ground floor (air) and lay a wood plank floor.
+  fillBox(ix0, fy0 + 1, iz0, ix1, fy1, iz1, B.AIR);
+  fillBox(ix0, fy0, iz0, ix1, fy0, iz1, B.OAK_PLANKS); // OAK_PLANKS floor
+
+  // ---- partition wall (STONE_BRICKS) splitting workshop (low z) from sales
+  //      (high z). Workshop z3..5, sales z7..11. The partition sits at zWall=6
+  //      so the baker can stand in OPEN sales air at z=zPart=7, behind a counter
+  //      that faces the entrance (+z). The host-placed baker NPC is at LOCAL
+  //      (20,1,7); leaving that column clear is essential so it isn't walled in.
+  const zPart = iz0 + 4;              // z=7 — baker line (kept OPEN, sales side)
+  const zWall = zPart - 1;            // z=6 — partition plane between the rooms
+  // Wall runs full width at zWall, full height, but we carve a 2-wide x 3-tall
+  // doorway near the west end and another near the east so circulation is easy.
+  fillBox(ix0, fy0 + 1, zWall, ix1, fy1, zWall, B.STONE_BRICKS);
+  const dwW0 = ix0 + 2;               // west doorway x
+  fillBox(dwW0, fy0 + 1, zWall, dwW0 + 1, fy0 + 3, zWall, B.AIR); // 2 wide, 3 tall
+  const dwE0 = ix1 - 3;               // east doorway x
+  fillBox(dwE0, fy0 + 1, zWall, dwE0 + 1, fy0 + 3, zWall, B.AIR);
+  // make sure the baker's standing column (and the row just behind it) is clear
+  fillBox(ix0 + 1, fy0 + 1, zPart, ix1 - 1, fy1, zPart, B.AIR);
+
+  // ====================== 販売スペース (SALES) — front =======================
+  // Teal (BLUE_WOOL) accent on the side walls of the sales half, leaving the
+  // cream sandstone facade + its doorway intact.
+  fillBox(ix0, fy0 + 1, zPart + 1, ix0, fy1, iz1, B.BLUE_WOOL); // west accent
+  fillBox(ix1, fy0 + 1, zPart + 1, ix1, fy1, iz1, B.BLUE_WOOL); // east accent
+
+  // COIR DOORMAT inside the threshold (DRY_GRASS patch).
+  fillBox(cx - 1, fy0, iz1 - 1, cx, fy0, iz1, B.DRY_GRASS);
+
+  // SALES COUNTER (SPRUCE_PLANKS, 2 tall, 2 deep). The baker NPC stands at
+  // LOCAL (20,1,7) = z=zPart, BEHIND the counter, facing +z (toward entrance).
+  // So the counter sits just in FRONT of the baker at z = zPart+1..zPart+2.
+  const cZ0 = zPart + 1, cZ1 = zPart + 2;
+  fillBox(ix0 + 2, fy0 + 1, cZ0, ix1 - 2, fy0 + 2, cZ1, B.SPRUCE_PLANKS); // counter body
+  // BLACK_WOOL chalkboard menu hung on the customer-facing front of the counter
+  fillBox(ix0 + 3, fy0 + 1, cZ1 + 1, cx - 2, fy0 + 2, cZ1 + 1, B.BLACK_WOOL);
+  // BREAD LOAVES (HAY) lined along the counter top facing the customer
+  for (let x = ix0 + 3; x <= ix1 - 3; x++) {
+    if (x % 2 === 0) stamp(x, fy0 + 3, cZ1, B.HAY);
   }
-  // WOOD-FRAMED GLASS BREAD DISPLAY CASE sitting on the counter top at one end:
-  // a SPRUCE_PLANKS frame (2 tall) around a GLASS box, raised above the counter.
-  const cax0 = rx1 - 4, cax1 = rx1 - 1, cayB = ry0 + 3, cayT = ry0 + 4;
-  fillBox(cax0, cayB, counterZ, cax1, cayT, counterZ + 1, B.SPRUCE_PLANKS); // frame
-  fillBox(cax0 + 1, cayB, counterZ + 1, cax1 - 1, cayT, counterZ + 1, B.GLASS); // glazed front
-  stamp(cax0 + 1, ry0 + 3, counterZ + 1, B.HAY); // a loaf visible inside the case
-  // BLACKBOARD menu panel (今日の旬味…) hung on the COUNTER FRONT face (counterZ+1
-  // is the counter body; the panel reads as a sign attached to its lower front).
-  fillBox(rx0 + 2, ry0 + 1, counterZ + 2, rx1 - 5, ry0 + 2, counterZ + 2, B.BLACK_WOOL);
-  // small CHALKBOARD on the LEFT (west) wall
-  fillBox(rx0, ry0 + 2, rz0 + 1, rx0, ry1, rz0 + 3, B.BLACK_WOOL);
 
-  // WALL SHELF (SPRUCE_PLANKS) on the back wall with stacked KRAFT CUPS/bowls
-  // rendered as small CALCITE blocks.
-  const shelfZ = rz0 + 1;
-  fillBox(rx0 + 1, ry0 + 2, shelfZ, rx0 + 4, ry0 + 2, shelfZ, B.SPRUCE_PLANKS); // shelf board
-  for (let x = rx0 + 1; x <= rx0 + 4; x++) stamp(x, ry0 + 3, shelfZ, B.CALCITE); // stacked kraft cups
+  // GLASS BREAD DISPLAY CASE on the counter top, east end: SPRUCE frame + GLASS.
+  const caX0 = ix1 - 6, caX1 = ix1 - 3;
+  fillBox(caX0, fy0 + 3, cZ0, caX1, fy0 + 4, cZ1, B.SPRUCE_PLANKS);   // frame
+  fillBox(caX0 + 1, fy0 + 3, cZ1, caX1 - 1, fy0 + 4, cZ1, B.GLASS);    // glazed front
+  fillBox(caX0 + 1, fy0 + 3, cZ0, caX1 - 1, fy0 + 3, cZ0, B.HAY);      // loaves inside
 
-  // TALL DARK DISPLAY FRIDGE / COFFEE MACHINE (BLACK_WOOL, full height) with a
-  // GLASS front, standing against the RIGHT (east) wall near the back.
-  const frX = rx1 - 1, frZ = rz0 + 1;
-  fillBox(frX, ry0 + 1, frZ, frX, ry1, frZ + 1, B.BLACK_WOOL); // fridge body
-  fillBox(frX, ry0 + 1, frZ, frX, ry0 + 3, frZ, B.GLASS);       // glass door front
+  // SPRUCE_PLANKS SHELF on the front (facade) wall with CALCITE "kraft cups".
+  const shZ = iz1;
+  fillBox(ix0 + 1, fy0 + 3, shZ, ix0 + 4, fy0 + 3, shZ, B.SPRUCE_PLANKS); // shelf board
+  for (let x = ix0 + 1; x <= ix0 + 4; x++) stamp(x, fy0 + 4, shZ, B.CALCITE); // kraft cups
+  // a wall CHALKBOARD menu on the west sales wall
+  fillBox(ix0, fy0 + 2, zPart + 2, ix0, fy1, zPart + 4, B.BLACK_WOOL);
+
+  // BLACK_WOOL + GLASS DISPLAY FRIDGE against the east sales wall, full height.
+  const frX = ix1 - 1, frZ = zPart + 2;
+  fillBox(frX, fy0 + 1, frZ, frX, fy1, frZ + 1, B.BLACK_WOOL); // fridge body
+  fillBox(frX, fy0 + 1, frZ, frX, fy0 + 3, frZ, B.GLASS);       // glass door front
+
+  // ====================== 工房 (WORKSHOP) — back ============================
+  // 2-3 FURNACE "ovens" in a row against the back (low-z) wall.
+  const ovZ = iz0;                    // ovens flush to back wall
+  for (let i = 0; i < 3; i++) {
+    const ovX = ix0 + 2 + i * 3;
+    fillBox(ovX, fy0 + 1, ovZ, ovX, fy0 + 2, ovZ, B.FURNACE); // 2-tall oven stack
+  }
+  // SPRUCE_PLANKS / CRAFTING_TABLE prep tables in the middle of the workshop.
+  const pyTop = fy0 + 1;              // table height (sitting/working height)
+  fillBox(ix0 + 2, pyTop, iz0 + 2, ix0 + 5, pyTop, iz0 + 2, B.SPRUCE_PLANKS);
+  stamp(ix0 + 3, pyTop, iz0 + 2, B.CRAFTING_TABLE); // a kneading station
+  stamp(ix0 + 4, pyTop, iz0 + 2, B.CRAFTING_TABLE);
+  fillBox(ix1 - 5, pyTop, iz0 + 2, ix1 - 3, pyTop, iz0 + 2, B.SPRUCE_PLANKS);
+
+  // FERMENTATION JARS of levain: GLASS columns topped with BLUE_WOOL, on a shelf.
+  const jarShelfX0 = ix1 - 4, jarShelfZ = zWall - 1; // shelf inside workshop, off the partition
+  fillBox(jarShelfX0, fy0 + 2, jarShelfZ, jarShelfX0 + 2, fy0 + 2, jarShelfZ, B.SPRUCE_PLANKS); // shelf
+  for (let x = jarShelfX0; x <= jarShelfX0 + 2; x++) {
+    stamp(x, fy0 + 3, jarShelfZ, B.GLASS);     // jar body
+    stamp(x, fy0 + 4, jarShelfZ, B.BLUE_WOOL); // levain lid
+  }
+  // HAY / WHITE_WOOL FLOUR SACKS stacked in the back-west corner.
+  fillBox(ix0 + 1, fy0 + 1, iz0 + 1, ix0 + 1, fy0 + 2, iz0 + 1, B.HAY);
+  stamp(ix0 + 1, fy0 + 3, iz0 + 1, B.WHITE_WOOL);
+  stamp(ix0 + 2, fy0 + 1, iz0 + 1, B.WHITE_WOOL);
+  stamp(ix0 + 2, fy0 + 2, iz0 + 1, B.HAY);
+  // CALCITE SINK with a WATER block, against the east wall of the workshop.
+  const skX = ix1 - 1;
+  fillBox(skX, fy0 + 1, iz0 + 1, skX, fy0 + 1, iz0 + 2, B.CALCITE); // sink basin sides
+  stamp(skX, fy0 + 1, iz0 + 1, B.WATER);                            // water in the basin
+  // wall shelves (SPRUCE_PLANKS) along the workshop west wall.
+  fillBox(ix0, fy0 + 3, iz0 + 1, ix0, fy0 + 3, iz0 + 2, B.SPRUCE_PLANKS);
+
+  // ==========================================================================
+  // 4b) INTERIOR STAIRCASE — from the ground floor up through the floor-2 deck
+  //     to the classroom. A run of SMOOTH_STONE steps in the back-east corner,
+  //     each step +1 y and +1 x, with a hole punched through the deck + headroom.
+  // ==========================================================================
+  const stZ = iz0 + 1;                // stair run along the back wall, low z
+  const stX0 = ix1 - 1;               // starts near east wall, climbs west
+  // steps: 5 risers from y1 (tread top y1) to y5 (tread top level with the
+  // floor-2 deck at f1Top). Each step is +1 x (westward) and +1 y.
+  for (let s = 0; s <= 4; s++) {
+    const sx = stX0 - s;
+    fillBox(sx, fy0, stZ, sx, fy0 + s, stZ, B.SMOOTH_STONE); // solid riser up to tread top
+  }
+  const stTopX = stX0 - 4;            // x of the top tread (tread top at y5)
+  // punch the stair well through the floor-2 deck WEST of the top tread so the
+  // player walks off the top tread onto the classroom floor, with clear headroom
+  // directly above the whole run.
+  fillBox(stTopX - 1, f1Top, stZ, stX0, f1Top, stZ, B.AIR); // open deck over the run + landing
+  fillBox(stTopX - 1, f1Top + 1, stZ, stX0, f1Top + 3, stZ, B.AIR); // headroom above the run
+
+  // ==========================================================================
+  // 4c) 教室 (CLASSROOM) — preserved second-floor room. OAK_PLANKS floor over
+  //     the deck, a BLACK_WOOL blackboard on the back wall, a teacher's
+  //     CRAFTING_TABLE desk, and a 3x3 grid of SPRUCE_PLANKS student desks.
+  // ==========================================================================
+  const gy0 = f1Top + 1, gy1 = f2Top - 1; // floor-2 interior y 6..8
+  fillBox(ix0, gy0, iz0, ix1, gy1, iz1, B.AIR);           // hollow the room
+  fillBox(ix0, f1Top, iz0, ix1, f1Top, iz1, B.OAK_PLANKS); // classroom floor (over deck)
+  // re-open the stair well in the new floor so the stair still reaches up
+  fillBox(stX0 - 4, f1Top, stZ, stX0 - 3, f1Top, stZ + 1, B.AIR);
+  // BLACKBOARD covering the back (low-z) wall, head height.
+  fillBox(ix0 + 2, gy0 + 1, iz0, ix1 - 2, gy0 + 2, iz0, B.BLACK_WOOL);
+  // TEACHER'S DESK (CRAFTING_TABLE) centered in front of the blackboard.
+  stamp(cx, gy0, iz0 + 1, B.CRAFTING_TABLE);
+  stamp(cx + 1, gy0, iz0 + 1, B.SPRUCE_PLANKS);
+  // 3x3-ish grid of STUDENT DESKS: a SPRUCE_PLANKS block at sitting height with
+  // a 1-block gap (aisle) between each, facing the blackboard.
+  for (let r = 0; r < 3; r++) {
+    const dz = iz0 + 3 + r * 2;       // desk rows down the room
+    for (let c = 0; c < 3; c++) {
+      const dxx = ix0 + 4 + c * 4;    // desk columns across the room
+      stamp(dxx, gy0, dz, B.SPRUCE_PLANKS); // desk top
+    }
+  }
 
   // ==========================================================================
   // 5) YARD DETAILS — a tree and stacked "tires" out on the gravel.
