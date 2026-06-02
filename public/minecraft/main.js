@@ -775,6 +775,7 @@ const BREADS = ['bread', 'campagne', 'baguette', 'pain_de_mie', 'rosemary_bread'
 function updateQuest() {
   const bread = BREADS.reduce((s, id) => s + inv.count(id), 0);
   const nearBaker = !!(baker && playing && Math.hypot(player.pos.x - baker.pos.x, player.pos.z - baker.pos.z) < 3.5);
+  if (nearBaker && !bakeryFound) { bakeryFound = true; toast('🥖 プチヘルメースに到着！畑で材料を集めてパンを焼こう'); }
   quest.update({ wheat: inv.count('wheat'), veg: inv.count('surplus_veg'), levain: inv.count('levain'), bread, nearBaker });
   if (nearBaker) {
     speechEl.style.display = 'block';
@@ -790,8 +791,15 @@ function updateQuest() {
 
 // Wayfinding: choose the next target/label from the player's progress.
 const FIELD = { x: -4, z: -3 };          // schoolyard farm plot (harvest)
+let bakeryFound = false;                  // becomes true once the player reaches the shop counter
 function updateGuide(bread) {
   if (!playing || questDone) { guide.hide(); return; }
+  // Onboarding: first send the visitor INTO the shop to meet the baker, so
+  // "where's the bakery?" is answered before anything else.
+  if (!bakeryFound && baker) {
+    guide.update({ player, target: { x: baker.pos.x, z: baker.pos.z }, label: '🥖 まずは校舎入口の「プチヘルメース」へ' });
+    return;
+  }
   const wheat = inv.count('wheat'), veg = inv.count('surplus_veg'), levain = inv.count('levain');
   let opts = null;
   if (wheat < 1 || veg < 1) {

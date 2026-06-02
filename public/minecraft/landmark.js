@@ -123,6 +123,23 @@ export function buildPetitHermes(stamp, B) {
   // round CALCITE crest centered above the door (3-wide center reads as a disc)
   fillBox(cx - 1, f1Top - 1, dz, cx + 1, f1Top - 1, dz, B.CALCITE);      // crest disc
   stamp(cx, f1Top, dz, B.CALCITE);                       // crest crown above the band
+  // SHOPFRONT SIGNAGE — make the renovated school read as a SHOP (パン屋), not
+  // just a school door, so a first-time visitor instantly knows where to go in.
+  // A teal 暖簾 hangs in the doorway transom, HAY "bread" emblems flank the door,
+  // and teal/white accent pilasters frame the entrance on the facade plane.
+  for (let y = f1 + 1; y <= f1Top - 1; y++) { // y2..4 framing stripes on the facade
+    const stripe = (y % 2 === 0) ? B.BLUE_WOOL : B.WHITE_WOOL;
+    stamp(cx - 3, y, dz, stripe);
+    stamp(cx + 3, y, dz, stripe);
+  }
+  // HAY "bread" emblems at sign height beside the door (clear bakery read)
+  stamp(cx - 3, f1, dz, B.HAY);
+  stamp(cx + 3, f1, dz, B.HAY);
+  // teal 暖簾 panels hanging across the top of the doorway (shop curtain) —
+  // replaces the glass transom; the 3-tall opening below stays open to walk in.
+  stamp(cx - 1, f1Top - 1, dz, B.BLUE_WOOL);
+  stamp(cx, f1Top - 1, dz, B.BLUE_WOOL);
+
   // RED BRICK steps leading down into the yard (3 tiers, getting wider) — set
   // BELOW the threshold (y=1) and stepping DOWN/OUT so they read as a stoop a
   // player descends from the door into the gravel yard.
