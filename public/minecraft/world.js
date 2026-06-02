@@ -147,6 +147,67 @@ function driveZone(wx, wz) {
   return 'shoulder';
 }
 
+// ── 小道 footpath network ──────────────────────────────────────────────────
+// Narrow 1–2 wide gravel/dirt paths connecting:
+//   P1: school drive (DRIVE_Z, DRIVE_X0..−42) → shrine approach (x=64, z=−30)
+//   P2: school area → farmhouse NW (−65,−35)
+//   P3: school area → farmhouse east (50,−50)
+//   P4: riverside path (along the river, east bank) for N-S exploration
+// Returns 'path' or null. Paths stay out of exclusion box, road, paddyWater, bridge.
+function pathZone(wx, wz) {
+  // -- P1: School-drive → Shrine diagonal path --
+  // Goes from (DRIVE_X1, DRIVE_Z) = (EX0-1, 24) toward (SHRINE_X, SHRINE_Z) = (64, -30)
+  // Broken into two legs: east (x: -41→64, z=24→-30) then we route as a straight diagonal.
+  // We trace the "dominant-axis" line (Bresenham-like: check if point is within ±1 of the line).
+  {
+    const x0 = EX0 - 1, z0 = DRIVE_Z;  // -41, 24
+    const x1 = SHRINE_X - 2, z1 = SHRINE_Z + 14; // 62, -16 (approach steps)
+    const dx = x1 - x0, dz = z1 - z0;  // 103, -40
+    const len = Math.sqrt(dx * dx + dz * dz);
+    // parametric t of nearest point on segment
+    const t = Math.max(0, Math.min(1, ((wx - x0) * dx + (wz - z0) * dz) / (dx * dx + dz * dz)));
+    const px = x0 + t * dx, pz = z0 + t * dz;
+    const dist = Math.sqrt((wx - px) ** 2 + (wz - pz) ** 2);
+    if (dist <= 0.9 && t > 0.01 && t < 0.99) {
+      if (!inExclusionBox(wx, wz)) return 'path';
+    }
+  }
+  // -- P2: School → NW farmhouse (−65, −35) --
+  {
+    const x0 = EX0 - 2, z0 = -38;  // west school edge mid-north
+    const x1 = -60, z1 = -35;
+    const dx = x1 - x0, dz = z1 - z0;
+    const t = Math.max(0, Math.min(1, ((wx - x0) * dx + (wz - z0) * dz) / (dx * dx + dz * dz)));
+    const px = x0 + t * dx, pz = z0 + t * dz;
+    const dist = Math.sqrt((wx - px) ** 2 + (wz - pz) ** 2);
+    if (dist <= 0.9 && t > 0.05 && t < 0.95) {
+      if (!inExclusionBox(wx, wz)) return 'path';
+    }
+  }
+  // -- P3: Drive entrance → east farmhouse (50, −50) --
+  {
+    const x0 = EX0 - 1, z0 = -48;  // school north-east approach
+    const x1 = 48, z1 = -50;
+    const dx = x1 - x0, dz = z1 - z0;
+    const t = Math.max(0, Math.min(1, ((wx - x0) * dx + (wz - z0) * dz) / (dx * dx + dz * dz)));
+    const px = x0 + t * dx, pz = z0 + t * dz;
+    const dist = Math.sqrt((wx - px) ** 2 + (wz - pz) ** 2);
+    if (dist <= 0.9 && t > 0.02 && t < 0.98) {
+      if (!inExclusionBox(wx, wz)) return 'path';
+    }
+  }
+  // -- P4: Riverside path (east bank of river, z: -80 to 50) --
+  {
+    const cx = riverCentreX(wz);
+    const eastBank = cx + RIVER_HALF + 2; // one block east of bank
+    if (wz >= -80 && wz <= 50 && wx === eastBank) {
+      // skip bridge zone + road zone
+      if (Math.abs(wz - DRIVE_Z) > 4 && !roadZone(wx, wz) && !inExclusionBox(wx, wz)) return 'path';
+    }
+  }
+  return null;
+}
+
 // Helper: paddy patchwork surface for flat valley columns outside exclusion +road
 // Returns 'water','levee','crop','field', or null (outside paddy zone)
 function paddyZone(wx, wz) {
@@ -415,6 +476,16 @@ export class World {
           continue;
         }
 
+        // ── 小道 footpaths (narrow gravel/dirt connectors) ────────────────────
+        const pth = pathZone(wx, wz);
+        if (pth) {
+          // Mix gravel and coarse dirt deterministically along paths
+          const pathSurf = (hash2(wx, wz, 0xbeef1) < 0.65) ? GRAVEL : DIRT;
+          data[idx(lx, VFLOOR, lz)] = pathSurf;
+          data[idx(lx, VFLOOR + 1, lz)] = AIR;
+          continue;
+        }
+
         // Sunflower fence row: orange brick fence + HAY/GREEN_WOOL stalks
         // Strip at z=SUN_Z..SUN_Z+3, x=SUN_X0..SUN_X1, just south of the yard
         if (wz >= SUN_Z && wz <= SUN_Z + 3 && wx >= SUN_X0 && wx <= SUN_X1) {
@@ -477,11 +548,12 @@ export class World {
         const dist = Math.sqrt(dx2 * dx2 + dz2 * dz2);
         const onRim = dist >= VRAD_FLAT && dist <= VRAD_BLEND + 30; // rim + just beyond
         let density = 0, baseH = 5;
-        if (biome === 'forest') density = onRim ? 0.18 : 0.045;       // heavy canopy on rim
-        else if (biome === 'plains') density = onRim ? 0.12 : 0.008;  // scattered woodland
+        // C6 – forests read as real forest: raised density so woodland columns fill in.
+        if (biome === 'forest') density = onRim ? 0.28 : 0.18;        // dense canopy everywhere
+        else if (biome === 'plains') density = onRim ? 0.14 : 0.012;  // scattered woodland
         else if (biome === 'savanna') density = 0.005;
-        else if (biome === 'snowy') { density = onRim ? 0.14 : 0.025; baseH = 6; }
-        else if (biome === 'mountain') density = onRim ? 0.10 : 0.004; // dense mountain forest
+        else if (biome === 'snowy') { density = onRim ? 0.18 : 0.06; baseH = 6; }
+        else if (biome === 'mountain') density = onRim ? 0.14 : 0.012; // dense mountain forest
         // desert: no trees
         if (density === 0 || hash2(wx, wz, this.seed) >= density) continue;
         const conifer = biome === 'snowy' || (onRim && hash2(wx, wz, this.seed ^ 0xf1) < 0.5);
@@ -592,6 +664,12 @@ export class World {
 
     // ── 南方八幡神社 (shrine) ─────────────────────────────────────────────────
     this._stampShrine(data, ox, oz);
+
+    // ── 道標 signposts at path junctions ─────────────────────────────────────
+    this._stampSignposts(data, ox, oz);
+
+    // ── 隠し要素 / hidden discovery spots ────────────────────────────────────
+    this._stampSecrets(data, ox, oz);
 
     // Villages: clusters of small huts on flat grassy ground (deterministic per region)
     const R = 80;
@@ -876,6 +954,122 @@ export class World {
       // Kasagi cap extensions at g+5
       this._stamp(data, tx - ox, g + 5, tz - 3 - oz, BRICK, true);
       this._stamp(data, tx - ox, g + 5, tz + 3 - oz, BRICK, true);
+    }
+  }
+
+  // ── 道標 signposts: SPRUCE_LOG post + SPRUCE_PLANKS board at path junctions ─
+  // Signpost = 2-high post capped with a planks "board". Placed at deterministic
+  // waypoint locations: drive entrance, midway along shrine path, farmhouse path fork.
+  // Each is checked for overlap with this chunk before stamping.
+  _stampSignposts(data, ox, oz) {
+    const g = VFLOOR;
+    // Signpost placements: [wx, wz] — all outside exclusion box, on or near paths
+    const SIGNS = [
+      // S1: Drive entrance junction (path meets drive, west of gate pillars)
+      [EX0 - 6, DRIVE_Z],
+      // S2: Mid-point on shrine approach path (halfway x ~ 10, z ~ -3)
+      [10, -3],
+      // S3: Fork near east farmhouse path (near x=4, z=-50)
+      [4, -50],
+      // S4: Riverside path north waypoint (east bank, near z=-55)
+      [riverCentreX(-55) + RIVER_HALF + 2, -55],
+      // S5: Community-center side path (near road turnoff to CC)
+      [ROAD_X + 5, CC_Z + 8],
+    ];
+    for (const [sx, sz] of SIGNS) {
+      if (inExclusionBox(sx, sz)) continue;
+      const lx = sx - ox, lz = sz - oz;
+      // SPRUCE_LOG post (2 high) + SPRUCE_PLANKS board at top
+      this._stamp(data, lx, g + 1, lz, SPRUCE_LOG, true);
+      this._stamp(data, lx, g + 2, lz, SPRUCE_LOG, true);
+      this._stamp(data, lx, g + 3, lz, SPRUCE_PLANKS, true);
+      // Small "arm" board extending one block to the side (directional indicator)
+      this._stamp(data, lx + 1, g + 3, lz, SPRUCE_PLANKS, false);
+    }
+  }
+
+  // ── 隠し要素: hidden discovery spots ─────────────────────────────────────
+  // 5 charming secrets scattered around the valley, deterministically placed.
+  _stampSecrets(data, ox, oz) {
+    const g = VFLOOR;
+
+    // SECRET 1: Forest picnic clearing — HAY bale bench + LANTERN, NW forest edge
+    // At a sheltered spot northwest, near the forest rim (~x=-70, z=-55)
+    {
+      const sx = -70, sz = -55;
+      if (!inExclusionBox(sx, sz)) {
+        // HAY bale "table" with lantern on top
+        this._stamp(data, sx - ox, g + 1, sz - oz, HAY, true);
+        this._stamp(data, sx - ox, g + 2, sz - oz, LANTERN, true);
+        // Two COBBLE "stools" flanking
+        this._stamp(data, sx - 1 - ox, g + 1, sz - oz, COBBLE, true);
+        this._stamp(data, sx + 1 - ox, g + 1, sz - oz, COBBLE, true);
+        // Spread of DRY_GRASS clearing floor (2x2)
+        for (let dz = -1; dz <= 1; dz++) for (let dx = -2; dx <= 2; dx++) {
+          this._stamp(data, sx + dx - ox, g, sz + dz - oz, DRY_GRASS, false);
+        }
+      }
+    }
+
+    // SECRET 2: Sunflower heart clearing — dense HAY/GREEN_WOOL sunflower cluster
+    // tucked in a SE field at x=36, z=36 (outside exclusion, in open paddies)
+    {
+      const sx = 36, sz = 36;
+      // Small heart-like 3x3 cluster of tall sunflower stalks
+      const heart = [[0,-1],[1,0],[2,0],[0,1],[1,1],[2,1],[0,2],[1,2],[2,2]];
+      for (const [dx, dz] of heart) {
+        const wx2 = sx + dx, wz2 = sz + dz;
+        if (inExclusionBox(wx2, wz2)) continue;
+        this._stamp(data, wx2 - ox, g, wz2 - oz, DIRT, true);
+        this._stamp(data, wx2 - ox, g + 1, wz2 - oz, GREEN_WOOL, true);
+        this._stamp(data, wx2 - ox, g + 2, wz2 - oz, GREEN_WOOL, true);
+        this._stamp(data, wx2 - ox, g + 3, wz2 - oz, HAY, true); // "head"
+      }
+    }
+
+    // SECRET 3: Shrine offering — stone lantern altar at the base of the torii approach
+    // A small stone-lantern offering spot at x=64, z=-18 (south of shrine steps)
+    {
+      const sx = SHRINE_X, sz = SHRINE_Z + 12; // base of torii (sz=-18)
+      const sg = VFLOOR + 3; // shrine is elevated
+      // Offering stone (COBBLE base + STONE_BRICKS top + LANTERN glow)
+      this._stamp(data, sx - 2 - ox, sg, sz - oz, COBBLE, false);
+      this._stamp(data, sx - 2 - ox, sg + 1, sz - oz, STONE_BRICKS, false);
+      this._stamp(data, sx - 2 - ox, sg + 2, sz - oz, LANTERN, false);
+      this._stamp(data, sx + 2 - ox, sg, sz - oz, COBBLE, false);
+      this._stamp(data, sx + 2 - ox, sg + 1, sz - oz, STONE_BRICKS, false);
+      this._stamp(data, sx + 2 - ox, sg + 2, sz - oz, LANTERN, false);
+    }
+
+    // SECRET 4: Hilltop lookout bench — a bench on the eastern valley rim
+    // A lookout at x=88, z=-30 (beyond the shrine, on higher ground)
+    {
+      const sx = 88, sz = -30;
+      if (!inExclusionBox(sx, sz)) {
+        const hg = this.heightAt(sx, sz);
+        // Two COBBLE blocks side by side = bench, SPRUCE_PLANKS back
+        this._stamp(data, sx - ox, hg + 1, sz - oz, COBBLE, false);
+        this._stamp(data, sx + 1 - ox, hg + 1, sz - oz, COBBLE, false);
+        this._stamp(data, sx - ox, hg + 2, sz - 1 - oz, SPRUCE_PLANKS, false);
+        this._stamp(data, sx + 1 - ox, hg + 2, sz - 1 - oz, SPRUCE_PLANKS, false);
+        // A lantern beside the bench
+        this._stamp(data, sx - 1 - ox, hg + 1, sz - oz, LANTERN, false);
+      }
+    }
+
+    // SECRET 5: Hidden lantern nook — tucked under the riverbank overhang
+    // A glowing lantern placed just below VFLOOR on the east river bank
+    // at a specific z where the bank forms a small alcove
+    {
+      const sz = -42;
+      const cx2 = riverCentreX(sz);
+      const sx = cx2 + RIVER_HALF + 3; // just east of bank
+      if (!inExclusionBox(sx, sz)) {
+        // Lantern placed at water level in a small carved nook
+        this._stamp(data, sx - ox, VFLOOR, sz - oz, LANTERN, false);
+        // HAY "bread stash" nearby
+        this._stamp(data, sx + 1 - ox, VFLOOR + 1, sz - oz, HAY, false);
+      }
     }
   }
 
