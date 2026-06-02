@@ -14,6 +14,7 @@ import { createSky } from './sky.js';
 import { itemDef, blockToItem } from './items.js';
 import { createFermentation } from './fermentation.js';
 import { createBakery } from './bakery.js';
+import { createGuide } from './guide.js';
 
 // ---------------------------------------------------------------------------
 // Settings (persisted)
@@ -731,22 +732,36 @@ const mobs = createMobs({
 });
 window.__mobCount = () => mobs.count(); // debug/verification hook
 
-// Populate the shop: the baker behind the counter + a few customers in the yard.
+// Populate the shop: the baker behind the counter + a few named regulars in the yard.
 let baker = null;
+const customers = [];
 if (settings.mobs !== false) {
   baker = mobs.spawnAt('baker', 8, 31, -29);
-  mobs.spawnAt('customer', 4, 31, -11);
-  mobs.spawnAt('customer', 12, 31, -10);
+  customers.push(mobs.spawnAt('customer', 4, 31, -11));
+  customers.push(mobs.spawnAt('customer', 12, 31, -10));
 }
+// 常連さん — the delivery payoff names a regular who lights up when you hand over bread.
+const REGULARS = ['みどりさん', 'たけしさん', 'ご近所のゆいちゃん', '常連のさとうさん'];
 
 // Guided "today's work" quest so first-time visitors know exactly what to do.
 let questDone = false;
 const quest = createQuest({
   onComplete: () => {
-    questDone = true; toast('🎉 パンが焼けました！本日のプチヘルメース、開店です'); if (settings.shake) shakeMag = 0.15;
-    setTimeout(() => toast('🔗 右上の共有ボタンで「焼けた！」をシェアしよう'), 2600);
+    questDone = true;
+    const regular = REGULARS[Math.floor(Math.random() * REGULARS.length)];
+    deliveredTo = regular;
+    toast(`🎉 ${regular}にパンを届けました！「ありがとう、また来ますね」`);
+    if (settings.shake) shakeMag = 0.18;
+    // hearts bloom over the counter — the moment of delight.
+    if (baker) {
+      for (let i = 0; i < 14; i++) particles.burst(baker.pos.x, baker.pos.y + 1.6, baker.pos.z, 0xff6fa5, 1, 2.0);
+      for (const c of customers) for (let i = 0; i < 6; i++) particles.burst(c.pos.x, c.pos.y + 1.6, c.pos.z, 0xff9ec4, 1, 1.6);
+    }
+    sfx.craft && sfx.craft();
+    setTimeout(() => toast('🔗 右上の共有ボタンで、この「焼けた！」をシェアしよう🥖'), 2800);
   },
 });
+let deliveredTo = null;
 // the baker greets the player when nearby (story warmth)
 const speechEl = document.createElement('div');
 Object.assign(speechEl.style, {
@@ -755,6 +770,7 @@ Object.assign(speechEl.style, {
   fontSize: '14px', lineHeight: '1.5', textAlign: 'center', boxShadow: '0 6px 20px rgba(0,0,0,.4)', pointerEvents: 'none',
 });
 document.body.appendChild(speechEl);
+const guide = createGuide(); // bottom-center wayfinding compass
 const BREADS = ['bread', 'campagne', 'baguette', 'pain_de_mie', 'rosemary_bread', 'apple_bread', 'fruit_bread', 'toast'];
 function updateQuest() {
   const bread = BREADS.reduce((s, id) => s + inv.count(id), 0);
@@ -763,12 +779,31 @@ function updateQuest() {
   if (nearBaker) {
     speechEl.style.display = 'block';
     speechEl.textContent = questDone
-      ? '👩‍🍳 ありがとう！“もったいない”を“おいしい”に。本日も開店です🥖'
+      ? `👩‍🍳 ありがとう！${deliveredTo ? `${deliveredTo}も喜んでた。` : ''}“もったいない”を“おいしい”に。本日も開店です🥖`
       : (bread > 0 ? '👩‍🍳 わぁ、焼けたのね！こっちに届けてくれる？🥖'
         : '👩‍🍳 いらっしゃい。畑の余り野菜と小麦で、パンを焼いてみてね🥖');
   } else {
     speechEl.style.display = 'none';
   }
+  updateGuide(bread);
+}
+
+// Wayfinding: choose the next target/label from the player's progress.
+const FIELD = { x: -4, z: -3 };          // schoolyard farm plot (harvest)
+function updateGuide(bread) {
+  if (!playing || questDone) { guide.hide(); return; }
+  const wheat = inv.count('wheat'), veg = inv.count('surplus_veg'), levain = inv.count('levain');
+  let opts = null;
+  if (wheat < 1 || veg < 1) {
+    opts = { player, target: FIELD, label: '⛏ 畑で小麦と規格外野菜を集めよう' };
+  } else if (levain < 1) {
+    opts = { player, target: null, label: '🥖 右上の工房ボタンで「瓶に仕込む」' };
+  } else if (bread < 1) {
+    opts = { player, target: null, label: '🥖 右上の工房ボタンで「焼く！」' };
+  } else if (baker) {
+    opts = { player, target: { x: baker.pos.x, z: baker.pos.z }, label: '🥖 店主にパンを届けよう' };
+  }
+  guide.update(opts);
 }
 
 // --- Bakery: time-based fermentation + one-tap baking (casual, no grid puzzle) ---
