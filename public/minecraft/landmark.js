@@ -597,37 +597,49 @@ export function buildPetitHermes(stamp, B) {
 
   // ==========================================================================
   // 9) WEST STAIR TOWER — x5..10, z3..19, y1..8+.
-  //    Wide straight staircase (3 wide: x6,7,8) rising y1→y8.
-  //    Step run: z19→z12 (one step per z, rising from front to back).
-  //    WHITE_WOOL railings, hole punched through deck y=8 for access.
+  //    Wide straight staircase (3 wide: x6..8) rising z19→z13 (7 steps).
+  //    Landing at z=12: SMOOTH_STONE y1..deck (solid to 2F deck level).
+  //    Stair SHAFT punched through deck at z=13..19 ONLY — z=12 landing
+  //    stays solid at y=deck (OAK_PLANKS from 2F fill) so the player emerges
+  //    at full 2F floor level and can walk south on the x=9..10 catwalk to
+  //    the corridor. GF railing on x=9 (east side) alongside the shaft.
+  //    2F railing caps the shaft opening on the east and north edges.
   // ==========================================================================
   const wsX0 = 5, wsX1 = 10; // west stair bay x
-  // Clear the stair bay (already cleared by room hollow)
-  // Smooth stone stair treads: step s=0..6, z decreases (into building), y increases
-  // tread s: z = 19-s*1, tread top y = 1+s
+  // Stair treads: step s=0..6, z decreases from 19 toward 13, y increases 1→7
   for (let s = 0; s <= 6; s++) {
-    const sz = 19 - s;    // z of this tread (starts at z=19, moves toward z=13)
+    const sz = 19 - s;    // z of this tread (z=19 at s=0, z=13 at s=6)
     const ty = f1 + s;    // tread top y = 1,2,3,4,5,6,7
     fillBox(6, f1, sz, 8, ty, sz, B.SMOOTH_STONE); // solid tread column (3 wide: x6..8)
     fillBox(6, ty + 1, sz, 8, ty + 2, sz, B.AIR);  // headroom above tread
   }
-  // Landing at the top (z=12): solid SMOOTH_STONE up to deck y=8
+  // Landing at the top (z=12): solid SMOOTH_STONE y1..deck (y=8).
+  // The 2F deck fill in section 11 will lay OAK_PLANKS on top at y=8, making
+  // the landing flush with the 2F deck — player emerges at 2F floor level.
   fillBox(6, f1, 12, 8, deck, 12, B.SMOOTH_STONE);
-  // Punch opening through deck over stair run (z12..19) for floor-2 access
-  fillBox(6, deck, 12, 8, deck + 2, 19, B.AIR);
-  // Replace deck planks properly (keep solid under non-stair areas)
-  fillBox(wsX0, deck, 2, wsX1, deck, 11, B.OAK_PLANKS); // rest of stair bay floor-2 deck
-  // WHITE_WOOL railings on east side (x=9) along stair run
+  // Punch the stair SHAFT through the deck at z=13..19 only (NOT z=12).
+  // z=12 stays solid so the player has a walkable landing at 2F.
+  fillBox(6, deck, 13, 8, deck + 2, 19, B.AIR);
+  // Restore solid deck for the rest of the stair bay (z=2..11 stays solid).
+  fillBox(wsX0, deck, 2, wsX1, deck, 11, B.OAK_PLANKS);
+  // x=9..10 catwalk: deck stays solid at z=12..19 (not punched — only x=6..8 punched).
+  // This 2-block-wide catwalk is the 2F walkway from landing → corridor:
+  //   player steps from landing (z=12, x=6..8, 2F level) east to x=9 (same level),
+  //   then walks south z=12→20 on the x=9..10 catwalk to the z=20 corridor doorway.
+  // (No explicit fill needed here; the section-11 full-deck fill covers it.)
+
+  // GF railings: x=9 (east side of shaft), 2 blocks tall alongside stair run
   for (let s = 0; s <= 6; s++) {
     const sz = 19 - s;
-    stamp(9, f1 + s + 1, sz, B.WHITE_WOOL);
-    stamp(9, f1 + s + 2, sz, B.WHITE_WOOL);
+    stamp(9, f1 + s + 1, sz, B.WHITE_WOOL); // railing lower post
+    stamp(9, f1 + s + 2, sz, B.WHITE_WOOL); // railing upper post
   }
-  // Railing cap (continuous WHITE_WOOL at railing top height)
-  fillBox(9, f1 + 1, 12, 9, f1 + 7, 19, B.WHITE_WOOL);
+  fillBox(9, f1 + 1, 12, 9, f1 + 7, 19, B.WHITE_WOOL); // GF railing cap strip
 
   // ==========================================================================
-  // 10) EAST STAIR TOWER — x80..82, z3..19, same stair design.
+  // 10) EAST STAIR TOWER — x80..82, z3..19, symmetric to west stair.
+  //     Same fix: shaft punched z=13..19 only; z=12 landing solid at deck;
+  //     x=79..80 catwalk provides 2F walkway from landing to corridor.
   // ==========================================================================
   const esX0 = 80, esX1 = 82; // east stair bay x
   for (let s = 0; s <= 6; s++) {
@@ -636,11 +648,11 @@ export function buildPetitHermes(stamp, B) {
     fillBox(80, f1, sz, 82, ty, sz, B.SMOOTH_STONE);
     fillBox(80, ty + 1, sz, 82, ty + 2, sz, B.AIR);
   }
-  fillBox(80, f1, 12, 82, deck, 12, B.SMOOTH_STONE);
-  fillBox(80, deck, 12, 82, deck + 2, 19, B.AIR);
+  fillBox(80, f1, 12, 82, deck, 12, B.SMOOTH_STONE); // east landing solid to deck
+  fillBox(80, deck, 13, 82, deck + 2, 19, B.AIR);     // shaft z=13..19 only
   fillBox(esX0, deck, 2, esX1, deck, 11, B.OAK_PLANKS);
-  // WHITE_WOOL railing on west side (x=79) is the divider wall; use east (end wall)
-  // Actually use west face x=79 already exists as divider wall; add railing on x=79
+  // x=79 catwalk (east bay west edge, adjacent to divider wall x=79) stays solid;
+  // use railing on x=79 alongside shaft
   for (let s = 0; s <= 6; s++) {
     const sz = 19 - s;
     stamp(79, f1 + s + 1, sz, B.WHITE_WOOL);
@@ -651,20 +663,44 @@ export function buildPetitHermes(stamp, B) {
   // ==========================================================================
   // 11) SECOND FLOOR — corridor z21..25 + 6 classrooms + stair access.
   //     Floor y=8 (OAK_PLANKS on deck). Interior y=9..14. Ceiling y=15 (roof).
+  //
+  //  BUG-1 FIX: hollow starts at z=3 (NOT z=2).
+  //    The perimeter wall at z=2 was built by section 2 (wallRing, SANDSTONE y9..14)
+  //    and section 3 (windowBand, GLASS y10..13).  Starting the hollow at z=3
+  //    preserves that north face so the 2F is not open to the outside.
+  //
+  //  BUG-2 FIX: stair shafts re-punched at z=13..19 ONLY (matching sections 9/10).
+  //    z=12 (the landing) stays solid at deck level, giving the player a 2F-level
+  //    surface to stand on when they emerge from the stair.  The x=9 (west stair)
+  //    and x=79 (east stair) columns are NEVER punched, forming a catwalk from
+  //    the landing south to the z=20 corridor doorway.
   // ==========================================================================
   const g1 = deck + 1; // floor-2 interior bottom = y9
   const g2 = f2Hi;     // floor-2 interior top    = y14
 
-  // Hollow out the entire second floor air space
-  fillBox(5, g1, 2, 82, g2, 25, B.AIR);
-  // Lay OAK_PLANKS floor overlay on deck
+  // Hollow out the 2F air space — start at z=3 to preserve the north perimeter wall.
+  fillBox(5, g1, 3, 82, g2, 25, B.AIR);
+  // Lay OAK_PLANKS floor overlay on entire deck (z=2..25 so z=2 north edge gets planks).
   fillBox(5, deck, 2, 82, deck, 25, B.OAK_PLANKS);
 
-  // Re-open stair shafts through floor-2 deck (z12..19 above each stair)
-  fillBox(6, deck, 12, 8, deck + 2, 19, B.AIR);
-  fillBox(80, deck, 12, 82, deck + 2, 19, B.AIR);
+  // Re-open stair shafts at z=13..19 (NOT z=12 — landing stays at deck level).
+  fillBox(6, deck, 13, 8, deck + 2, 19, B.AIR);  // west stair shaft
+  fillBox(80, deck, 13, 82, deck + 2, 19, B.AIR); // east stair shaft
 
-  // Floor-2 BAY DIVIDER WALLS (same x positions, z2..19, y9..14)
+  // 2F RAILING along the catwalk side of each stair shaft — prevents accidental
+  // falls into the open shaft from the x=9 (west) / x=79 (east) walkway.
+  //   • East wall of west shaft  (x=8, z=13..19, y=g1..g1+1): single-block-wide rail
+  //     standing on the shaft's east rim; player on x=9 catwalk cannot walk west
+  //     into the open shaft.
+  //   • West wall of east shaft  (x=80, z=13..19, y=g1..g1+1): same for east bay.
+  // NOTE: no railing is placed at z=12 (the stair landing) — that would block the
+  // player's exit from the stair.  The landing is openly accessible on all sides
+  // so the player can step from the stair (z=12 x=6..8) east to the catwalk (x=9).
+  fillBox(8,  g1, 13, 8,  g1 + 1, 19, B.WHITE_WOOL); // west shaft east-rim railing
+  fillBox(80, g1, 13, 80, g1 + 1, 19, B.WHITE_WOOL); // east shaft west-rim railing
+
+  // Floor-2 BAY DIVIDER WALLS (same x positions, z2..19, y9..14).
+  // Starting at z=2 ensures dividers reach the (now preserved) north wall.
   for (const divX of [11, 22, 33, 44, 57, 68, 79]) {
     fillBox(divX, g1, 2, divX, g2, 19, B.SANDSTONE);
   }
@@ -802,19 +838,16 @@ export function buildPetitHermes(stamp, B) {
     stamp(8, 6, 21, B.LANTERN);
   }
   // UP-ARROW motif on corridor back wall (z=20) above west stair doorway.
-  // The floor-2 corridor back wall (SANDSTONE) at y=9..14 covers z=20 but
-  // we can paint over it with the arrow after it's placed.
-  // Base row: y=7 (floor-1 ceiling zone is y=7 = f1Hi; wall exists there already)
-  fillBox(6, 7, 20, 9, 7, 20, B.WHITE_WOOL);   // arrow base row (y=7 is f1Hi)
-  // Mid: x7, x8 at y=8 (deck level, floor is OAK_PLANKS but wall at x5/x10 is SANDSTONE;
-  // at interior x6..9 the deck sits at y=8, but z=20 is wall — paint it)
-  stamp(7, 8, 20, B.WHITE_WOOL);
+  // IMPORTANT: the 2F doorway is carved at y=g1..g1+3 (y=9..12), so markers
+  // at y≥9 must NOT fill the doorway columns (x=6..9).  Only paint on the
+  // SOLID wall portions: y=7..8 (below doorway), and y=13 (above doorway top).
+  fillBox(6, 7, 20, 9, 7, 20, B.WHITE_WOOL);   // arrow base row at y=7 (GF ceiling)
+  stamp(7, 8, 20, B.WHITE_WOOL);               // arrow mid at y=8 (deck level)
   stamp(8, 8, 20, B.WHITE_WOOL);
-  // Tip at y=9: floor-2 corridor back wall (SANDSTONE) already set above; paint it
-  stamp(7, 9, 20, B.WHITE_WOOL);
-  // "2F" marker at y=10: paint over the floor-2 corridor back wall
-  stamp(7, 10, 20, B.BLUE_WOOL);
-  stamp(8, 10, 20, B.BLUE_WOOL);
+  // Arrow tip + "2F" badge placed ABOVE the doorway (y=13, solid wall above door arch)
+  stamp(7, 13, 20, B.WHITE_WOOL);  // arrow tip above door
+  stamp(7, 14, 20, B.BLUE_WOOL);   // "2F" badge upper cell (under ceiling)
+  stamp(8, 14, 20, B.BLUE_WOOL);
 
   // ── EAST STAIR MARKER ──────────────────────────────────────────────────────
   // Lintel: BLUE_WOOL span at y=6, x79..82, z=20
@@ -823,14 +856,13 @@ export function buildPetitHermes(stamp, B) {
     stamp(80, 6, 21, B.LANTERN);
     stamp(81, 6, 21, B.LANTERN);
   }
-  // UP-ARROW above east stair doorway
+  // UP-ARROW above east stair doorway (same pattern: base y=7..8, badge y=13..14)
   fillBox(80, 7, 20, 82, 7, 20, B.WHITE_WOOL); // arrow base row
   stamp(80, 8, 20, B.WHITE_WOOL);
   stamp(81, 8, 20, B.WHITE_WOOL);
-  stamp(81, 9, 20, B.WHITE_WOOL); // arrow tip
-  // "2F" marker
-  stamp(80, 10, 20, B.BLUE_WOOL);
-  stamp(81, 10, 20, B.BLUE_WOOL);
+  stamp(81, 13, 20, B.WHITE_WOOL);  // arrow tip above door
+  stamp(80, 14, 20, B.BLUE_WOOL);   // "2F" badge
+  stamp(81, 14, 20, B.BLUE_WOOL);
 
   // Landing LANTERNs at top of stairs (floor-2 deck y=8, z=12)
   if (B.LANTERN != null) {
