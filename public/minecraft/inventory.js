@@ -354,6 +354,15 @@ export function createInventory(opts) {
       renderHotbar(); if (open) renderScreen();
       return left;
     },
+    take(itemId, count = 1) { // remove up to `count` of itemId; returns number actually removed
+      let need = count;
+      for (let i = MAIN - 1; i >= 0 && need > 0; i--) {
+        const c = main[i];
+        if (c && c.item === itemId) { const m = Math.min(need, c.count); c.count -= m; need -= m; if (c.count <= 0) main[i] = null; }
+      }
+      renderHotbar(); if (open) renderScreen();
+      return count - need;
+    },
     selectedDef() { const c = main[selected]; return c ? itemDef(c.item) : null; },
     holdingShield() { const d = this.selectedDef(); return !!(d && d.shield); },
     armorPoints() {

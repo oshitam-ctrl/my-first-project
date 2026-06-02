@@ -497,6 +497,29 @@ export function createAudio() {
       }
     },
 
+    // craft = a warm two-note " できた！" chime (used for baking / crafting).
+    craft() {
+      if (!enabled || !ensure()) return;
+      const t0 = ctx.currentTime;
+      blip('triangle', 523 * vary(0.02), 0.22, 0.004, 0.16, t0);        // C5
+      blip('sine', 784 * vary(0.02), 0.18, 0.004, 0.22, t0 + 0.09);     // G5
+    },
+
+    // pop = a soft bubble "ぷくっ" (fermentation matured): quick upward sine.
+    pop() {
+      if (!enabled || !ensure()) return;
+      const t0 = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      const f0 = 320 * vary(0.06);
+      osc.frequency.setValueAtTime(f0, t0);
+      osc.frequency.exponentialRampToValueAtTime(f0 * 2.4, t0 + 0.07); // bloop up
+      osc.connect(g).connect(master);
+      env(g, osc, t0, 0.2, 0.003, 0.08);
+      noiseBurst('bandpass', 1600 * vary(0.1), 2, 0.12, 0.002, 0.04, t0);
+    },
+
     setEnabled(on) {
       enabled = !!on;
       sfx.enabled = enabled;

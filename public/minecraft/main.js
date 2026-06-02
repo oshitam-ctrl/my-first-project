@@ -12,6 +12,8 @@ import { createMobs } from './mobs.js';
 import { createQuest } from './quest.js';
 import { createSky } from './sky.js';
 import { itemDef, blockToItem } from './items.js';
+import { createFermentation } from './fermentation.js';
+import { createBakery } from './bakery.js';
 
 // ---------------------------------------------------------------------------
 // Settings (persisted)
@@ -769,6 +771,41 @@ function updateQuest() {
   }
 }
 
+// --- Bakery: time-based fermentation + one-tap baking (casual, no grid puzzle) ---
+const ferment = createFermentation();
+const bakery = createBakery({
+  inv, ferment, sfx, toast, itemDef,
+  onBake: (id, n) => { if (settings.shake) shakeMag = 0.12; },
+});
+// 🥖 top-bar button opens the bakery counter.
+{
+  const b = document.createElement('button');
+  b.textContent = '🥖'; b.title = 'パン工房をひらく';
+  b.addEventListener('click', (e) => { e.stopPropagation(); sfx.resume(); if (playing) bakery.open(); });
+  const tb = document.getElementById('topbar');
+  if (tb) tb.insertBefore(b, tb.firstChild);
+}
+// debug/verification hooks for the bakery loop (harmless in prod)
+window.__bakery = {
+  give: (id, n = 1) => inv.collect(id, n),
+  count: (id) => inv.count(id),
+  ferments: () => ferment.count(),
+  startFerment: () => ferment.start(performance.now()),
+  // force all pending jars ready now (fast-forward), so tests don't wait 75s
+  matureAll: () => ferment.rush(),
+  pump: () => updateFermentation(), // run one fermentation tick (loop is paused when tab hidden)
+};
+// Matured jars yield 発酵液 — celebrate with a pop + bubbles + a toast.
+function updateFermentation() {
+  const done = ferment.update(performance.now());
+  for (const _ of done) {
+    inv.collect('levain', 1);
+    sfx.pop && sfx.pop();
+    if (playing) particles.burst(player.pos.x, player.pos.y + 1.2, player.pos.z, 0xe7d08a, 8, 1.6);
+  }
+  if (done.length) toast(`🫧 発酵液ができた！（×${done.length}）パン工房で焼こう`);
+}
+
 const crosshairEl = document.getElementById('crosshair');
 function flashCrosshair(color) {
   if (!crosshairEl) return;
@@ -998,6 +1035,8 @@ function loop() {
   updateChunks();
   updateDayNight(dt);
   if (playing) updateAmbience(dt);
+  updateFermentation();
+  bakery.tick();
   sky.update(dt, curSun, dayTime);
   updateMining(dt);
   particles.update(dt);

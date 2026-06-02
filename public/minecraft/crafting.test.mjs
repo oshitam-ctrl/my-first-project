@@ -110,18 +110,10 @@ check('bread', craftResult([N, N, N, N, N, N, 'wheat', 'wheat', 'wheat']), {
 
 // --- Petit Hermès bakery recipes ---
 
-// jar + surplus_veg -> levain (2x2 grid)
-check('jar+veg->levain 2x2', craftResult(['empty_jar', 'surplus_veg', N, N]), {
-  id: 'levain',
-  count: 1,
-});
-
-// jar + surplus_veg -> levain, different offset / swapped order (position & order independent)
-check(
-  'veg+jar->levain offset',
-  craftResult([N, N, N, N, 'surplus_veg', N, N, N, 'empty_jar']),
-  { id: 'levain', count: 1 }
-);
+// 発酵液 (levain) is intentionally NOT craftable in the grid: it comes only from
+// time-based fermentation (fermentation.js). The old instant recipes were removed.
+check('jar+veg->levain has no instant recipe', craftResult(['empty_jar', 'surplus_veg', N, N]), null);
+check('3 veg->levain has no instant recipe', craftResult([N, 'surplus_veg', N, 'surplus_veg', N, N, N, N, 'surplus_veg']), null);
 
 // levain + wheat -> bread x2
 check('levain+wheat->bread x2', craftResult(['levain', 'wheat', N, N]), {
@@ -149,12 +141,6 @@ check('flour+levain->baguette', craftResult(['flour', 'levain', N, N]), {
   count: 1,
 });
 
-// 3 surplus_veg -> levain x2, scattered positions
-check(
-  '3 veg->levain x2',
-  craftResult([N, 'surplus_veg', N, 'surplus_veg', N, N, N, N, 'surplus_veg']),
-  { id: 'levain', count: 2 }
-);
 
 // --- Petit Hermès signature breads ---
 

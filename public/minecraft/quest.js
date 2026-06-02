@@ -22,12 +22,12 @@ const STEPS = [
     progress: (s) => `${Math.min(num(s.veg), 1)}/1`,
   },
   {
-    label: '空き瓶＋野菜で“発酵液”をつくる',
+    label: '🥖工房で瓶に仕込み、発酵を待つ→発酵液',
     done: (s) => num(s.levain) >= 1,
     progress: (s) => `${Math.min(num(s.levain), 1)}/1`,
   },
   {
-    label: '発酵液＋小麦粉でパンを焼く',
+    label: '🥖工房で発酵液＋小麦からパンを焼く',
     done: (s) => num(s.bread) >= 1,
     progress: (s) => `${Math.min(num(s.bread), 1)}/1`,
   },
