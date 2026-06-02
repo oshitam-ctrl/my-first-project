@@ -515,6 +515,7 @@ function placeBlock() {
   applyEdit(Math.floor(x / CHUNK), Math.floor(z / CHUNK), x, y, z);
   particles.burst(x + 0.5, y + 0.5, z + 0.5, blockColorHex(id), 6, 1.6);
   sfx.place(id);
+  vmSwing(); // viewmodel swing on block place
 }
 
 function updateMining(dt) {
@@ -533,11 +534,14 @@ function updateMining(dt) {
     if (!isFinite(hard)) { breakProgress = 0; crackMesh.visible = false; return; } // bedrock
     if (creative) { // instant break with a small throttle while held
       creativeBreakCD -= dt;
-      if (creativeBreakCD <= 0) { doBreak(x, y, z, id); creativeBreakCD = 0.18; }
+      if (creativeBreakCD <= 0) { doBreak(x, y, z, id); creativeBreakCD = 0.18; vmSwing(); }
       crackMesh.visible = false;
       return;
     }
-    if (!sameBlock(hit.block, breakTarget)) { breakTarget = hit.block.slice(); breakProgress = 0; }
+    if (!sameBlock(hit.block, breakTarget)) {
+      breakTarget = hit.block.slice(); breakProgress = 0;
+      vmSwing(); // viewmodel swing when starting to mine a new block
+    }
     breakProgress += dt / hard;
     const s = Math.min(CRACK_STAGES - 1, Math.floor(breakProgress * CRACK_STAGES));
     crackMat.map = crackTex[s];
@@ -718,6 +722,291 @@ function toggleInv(size = 2) {
   ib.addEventListener('click', (e) => { e.stopPropagation(); show(); });
   const tb2 = document.getElementById('topbar');
   if (tb2) tb2.insertBefore(ib, tb2.firstChild);
+}
+
+// ---------------------------------------------------------------------------
+// First-person held-item viewmodel (Minecraft-style, bottom-right)
+// ---------------------------------------------------------------------------
+// Rendered as a THREE.Group in the scene, repositioned every frame to sit in
+// camera-view space (right/down/forward offset from camera). We deliberately
+// avoid camera.add() so the stub (which has no Object3D hierarchy) stays safe.
+// All THREE API calls are guarded with optional-chaining / null checks so the
+// headless test with the full-stub never throws.
+// ---------------------------------------------------------------------------
+(function () {
+  // ---- constants -----------------------------------------------------------
+  const VM_X =  0.26;   // right offset in camera space
+  const VM_Y = -0.20;   // down offset  in camera space
+  const VM_Z =  0.45;   // distance in front of camera (forward along camera -Z)
+
+  // ---- state ---------------------------------------------------------------
+  let vmLastSlot = -1;  // track selected slot to rebuild mesh on change
+  let vmGroup = null;   // THREE.Group that holds the mesh(es)
+  let vmMesh = null;    // the current held-item mesh (child of vmGroup)
+  let vmIconCanvas = null; // off-screen canvas for item-icon texture
+  let vmIconCtx = null;
+  let vmIconTex = null; // THREE.CanvasTexture
+
+  // animation state
+  let vmBobT = 0;       // walk-bob phase accumulator
+  let vmSwingT = 0;     // swing timer (0 = idle, >0 = animating, counts down)
+  const VM_SWING_DUR = 0.25; // seconds for one swing cycle
+
+  // ---- swing trigger (called externally) ----------------------------------
+  // Exposed via closure; called by placeBlock() and mining break-start.
+  function triggerSwing() {
+    vmSwingT = VM_SWING_DUR;
+  }
+  // Make it accessible to the rest of main.js
+  window._vmSwing = triggerSwing;
+
+  // ---- icon canvas (reused across item changes) ---------------------------
+  function ensureIconCanvas() {
+    if (vmIconCanvas) return;
+    vmIconCanvas = document.createElement('canvas');
+    vmIconCanvas.width = vmIconCanvas.height = 32;
+    vmIconCtx = vmIconCanvas.getContext('2d');
+  }
+
+  // Draw the item icon using the same logic as inventory.drawIcon
+  function drawVmIcon(id) {
+    ensureIconCanvas();
+    const ctx = vmIconCtx;
+    if (!ctx) return;
+    ctx.clearRect(0, 0, 32, 32);
+    if (!id) {
+      // empty hand: draw skin-coloured rectangle
+      ctx.fillStyle = '#c68642';
+      ctx.fillRect(8, 4, 16, 24);
+      ctx.fillStyle = '#a0522d';
+      ctx.fillRect(8, 20, 16, 8);
+      return;
+    }
+    const def = itemDef(id);
+    if (def && def.block != null && BLOCKS[def.block]) {
+      // block item: draw atlas face tile
+      const tile = BLOCKS[def.block].faces[2]; // side face
+      const tw = texture.image ? texture.image.width / cols : 16;
+      try {
+        ctx.imageSmoothingEnabled = false;
+        if (texture.image) {
+          ctx.drawImage(texture.image,
+            (tile % cols) * tw, Math.floor(tile / cols) * tw, tw, tw,
+            2, 2, 28, 28);
+        }
+      } catch (e) { /* stub/headless: image may not exist */ }
+    } else if (def) {
+      const c = def.color ?? 0x888888;
+      const hex = '#' + c.toString(16).padStart(6, '0');
+      if (def.tool) {
+        ctx.fillStyle = '#6b4a1e'; ctx.fillRect(14, 12, 4, 16);
+        ctx.fillStyle = hex; ctx.fillRect(8, 4, 16, 8);
+      } else {
+        ctx.fillStyle = hex;
+        ctx.beginPath(); ctx.arc(16, 16, 11, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+
+  // ---- mesh builders -------------------------------------------------------
+  // Build or replace the mesh inside vmGroup for the given item id.
+  // id may be null (empty hand).
+  function buildVmMesh(id) {
+    // remove previous mesh
+    if (vmMesh && vmGroup) {
+      try { vmGroup.remove(vmMesh); } catch (e) {}
+      try { vmMesh.geometry && vmMesh.geometry.dispose && vmMesh.geometry.dispose(); } catch (e) {}
+      try { vmMesh.material && vmMesh.material.dispose && vmMesh.material.dispose(); } catch (e) {}
+      vmMesh = null;
+    }
+
+    const def = id ? itemDef(id) : null;
+    const isBlock = def && def.block != null && BLOCKS[def.block];
+
+    if (isBlock) {
+      // Small tilted cube with per-face atlas tiles drawn to a canvas texture.
+      // BoxGeometry UV maps each face 0→1, so a full-face canvas looks correct.
+      try {
+        ensureIconCanvas(); // ensure vmIconCanvas/vmIconCtx are ready
+        const bdef = BLOCKS[def.block];
+        // Draw top face tile (faces[0]) on left half, side face (faces[2]) on right half
+        // Actually we just draw the side tile (faces[2]) since that's most recognisable,
+        // and use it on all faces — matches inventory icon style.
+        const sideTile = bdef.faces[2];
+        const tw = texture.image ? texture.image.width / cols : 16;
+        const ctx = vmIconCtx;
+        if (ctx) {
+          ctx.clearRect(0, 0, 32, 32);
+          ctx.imageSmoothingEnabled = false;
+          if (texture.image) {
+            ctx.drawImage(texture.image,
+              (sideTile % cols) * tw, Math.floor(sideTile / cols) * tw, tw, tw,
+              0, 0, 32, 32);
+          } else {
+            ctx.fillStyle = '#888'; ctx.fillRect(0, 0, 32, 32);
+          }
+        }
+        if (!vmIconTex) {
+          vmIconTex = new THREE.CanvasTexture(vmIconCanvas);
+          if (vmIconTex.magFilter !== undefined) vmIconTex.magFilter = THREE.NearestFilter;
+          if (vmIconTex.minFilter !== undefined) vmIconTex.minFilter = THREE.NearestFilter;
+        } else {
+          if (vmIconTex.needsUpdate !== undefined) vmIconTex.needsUpdate = true;
+        }
+        const geo = new THREE.BoxGeometry(0.22, 0.22, 0.22);
+        const mat = new THREE.MeshBasicMaterial({
+          map: vmIconTex,
+          depthTest: false,   // always draw on top of world geometry
+          depthWrite: false,
+        });
+        vmMesh = new THREE.Mesh(geo, mat);
+        vmMesh.rotation.x =  0.42;  // tilt forward (Minecraft-style isometric)
+        vmMesh.rotation.y = -0.72;  // rotate to show two faces
+        vmMesh.renderOrder = 999;   // render last so it appears on top
+        vmMesh.frustumCulled = false;
+      } catch (e) { vmMesh = null; }
+    } else {
+      // Flat quad with icon canvas texture (tool, food, or hand); always on top
+      try {
+        drawVmIcon(id);  // also handles null -> draws hand
+        if (!vmIconTex) {
+          vmIconTex = new THREE.CanvasTexture(vmIconCanvas);
+          if (vmIconTex.magFilter !== undefined) vmIconTex.magFilter = THREE.NearestFilter;
+          if (vmIconTex.minFilter !== undefined) vmIconTex.minFilter = THREE.NearestFilter;
+        } else {
+          // Refresh existing texture
+          if (vmIconTex.needsUpdate !== undefined) vmIconTex.needsUpdate = true;
+        }
+        const geo = new THREE.PlaneGeometry(0.20, 0.20);
+        const isTool = def && def.tool;
+        const mat = new THREE.MeshBasicMaterial({
+          map: vmIconTex,
+          transparent: true,
+          depthTest: false,  // always draw on top of world geometry
+          depthWrite: false,
+          side: THREE.DoubleSide,
+        });
+        vmMesh = new THREE.Mesh(geo, mat);
+        // Tool: angled like a held pickaxe; food/other: slightly less angled
+        vmMesh.rotation.x = isTool ? -0.55 : -0.35;
+        vmMesh.rotation.z = isTool ?  0.65 :  0.15;
+        vmMesh.renderOrder = 999;
+        vmMesh.frustumCulled = false;
+      } catch (e) { vmMesh = null; }
+    }
+
+    if (vmMesh && vmGroup) {
+      try { vmGroup.add(vmMesh); } catch (e) {}
+    }
+  }
+
+  // ---- init ----------------------------------------------------------------
+  try {
+    vmGroup = new THREE.Group();
+    vmGroup.frustumCulled = false;
+    vmGroup.renderOrder = 999;
+    scene.add(vmGroup);
+    buildVmMesh(null); // start with empty-hand mesh
+  } catch (e) {
+    vmGroup = null;
+  }
+
+  // ---- per-frame update ----------------------------------------------------
+  // Called from the main render loop; dt in seconds.
+  function updateViewmodel(dt) {
+    if (!vmGroup) return;
+
+    // Visibility: only show in first-person play, not when any overlay is open
+    const shouldShow = playing && !inv.isOpen() &&
+      !(typeof bakery !== 'undefined' && bakery && typeof bakery.isOpen === 'function' && bakery.isOpen()) &&
+      !document.getElementById('about')?.style?.display?.startsWith('flex') &&
+      !document.getElementById('settings')?.style?.display?.startsWith('block');
+    vmGroup.visible = shouldShow;
+
+    if (!shouldShow) return;
+
+    // Rebuild mesh if selected slot changed
+    const slot = inv.selected;
+    const itemId = inv.selectedItem();
+    if (slot !== vmLastSlot) {
+      vmLastSlot = slot;
+      // Redraw icon canvas (non-block items) and re-upload texture
+      if (vmIconTex) {
+        drawVmIcon(itemId);
+        if (vmIconTex.needsUpdate !== undefined) vmIconTex.needsUpdate = true;
+      }
+      buildVmMesh(itemId);
+    }
+
+    // ---- walk bob -----------------------------------------------------------
+    const hSpeed = Math.sqrt(
+      player.vel.x * player.vel.x + player.vel.z * player.vel.z
+    );
+    const isWalking = hSpeed > 0.5 && player.onGround;
+    if (isWalking) vmBobT += dt * 8.5; // ~2.7 bobs/sec
+
+    const bobY  = isWalking ? Math.sin(vmBobT) * 0.020 : 0;
+    const bobX  = isWalking ? Math.sin(vmBobT * 0.5) * 0.012 : 0;
+    const bobRZ = isWalking ? Math.sin(vmBobT * 0.5) * 0.06 : 0;
+
+    // ---- swing animation ----------------------------------------------------
+    let swingX = 0, swingY = 0, swingRX = 0;
+    if (vmSwingT > 0) {
+      vmSwingT = Math.max(0, vmSwingT - dt);
+      const p = 1 - vmSwingT / VM_SWING_DUR; // 0->1 over duration
+      // ease-out arc: forward then back
+      const arc = p < 0.5
+        ? 4 * p * p * p                         // ease-in during first half
+        : 1 - Math.pow(-2 * p + 2, 3) / 2;     // ease-out during second half
+      const sineArc = Math.sin(arc * Math.PI);  // peak at midpoint, back to 0
+      swingRX = sineArc * -0.9;   // rotate forward (down) then back
+      swingY  = sineArc * -0.04;  // slight downward dip
+      swingX  = sineArc *  0.05;  // slight rightward arc
+    }
+
+    // ---- compute camera-local axes in world space ---------------------------
+    // Camera faces -Z in local space; we derive right/up/fwd from yaw+pitch.
+    const cosY = Math.cos(player.yaw),   sinY = Math.sin(player.yaw);
+    const cosP = Math.cos(player.pitch), sinP = Math.sin(player.pitch);
+
+    // Camera forward: (−sinY·cosP, sinP, −cosY·cosP)
+    // Camera right  : ( cosY,       0,    −sinY)
+    // Camera up     : ( sinY·sinP,  cosP, cosY·sinP)
+    const rx = cosY,        ry = 0,    rz = -sinY;
+    const ux = sinY * sinP, uy = cosP, uz = cosY * sinP;
+    const fx = -sinY * cosP, fy = sinP, fz = -cosY * cosP;
+
+    // Target position: camera + offset in camera space
+    const ox = VM_X + bobX + swingX;
+    const oy = VM_Y + bobY + swingY;
+    const oz = VM_Z;
+
+    const camX = camera.position.x;
+    const camY = camera.position.y;
+    const camZ = camera.position.z;
+
+    try {
+      vmGroup.position.set(
+        camX + rx * ox + ux * oy + fx * oz,
+        camY + ry * ox + uy * oy + fy * oz,
+        camZ + rz * ox + uz * oy + fz * oz
+      );
+
+      // Orientation: match camera yaw+pitch, plus mesh's own pre-rotation
+      vmGroup.rotation.order = 'YXZ';
+      vmGroup.rotation.y = -player.yaw;
+      vmGroup.rotation.x = -player.pitch + swingRX;
+      vmGroup.rotation.z = bobRZ;
+    } catch (e) { /* stub safety */ }
+  }
+
+  // Expose updateViewmodel and triggerSwing for the main loop
+  window._updateViewmodel = updateViewmodel;
+})();
+
+// Helper: trigger viewmodel swing (used in placeBlock and mining)
+function vmSwing() {
+  if (typeof window._vmSwing === 'function') window._vmSwing();
 }
 
 // Mobs / entities (passive animals by day, hostiles at night)
@@ -1126,6 +1415,8 @@ function loop() {
   if (playing) mobs.update(dt);
 
   renderer.render(scene, camera);
+  // Update first-person held-item viewmodel (after render to avoid one-frame lag)
+  if (typeof window._updateViewmodel === 'function') window._updateViewmodel(dt);
   updateHud(dt);
 }
 loop();

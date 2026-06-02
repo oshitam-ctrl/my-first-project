@@ -214,6 +214,37 @@ export function createMobs(opts) {
     return m;
   }
 
+  // Create a pivot Group for limb animation. The pivot sits at (px, pivotY, pz)
+  // in group-space (the "joint" — hip, shoulder, etc.). The visible mesh is
+  // placed inside the pivot, offset so its TOP edge is at the pivot origin:
+  //   mesh.position.y = -(sy / 2)   (box is centered, so center = -half-height)
+  // Rotating pivot.rotation.x swings the limb about that joint, producing a
+  // natural walking motion. No per-frame allocations needed; we just set
+  // pivot.rotation.x in syncMesh.
+  //
+  // The pivot itself is added to `parts.all` (for hurt-flash traversal) AND
+  // the inner mesh is tracked (also for hurt-flash). The PIVOT is what we
+  // store in parts.legs / parts.arms so callers can set pivot.rotation.x.
+  //
+  // offsetY: extra downward offset on the mesh centre (default 0). Useful when
+  // the limb is not sy tall (e.g. for asymmetric parts).
+  function makePivot(group, track, colorHex, sx, sy, sz, px, pivotY, pz, offsetY) {
+    const pivot = new THREE.Group();
+    pivot.position.set(px, pivotY, pz);
+    group.add(pivot);
+    // inner mesh: centred at -(sy/2) so its top aligns with the pivot origin
+    const meshY = -(sy / 2) - (offsetY || 0);
+    const m = new THREE.Mesh(unitBox, mat(colorHex));
+    m.scale.set(sx, sy, sz);
+    m.position.set(0, meshY, 0);
+    m.userData.baseColor = colorHex;
+    pivot.add(m);
+    track(m); // register inner mesh so hurt-flash colours it
+    // give the pivot a rotation object (the full-stub Group already has one;
+    // guard in case a minimal stub only returns a plain {x,y,z} object)
+    return pivot;
+  }
+
   // -------------------------------------------------------------------------
   // Model builders. Each returns { group, parts } where parts holds meshes we
   // animate (legs) or flash (all). Origin (0,0,0) is the feet center.
@@ -323,85 +354,91 @@ export function createMobs(opts) {
     const c = def.colors;
     const all = [];
     const legs = [];
+    const arms = []; // humanoid only: [rightArmPivot, leftArmPivot]
+    let headMesh = null; // the head mesh (for head-look yaw)
+    let bodyMesh = null; // main body/torso mesh (for idle breathing scale.y)
     const track = (m) => { all.push(m); return m; };
 
     if (def.model === 'quadruped') {
+      // body: centred at bodyY+0.2, height 0.5
       const bodyY = 0.5, bodyH = 0.5;
-      track(box(group, c.body, 0.8, bodyH, 0.5, 0, bodyY + 0.2, 0)); // body
-      const head = track(box(group, c.head, 0.5, 0.5, 0.5, 0, bodyY + 0.4, 0.5)); // head front
+      bodyMesh = track(box(group, c.body, 0.8, bodyH, 0.5, 0, bodyY + 0.2, 0));
+      headMesh = track(box(group, c.head, 0.5, 0.5, 0.5, 0, bodyY + 0.4, 0.5));
       if (c.accent) track(box(group, c.accent, 0.52, 0.52, 0.2, 0, bodyY + 0.4, 0.62));
-      // 4 legs
+      headMesh.userData.isHead = true;
+      // 4 legs — each in a pivot at hip height (top of leg = 0.45 up from feet)
+      // pivot at y=0.45, mesh inside offset -0.225 so it hangs downward
       const lx = 0.28, lz = 0.18;
       for (const [px, pz] of [[lx, lz], [-lx, lz], [lx, -lz], [-lx, -lz]]) {
-        legs.push(track(box(group, c.leg, 0.22, 0.45, 0.22, px, 0.22, pz)));
+        legs.push(makePivot(group, track, c.leg, 0.22, 0.45, 0.22, px, 0.45, pz));
       }
-      head.userData.isHead = true;
     } else if (def.model === 'chicken') {
-      track(box(group, c.body, 0.4, 0.4, 0.35, 0, 0.4, 0));
-      const head = track(box(group, c.head, 0.3, 0.3, 0.3, 0, 0.65, 0.18));
+      bodyMesh = track(box(group, c.body, 0.4, 0.4, 0.35, 0, 0.4, 0));
+      headMesh = track(box(group, c.head, 0.3, 0.3, 0.3, 0, 0.65, 0.18));
       track(box(group, c.beak, 0.12, 0.12, 0.15, 0, 0.65, 0.38));
-      // two legs
+      headMesh.userData.isHead = true;
+      // two legs — pivot at y=0.27 (just under body bottom), mesh hangs 0.125 down
       for (const px of [0.1, -0.1]) {
-        legs.push(track(box(group, c.leg, 0.08, 0.25, 0.08, px, 0.13, 0)));
+        legs.push(makePivot(group, track, c.leg, 0.08, 0.25, 0.08, px, 0.27, 0));
       }
-      head.userData.isHead = true;
     } else if (def.model === 'humanoid') {
-      track(box(group, c.legs, 0.5, 0.75, 0.28, 0, 1.1, 0)); // body/torso
-      // friendly NPCs get a contrasting cream top over the torso (apron/shirt)
+      // Torso: occupies roughly y=0.72 (hip) to y=1.47 (shoulder)
+      bodyMesh = track(box(group, c.legs, 0.5, 0.75, 0.28, 0, 1.1, 0));
       if (c.body && c.body !== c.legs) track(box(group, c.body, 0.52, 0.42, 0.3, 0, 1.28, 0));
-      const head = track(box(group, c.head, 0.45, 0.45, 0.45, 0, 1.65, 0)); // head
-      // simple hair cap (sits on top/back of head) for friendly NPCs
+      headMesh = track(box(group, c.head, 0.45, 0.45, 0.45, 0, 1.65, 0));
+      headMesh.userData.isHead = true;
       if (c.hair) {
-        track(box(group, c.hair, 0.48, 0.16, 0.48, 0, 1.82, 0)); // top
-        track(box(group, c.hair, 0.48, 0.4, 0.12, 0, 1.66, -0.2)); // back
+        track(box(group, c.hair, 0.48, 0.16, 0.48, 0, 1.82, 0));
+        track(box(group, c.hair, 0.48, 0.4, 0.12, 0, 1.66, -0.2));
       }
-      // arms
-      track(box(group, c.limb, 0.18, 0.7, 0.18, 0.34, 1.1, 0));
-      track(box(group, c.limb, 0.18, 0.7, 0.18, -0.34, 1.1, 0));
-      // legs
+      // Arms: pivot at shoulder (y≈1.47), arm hangs 0.35 down from centre
+      // Right arm (+x side)
+      arms.push(makePivot(group, track, c.limb, 0.18, 0.7, 0.18, 0.34, 1.47, 0));
+      // Left arm (-x side)
+      arms.push(makePivot(group, track, c.limb, 0.18, 0.7, 0.18, -0.34, 1.47, 0));
+      // Legs: pivot at hip (y≈0.72), leg hangs 0.35 down from centre
       for (const px of [0.13, -0.13]) {
-        legs.push(track(box(group, c.legs, 0.2, 0.7, 0.2, px, 0.35, 0)));
+        legs.push(makePivot(group, track, c.legs, 0.2, 0.7, 0.2, px, 0.72, 0));
       }
       // --- optional costume / armor overlays (knights, wizards, farmers, kids) ---
-      // The face is added later at the head's front, so helmets are top-caps that
-      // leave the face open; chestplates/capes sit over the torso/back.
       if (c.chest) {
-        track(box(group, c.chest, 0.56, 0.5, 0.34, 0, 1.22, 0));     // chestplate
-        track(box(group, c.chest, 0.22, 0.2, 0.24, 0.34, 1.42, 0));  // L pauldron
-        track(box(group, c.chest, 0.22, 0.2, 0.24, -0.34, 1.42, 0)); // R pauldron
+        track(box(group, c.chest, 0.56, 0.5, 0.34, 0, 1.22, 0));
+        track(box(group, c.chest, 0.22, 0.2, 0.24, 0.34, 1.42, 0));
+        track(box(group, c.chest, 0.22, 0.2, 0.24, -0.34, 1.42, 0));
       }
-      if (c.cape) track(box(group, c.cape, 0.5, 0.85, 0.06, 0, 1.18, -0.2)); // cape on the back
+      if (c.cape) track(box(group, c.cape, 0.5, 0.85, 0.06, 0, 1.18, -0.2));
       if (c.helmet) {
-        track(box(group, c.helmet, 0.52, 0.22, 0.52, 0, 1.9, 0));      // crown
-        track(box(group, c.helmet, 0.52, 0.18, 0.12, 0, 1.78, -0.22)); // back guard
-        if (c.brim) track(box(group, c.helmet, 0.78, 0.06, 0.78, 0, 1.8, 0));     // straw-hat brim
-        if (c.hatPeak) track(box(group, c.helmet, 0.18, 0.55, 0.18, 0, 2.2, 0));  // wizard point
+        track(box(group, c.helmet, 0.52, 0.22, 0.52, 0, 1.9, 0));
+        track(box(group, c.helmet, 0.52, 0.18, 0.12, 0, 1.78, -0.22));
+        if (c.brim) track(box(group, c.helmet, 0.78, 0.06, 0.78, 0, 1.8, 0));
+        if (c.hatPeak) track(box(group, c.helmet, 0.18, 0.55, 0.18, 0, 2.2, 0));
       }
-      if (c.glint) { // enchant shimmer: a couple of bright floating sparks
+      if (c.glint) {
         track(box(group, c.glint, 0.07, 0.07, 0.07, 0.32, 1.55, 0.22));
         track(box(group, c.glint, 0.06, 0.06, 0.06, -0.28, 1.3, 0.24));
       }
-      head.userData.isHead = true;
     } else if (def.model === 'creeper') {
-      track(box(group, c.body, 0.5, 1.0, 0.4, 0, 0.95, 0)); // body
-      const head = track(box(group, c.head, 0.5, 0.5, 0.5, 0, 1.55, 0)); // head
-      // 4 stubby legs
+      bodyMesh = track(box(group, c.body, 0.5, 1.0, 0.4, 0, 0.95, 0));
+      headMesh = track(box(group, c.head, 0.5, 0.5, 0.5, 0, 1.55, 0));
+      headMesh.userData.isHead = true;
+      // 4 stubby legs — pivot at y=0.3 (just above feet)
       for (const [px, pz] of [[0.15, 0.18], [-0.15, 0.18], [0.15, -0.18], [-0.15, -0.18]]) {
-        legs.push(track(box(group, c.leg, 0.2, 0.3, 0.2, px, 0.15, pz)));
+        legs.push(makePivot(group, track, c.leg, 0.2, 0.3, 0.2, px, 0.3, pz));
       }
-      head.userData.isHead = true;
     } else if (def.model === 'spider') {
-      track(box(group, c.body, 0.7, 0.45, 0.9, 0, 0.45, -0.1)); // abdomen
-      const head = track(box(group, c.head, 0.5, 0.4, 0.4, 0, 0.45, 0.45)); // head
+      bodyMesh = track(box(group, c.body, 0.7, 0.45, 0.9, 0, 0.45, -0.1));
+      headMesh = track(box(group, c.head, 0.5, 0.4, 0.4, 0, 0.45, 0.45));
+      headMesh.userData.isHead = true;
       track(box(group, c.eye, 0.4, 0.1, 0.05, 0, 0.55, 0.65));
-      // 8 thin legs (4 per side)
+      // 8 thin horizontal legs — stored flat; we'll animate rotation.z for jitter
+      // Pivot at body centre (y=0.45), leg extends outward on x-axis
       for (const side of [1, -1]) {
         for (let i = 0; i < 4; i++) {
           const lz = 0.35 - i * 0.25;
-          legs.push(track(box(group, c.leg, 0.6, 0.08, 0.08, side * 0.55, 0.4, lz)));
+          // horizontal legs: pivot at body edge, leg extends outward
+          legs.push(makePivot(group, track, c.leg, 0.6, 0.08, 0.08, side * 0.35, 0.42, lz));
         }
       }
-      head.userData.isHead = true;
     } else {
       // fallback cube
       track(box(group, 0xff00ff, 0.6, 0.6, 0.6, 0, 0.3, 0));
@@ -410,7 +447,9 @@ export function createMobs(opts) {
     // cosmetic facial features (eyes/snout/beak/etc.) on the front of the head
     addFace(group, track, def.model, c);
 
-    return { group, parts: { all, legs } };
+    // parts.arms and parts.head are optional (only set for relevant models)
+    const parts = { all, legs, arms, head: headMesh, body: bodyMesh };
+    return { group, parts };
   }
 
   // -------------------------------------------------------------------------
@@ -804,24 +843,140 @@ export function createMobs(opts) {
   }
 
   // -------------------------------------------------------------------------
-  // Mesh sync + cheap leg-swing animation
+  // Mesh sync + animation
+  //
+  // PIVOT SYSTEM: animatable limbs (legs, arms) are THREE.Group pivots whose
+  // origin sits at the joint (hip/shoulder). The visible mesh inside each pivot
+  // is offset downward so its top aligns with the pivot. Rotating pivot.rotation.x
+  // therefore swings the limb from the joint — natural walking motion with zero
+  // per-frame allocation.
+  //
+  // HEAD-LOOK: the head mesh is rotated in local Y toward the player when the
+  // player is within HEAD_LOOK_DIST blocks, clamped to ±HEAD_LOOK_CLAMP rad.
+  //
+  // IDLE BREATHING: a small scale.y oscillation on the body mesh (± BREATHE_AMP)
+  // gives the impression the mob is alive even when standing still.
+  //
+  // SPIDER LEGS: the spider's legs extend horizontally, so we animate rotation.z
+  // (side-to-side jitter) rather than rotation.x.
   // -------------------------------------------------------------------------
+  const HEAD_LOOK_DIST  = 5.0;   // blocks: turn head to watch player within this range
+  const HEAD_LOOK_CLAMP = 0.55;  // max yaw offset for head-look (rad, ~30°)
+  const HEAD_LOOK_RATE  = 4.0;   // lerp speed for head-look
+  const BREATHE_AMP     = 0.025; // idle breathing scale.y amplitude
+  const BREATHE_SPEED   = 1.4;   // idle breathe cycles per second
+
   function syncMesh(mob, dt) {
     mob.group.position.set(mob.pos.x, mob.pos.y, mob.pos.z);
     mob.group.rotation.y = mob.yaw;
-    // leg swing while moving
-    if (mob.moving && Math.hypot(mob.vel.x, mob.vel.z) > 0.2) {
-      mob.animT += dt * 8;
-      const sw = Math.sin(mob.animT) * 0.4;
-      const legs = mob.parts.legs;
-      for (let i = 0; i < legs.length; i++) {
-        const dir = i % 2 === 0 ? 1 : -1;
-        if (legs[i].rotation) legs[i].rotation.x = sw * dir;
+
+    const p     = mob.parts;
+    const legs  = p.legs;
+    const arms  = p.arms;   // may be empty []
+    const model = mob.def.model;
+    const speed = Math.hypot(mob.vel.x, mob.vel.z);
+    const isMoving = mob.moving && speed > 0.2;
+
+    if (isMoving) {
+      // --- WALK animation ---------------------------------------------------
+      // animT accumulates faster when moving quickly (speed-scaled)
+      mob.animT += dt * (6.0 + speed * 0.8);
+      const amp = Math.min(0.5, 0.25 + speed * 0.05); // 0.25–0.5 rad
+
+      if (model === 'spider') {
+        // Spider: 8 horizontal legs jitter in Z with alternating phase
+        const sw = Math.sin(mob.animT) * 0.3;
+        for (let i = 0; i < legs.length; i++) {
+          if (legs[i].rotation) legs[i].rotation.z = sw * (i % 2 === 0 ? 1 : -1);
+        }
+      } else if (model === 'creeper') {
+        // Creeper: gentle sway — opposite front/back pairs (like a stubby quadruped)
+        const sw = Math.sin(mob.animT) * amp * 0.6;
+        for (let i = 0; i < legs.length; i++) {
+          if (legs[i].rotation) legs[i].rotation.x = sw * (i % 2 === 0 ? 1 : -1);
+        }
+      } else if (model === 'quadruped') {
+        // Quadruped: legs[0,1] = front-left, front-right; legs[2,3] = back-left, back-right
+        // Diagonal pairs (0,3) and (1,2) swing in opposition for trot-like motion
+        const sw = Math.sin(mob.animT) * amp;
+        for (let i = 0; i < legs.length; i++) {
+          if (legs[i].rotation) {
+            // diagonal pair: 0 & 3 together, 1 & 2 together, opposite sign
+            const phase = (i === 0 || i === 3) ? 1 : -1;
+            legs[i].rotation.x = sw * phase;
+          }
+        }
+      } else if (model === 'chicken') {
+        // Chicken: legs alternate; also give body a subtle vertical bob
+        const sw = Math.sin(mob.animT) * amp * 0.8;
+        for (let i = 0; i < legs.length; i++) {
+          if (legs[i].rotation) legs[i].rotation.x = sw * (i % 2 === 0 ? 1 : -1);
+        }
+        // small body bob: move group up/down slightly
+        if (p.body && p.body.position) {
+          p.body.position.y = 0.4 + Math.sin(mob.animT * 2) * 0.025;
+        }
+      } else {
+        // Humanoid (zombie, skeleton, NPCs, etc.): legs swing, arms swing opposite
+        const sw = Math.sin(mob.animT) * amp;
+        for (let i = 0; i < legs.length; i++) {
+          if (legs[i].rotation) legs[i].rotation.x = sw * (i % 2 === 0 ? 1 : -1);
+        }
+        // arms swing opposite to corresponding leg (right arm ↔ left leg, etc.)
+        for (let i = 0; i < arms.length; i++) {
+          if (arms[i] && arms[i].rotation) {
+            arms[i].rotation.x = sw * (i % 2 === 0 ? -1 : 1);
+          }
+        }
       }
     } else {
-      const legs = mob.parts.legs;
-      for (let i = 0; i < legs.length; i++) if (legs[i].rotation) legs[i].rotation.x = 0;
+      // --- IDLE: reset limbs + gentle breathing ----------------------------
+      mob.animT += dt * BREATHE_SPEED * Math.PI * 2;
+      for (let i = 0; i < legs.length; i++) {
+        if (!legs[i].rotation) continue;
+        // gently return to rest position
+        legs[i].rotation.x *= 0.85;
+        // spider idle: also damp Z
+        if (model === 'spider') legs[i].rotation.z *= 0.85;
+      }
+      for (let i = 0; i < arms.length; i++) {
+        if (arms[i] && arms[i].rotation) arms[i].rotation.x *= 0.85;
+      }
+      // Idle body scale.y breathing (skip spider/creeper whose scale changes feel odd)
+      if (p.body && p.body.scale && model !== 'spider') {
+        const breath = 1.0 + Math.sin(mob.animT) * BREATHE_AMP;
+        p.body.scale.y = breath;
+      }
+      // Chicken: reset body bob
+      if (model === 'chicken' && p.body && p.body.position) {
+        p.body.position.y += (0.4 - p.body.position.y) * 0.2;
+      }
     }
+
+    // --- HEAD-LOOK: turn head toward player when nearby ---------------------
+    if (p.head && p.head.rotation) {
+      const dx = player.pos.x - mob.pos.x;
+      const dz = player.pos.z - mob.pos.z;
+      const distToPlayer = Math.hypot(dx, dz);
+      if (distToPlayer < HEAD_LOOK_DIST) {
+        // world yaw toward player, then subtract mob's own yaw → local offset
+        const targetYaw = Math.atan2(dx, dz) - mob.yaw;
+        // wrap to [-π, π]
+        let delta = ((targetYaw + Math.PI) % (Math.PI * 2)) - Math.PI;
+        if (delta < -Math.PI) delta += Math.PI * 2;
+        // clamp
+        delta = Math.max(-HEAD_LOOK_CLAMP, Math.min(HEAD_LOOK_CLAMP, delta));
+        // lerp current toward target
+        const cur = p.head.rotation.y || 0;
+        p.head.rotation.y = cur + (delta - cur) * Math.min(1, HEAD_LOOK_RATE * dt);
+      } else {
+        // fade back to neutral when player is far away
+        if (p.head.rotation.y) {
+          p.head.rotation.y *= Math.max(0, 1 - HEAD_LOOK_RATE * dt);
+        }
+      }
+    }
+
     // hurt flash timeout
     if (mob.hurtT > 0) {
       mob.hurtT -= dt;
