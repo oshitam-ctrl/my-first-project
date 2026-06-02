@@ -182,12 +182,33 @@ const painters = {
   [T.stone]: (c) => noisePx(c, [128, 128, 130], 22),
   [T.sand]: (c) => noisePx(c, [219, 205, 152], 18),
   [T.leaves]: (c) => {
+    // Start transparent so alpha-cutout holes are real gaps, not dark smudges
+    c.clearRect(0, 0, TILE, TILE);
     noisePx(c, [60, 118, 45], 34);
-    // punch a few transparent-ish darker holes for foliage feel
-    c.fillStyle = 'rgba(30,70,25,0.6)';
-    for (let i = 0; i < 14; i++) c.fillRect((Math.random() * TILE) | 0, (Math.random() * TILE) | 0, 1, 1);
+    // Punch genuine alpha=0 holes for foliage cutout rendering
+    c.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < 22; i++) {
+      const px = (Math.random() * TILE) | 0;
+      const py = (Math.random() * TILE) | 0;
+      c.fillStyle = 'rgba(0,0,0,1)';
+      c.fillRect(px, py, 1 + ((i * 3) % 2), 1 + ((i * 5) % 2));
+    }
+    c.globalCompositeOperation = 'source-over';
   },
-  [T.water]: (c) => noisePx(c, [54, 110, 196], 14),
+  [T.water]: (c) => {
+    // Soft blue-teal base with gentle diagonal ripple lines
+    noisePx(c, [54, 110, 196], 18);
+    c.strokeStyle = 'rgba(100,165,230,0.55)';
+    c.lineWidth = 1;
+    for (let i = -TILE; i < TILE * 2; i += 4) {
+      c.beginPath(); c.moveTo(i, 0); c.lineTo(i + TILE, TILE); c.stroke();
+    }
+    // lighter highlight strips
+    c.strokeStyle = 'rgba(180,220,255,0.30)';
+    for (let i = -TILE; i < TILE * 2; i += 7) {
+      c.beginPath(); c.moveTo(i + 2, 0); c.lineTo(i + 2 + TILE, TILE); c.stroke();
+    }
+  },
   [T.bedrock]: (c) => noisePx(c, [40, 40, 44], 30),
   [T.snow]: (c) => noisePx(c, [236, 240, 245], 12),
   [T.cobble]: (c) => {
@@ -320,9 +341,17 @@ const painters = {
     c.fillRect(11, 13, 2, 1);
   },
   [T.birch_leaves]: (c) => {
+    c.clearRect(0, 0, TILE, TILE);
     noisePx(c, [122, 170, 80], 30);
-    c.fillStyle = 'rgba(90,135,55,0.6)';
-    for (let i = 0; i < 14; i++) c.fillRect((Math.random() * TILE) | 0, (Math.random() * TILE) | 0, 1, 1);
+    // Genuine alpha=0 holes for cutout rendering
+    c.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < 22; i++) {
+      const px = (Math.random() * TILE) | 0;
+      const py = (Math.random() * TILE) | 0;
+      c.fillStyle = 'rgba(0,0,0,1)';
+      c.fillRect(px, py, 1 + ((i * 3) % 2), 1 + ((i * 7) % 2));
+    }
+    c.globalCompositeOperation = 'source-over';
   },
   [T.spruce_log]: (c) => {
     noisePx(c, [78, 56, 34], 14);
@@ -335,9 +364,17 @@ const painters = {
     }
   },
   [T.spruce_leaves]: (c) => {
+    c.clearRect(0, 0, TILE, TILE);
     noisePx(c, [40, 78, 46], 28);
-    c.fillStyle = 'rgba(24,52,30,0.6)';
-    for (let i = 0; i < 14; i++) c.fillRect((Math.random() * TILE) | 0, (Math.random() * TILE) | 0, 1, 1);
+    // Genuine alpha=0 holes for cutout rendering
+    c.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < 22; i++) {
+      const px = (Math.random() * TILE) | 0;
+      const py = (Math.random() * TILE) | 0;
+      c.fillStyle = 'rgba(0,0,0,1)';
+      c.fillRect(px, py, 1 + ((i * 5) % 2), 1 + ((i * 3) % 2));
+    }
+    c.globalCompositeOperation = 'source-over';
   },
   [T.dry_grass]: (c) => noisePx(c, [150, 156, 78], 18),
   [T.cactus]: (c) => {
@@ -561,6 +598,54 @@ export function buildAtlas() {
   texture.generateMipmaps = false;
 
   return { texture, cols, rows };
+}
+
+// Build a small standalone tiling water texture (separate from the atlas so
+// its UV offset can be animated without moving every other tile).
+// Returns a THREE.CanvasTexture set to RepeatWrapping.
+export function buildWaterTexture() {
+  const SIZE = 32; // 32×32 gives enough detail at NearestFilter
+  const canvas = document.createElement('canvas');
+  canvas.width = SIZE;
+  canvas.height = SIZE;
+  const c = canvas.getContext('2d');
+
+  // Blue-teal base
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const n = (Math.random() - 0.5) * 28;
+      const r = Math.max(0, Math.min(255, Math.round(48 + n)));
+      const g = Math.max(0, Math.min(255, Math.round(110 + n)));
+      const b = Math.max(0, Math.min(255, Math.round(200 + n * 0.5)));
+      c.fillStyle = `rgba(${r},${g},${b},0.88)`;
+      c.fillRect(x, y, 1, 1);
+    }
+  }
+  // Diagonal ripple highlights
+  c.strokeStyle = 'rgba(130,190,240,0.55)';
+  c.lineWidth = 1;
+  for (let i = -SIZE; i < SIZE * 2; i += 5) {
+    c.beginPath(); c.moveTo(i, 0); c.lineTo(i + SIZE, SIZE); c.stroke();
+  }
+  c.strokeStyle = 'rgba(200,235,255,0.28)';
+  for (let i = -SIZE; i < SIZE * 2; i += 9) {
+    c.beginPath(); c.moveTo(i + 2, 0); c.lineTo(i + 2 + SIZE, SIZE); c.stroke();
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.magFilter = THREE.NearestFilter;
+  tex.minFilter = THREE.NearestFilter;
+  tex.generateMipmaps = false;
+  // RepeatWrapping lets us scroll offset for animation (wrapS/wrapT = 1000 = RepeatWrapping)
+  if (typeof THREE.RepeatWrapping !== 'undefined') {
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+  } else {
+    // stub fallback: RepeatWrapping may not exist; assign numeric value directly
+    tex.wrapS = 1000;
+    tex.wrapT = 1000;
+  }
+  return tex;
 }
 
 // UV rect for a tile index, with a tiny inset to avoid bleeding.

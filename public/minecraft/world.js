@@ -176,9 +176,13 @@ function oreRoll(wx, y, wz, seed) {
   return (h >>> 0) / 4294967296;
 }
 
-// Only true see-through blocks go in the alpha-blended pass. Leaves render
-// in the opaque pass (solid look) but still don't cull neighbour faces.
-const TRANSPARENT_GROUP = new Set([WATER, 12 /*glass*/]);
+// Block-id routing for render groups:
+//   TRANSPARENT_GROUP  – alpha-blended pass (glass only now; water split out)
+//   WATER_BLOCK        – dedicated water group with animated scrolling texture
+//   LEAF_GROUP         – alpha-cutout foliage pass (DoubleSide, alphaTest)
+const TRANSPARENT_GROUP = new Set([12 /*glass*/]);
+const WATER_BLOCK = WATER; // id 7
+const LEAF_GROUP = new Set([LEAVES, 24 /*birch_leaves*/, 26 /*spruce_leaves*/]);
 
 const dirs = [
   { d: [0, 1, 0], shade: 1.0, face: 0 },
@@ -1032,7 +1036,9 @@ export class World {
 
     const groups = {
       opaque: { pos: [], norm: [], uv: [], col: [] },
-      trans: { pos: [], norm: [], uv: [], col: [] },
+      trans:  { pos: [], norm: [], uv: [], col: [] }, // glass alpha-blend
+      water:  { pos: [], norm: [], uv: [], col: [] }, // water animated pass
+      leaf:   { pos: [], norm: [], uv: [], col: [] }, // foliage alpha-cutout
     };
 
     const occ = (x, y, z) => (isOpaque(this.getBlock(x, y, z)) ? 1 : 0);
@@ -1061,7 +1067,18 @@ export class World {
           const wz = oz + lz;
           const def = BLOCKS[id];
           if (!def) continue;
-          const g = TRANSPARENT_GROUP.has(id) ? groups.trans : groups.opaque;
+          // Route block to the correct render group:
+          //   water  → animated translucent water pass
+          //   leaves → alpha-cutout foliage pass
+          //   glass  → alpha-blended transparent pass
+          //   rest   → opaque pass
+          const g = id === WATER_BLOCK ? groups.water
+            : LEAF_GROUP.has(id) ? groups.leaf
+            : TRANSPARENT_GROUP.has(id) ? groups.trans
+            : groups.opaque;
+
+          // Water uses full [0,1] UV (separate tiling texture, not atlas)
+          const useFullUV = (id === WATER_BLOCK);
 
           for (const dir of dirs) {
             const [dx, dy, dz] = dir.d;
@@ -1069,7 +1086,7 @@ export class World {
             if (isOpaque(nId) || nId === id) continue; // face hidden
 
             const tile = def.faces[dir.face];
-            this._emitFace(g, wx, y, wz, dir, tile, occ, sampleLight);
+            this._emitFace(g, wx, y, wz, dir, tile, occ, sampleLight, useFullUV);
           }
         }
       }
@@ -1085,7 +1102,10 @@ export class World {
   // visual upgrade toward a Minecraft look. The result is multiplied by
   // dir.shade (directional tint) and AO_BRIGHT (corner AO) and baked into the
   // vertex color attribute; the GPU interpolates across the quad.
-  _emitFace(g, x, y, z, dir, tile, occ, sampleLight) {
+  //
+  // useFullUV: when true, emit UV [0..1]×[0..1] (for water's own tiling texture)
+  //            instead of sampling the atlas tile rect.
+  _emitFace(g, x, y, z, dir, tile, occ, sampleLight, useFullUV = false) {
     const [nx, ny, nz] = dir.d;
     // choose axis layout
     let uAxis, vAxis, nAxis, ncoord;
@@ -1093,7 +1113,10 @@ export class World {
     else if (ny !== 0) { nAxis = 1; uAxis = 0; vAxis = 2; ncoord = ny > 0 ? 1 : 0; }
     else { nAxis = 2; uAxis = 0; vAxis = 1; ncoord = nz > 0 ? 1 : 0; }
 
-    const uvrect = tileUV(tile, this.atlasCols, this.atlasRows);
+    // Full [0,1] UV for water (its own tiling texture); atlas rect otherwise.
+    const uvrect = useFullUV
+      ? { u0: 0, u1: 1, v0: 0, v1: 1 }
+      : tileUV(tile, this.atlasCols, this.atlasRows);
 
     const corners = [[0, 0], [1, 0], [1, 1], [0, 1]];
     const verts = [];

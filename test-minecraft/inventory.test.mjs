@@ -61,4 +61,33 @@ const c0 = cinv._debug.main[0].count;
 ok('creative place does not consume', cinv.consumeSelected(1) === true && cinv._debug.main[0].count === c0);
 ok('creative add is a no-op', cinv.add('dirt', 5) === 0);
 
+// --- shift-click quick-move -------------------------------------------
+const sinv = createInventory({ texture: { image: { width: 128 } }, cols: 8, sfx: null, creative: false, onSelect() {} });
+sinv.mountHotbar(document.getElementById('hotbar'));
+// put a stack in hotbar slot 2, shift-click moves it to storage (9..35)
+sinv.add('stone', 32);
+// stone should land in slot 0 (first empty hotbar slot after oak_log in slot 0 above... actually sinv is fresh)
+let stoneHotbarIdx = sinv._debug.main.findIndex((c) => c && c.item === 'stone');
+ok('stone placed in hotbar for shift-click test', stoneHotbarIdx >= 0 && stoneHotbarIdx < 9);
+sinv._debug.clickSlot('main', stoneHotbarIdx, true); // shift+click
+const stoneInStorage = sinv._debug.main.slice(9).some((c) => c && c.item === 'stone');
+const stoneGoneFromHotbar = !sinv._debug.main[stoneHotbarIdx];
+ok('shift-click moves stack from hotbar to storage', stoneInStorage && stoneGoneFromHotbar);
+
+// shift-click back: storage slot -> hotbar
+let stoneStorageIdx = sinv._debug.main.findIndex((c, i) => i >= 9 && c && c.item === 'stone');
+sinv._debug.clickSlot('main', stoneStorageIdx, true); // shift+click back
+const stoneBackInHotbar = sinv._debug.main.slice(0, 9).some((c) => c && c.item === 'stone');
+ok('shift-click moves stack from storage back to hotbar', stoneBackInHotbar);
+
+// --- name popup (stub-safe: just verify it doesn't throw) ----------------
+const pinv = createInventory({ texture: { image: { width: 128 } }, cols: 8, sfx: null, creative: false, onSelect() {} });
+pinv.mountHotbar(document.getElementById('hotbar'));
+pinv.add('grass', 1);
+let threw = false;
+try { pinv.setSelected(0); } catch (e) { threw = true; }
+ok('setSelected with item does not throw (name popup safe)', !threw);
+try { pinv.setSelected(1); } catch (e) { threw = true; } // empty slot
+ok('setSelected with empty slot does not throw (name popup safe)', !threw);
+
 console.log(`\nAll ${n} inventory assertions passed.`);

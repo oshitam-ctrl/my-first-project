@@ -2,7 +2,7 @@
 // UI, day/night, audio, particles, progressive mining, sharing, and PWA wiring.
 import * as THREE from './vendor/three.module.js';
 import { World, CHUNK, HEIGHT, SEA_LEVEL } from './world.js';
-import { buildAtlas, BLOCKS } from './blocks.js';
+import { buildAtlas, buildWaterTexture, BLOCKS } from './blocks.js';
 import { createAudio } from './audio.js';
 import { createParticles } from './particles.js';
 import { isTouchDevice, createTouchControls } from './touch.js';
@@ -77,6 +77,24 @@ const matTrans = new THREE.MeshBasicMaterial({
   transparent: true, opacity: 0.78, depthWrite: false,
 });
 
+// Water: separate tiling texture so we can scroll its UV offset each frame
+// without moving every other tile in the shared atlas.
+const waterTex = buildWaterTexture();
+const matWater = new THREE.MeshBasicMaterial({
+  map: waterTex, vertexColors: true, side: THREE.DoubleSide,
+  transparent: true, opacity: 0.72, depthWrite: false,
+});
+
+// Leaves: alpha-cutout (alphaTest punches holes through the foliage texture).
+// Uses the shared atlas (leaf tiles have genuine alpha=0 holes painted in).
+// transparent:false + alphaTest renders in the opaque pass (no per-frame
+// sort overhead), while still discarding pixels below the threshold.
+const matLeaf = new THREE.MeshBasicMaterial({
+  map: texture, vertexColors: true,
+  side: THREE.DoubleSide,
+  alphaTest: 0.5, depthWrite: true,
+});
+
 // ---------------------------------------------------------------------------
 // Audio + particles
 // ---------------------------------------------------------------------------
@@ -136,13 +154,31 @@ function buildChunkMeshes(cx, cz) {
     scene.add(m);
     entry.trans = m;
   }
+  // Water: animated translucent pass with its own tiling texture
+  const wg = world.makeMesh(groups.water);
+  if (wg) {
+    const m = new THREE.Mesh(wg, matWater);
+    m.position.set(0, 0, 0);
+    m.renderOrder = 2; // render after glass so depth reads correctly
+    scene.add(m);
+    entry.water = m;
+  }
+  // Leaves: alpha-cutout foliage pass
+  const lg = world.makeMesh(groups.leaf);
+  if (lg) {
+    const m = new THREE.Mesh(lg, matLeaf);
+    m.position.set(0, 0, 0);
+    m.frustumCulled = true;
+    scene.add(m);
+    entry.leaf = m;
+  }
   meshes.set(key, entry);
 }
 
 function removeChunkMeshes(key) {
   const e = meshes.get(key);
   if (!e) return;
-  for (const m of [e.opaque, e.trans]) {
+  for (const m of [e.opaque, e.trans, e.water, e.leaf]) {
     if (!m) continue;
     scene.remove(m);
     m.geometry.dispose();
@@ -1339,6 +1375,27 @@ $('set-mobs').addEventListener('change', (e) => {
 });
 
 // ---------------------------------------------------------------------------
+// Water animation: gentle UV scroll on matWater each frame
+// ---------------------------------------------------------------------------
+// Accumulated world time (seconds) used to scroll the water texture offset.
+// The offset is guarded with optional chaining so the headless THREE stub
+// (which has no Vector2 / offset on CanvasTexture) doesn't throw.
+let _waterTime = 0;
+function updateWaterAnimation(dt) {
+  _waterTime += dt;
+  // Scroll diagonally: ~0.04 units/s horizontally, ~0.03 units/s vertically.
+  // Values wrap naturally because the texture uses RepeatWrapping.
+  const u = (_waterTime * 0.04) % 1;
+  const v = (_waterTime * 0.03) % 1;
+  // matWater.map is the waterTex CanvasTexture; in the browser it has an
+  // `offset` Vector2. In the headless stub it won't — guard safely.
+  if (matWater.map && matWater.map.offset && typeof matWater.map.offset.set === 'function') {
+    matWater.map.offset.set(u, v);
+    matWater.map.needsUpdate = false; // offset change doesn't require needsUpdate
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Day / night cycle
 // ---------------------------------------------------------------------------
 let dayTime = 0.28;
@@ -1350,6 +1407,8 @@ function updateDayNight(dt) {
   const light = 0.18 + 0.82 * sun;
   matOpaque.color.setRGB(light, light, light);
   matTrans.color.setRGB(light, light, light);
+  matWater.color.setRGB(light, light, light);
+  matLeaf.color.setRGB(light, light, light);
   const skyColor = NIGHT.clone().lerp(SKY_DAY, sun);
   scene.background.copy(skyColor);
   scene.fog.color.copy(skyColor);
@@ -1423,6 +1482,7 @@ function loop() {
   shakeMag *= 0.82;
   updateChunks();
   updateDayNight(dt);
+  updateWaterAnimation(dt);
   if (playing) updateAmbience(dt);
   updateFermentation();
   bakery.tick();
