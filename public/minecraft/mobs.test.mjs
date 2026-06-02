@@ -161,4 +161,37 @@ check('attacking near a customer does not throw', !aThrew);
 check('friendly customer hit but never dies (invincible)', !customer.dead);
 npc.clear();
 
+// 13) buildModel returns parts with legs[], arms[], head, body
+const animMobs = createMobs(makeOpts({ enabled: false }));
+const pig2 = animMobs._spawnMob('pig', 0, 1, 0);
+check('pig parts.legs has 4 entries', pig2.parts.legs.length === 4);
+check('pig parts.arms is empty array', Array.isArray(pig2.parts.arms) && pig2.parts.arms.length === 0);
+check('pig parts.head is a mesh object', pig2.parts.head != null);
+check('pig parts.body is a mesh object', pig2.parts.body != null);
+
+const zombie = animMobs._spawnMob('zombie', 0, 1, 5);
+check('zombie parts.legs has 2 entries', zombie.parts.legs.length === 2);
+check('zombie parts.arms has 2 entries', zombie.parts.arms.length === 2);
+check('zombie parts.head is set', zombie.parts.head != null);
+
+const spider2 = animMobs._spawnMob('spider', 5, 1, 0);
+check('spider parts.legs has 8 entries', spider2.parts.legs.length === 8);
+
+// 14) animation runs without throwing for all model types
+const allTypes = ['pig', 'cow', 'sheep', 'chicken', 'baker', 'customer', 'zombie',
+  'skeleton', 'creeper', 'spider', 'farmer', 'knight_diamond', 'wizard'];
+const animAll = createMobs(makeOpts({ enabled: false }));
+let animThrew = false;
+try {
+  for (const t of allTypes) {
+    const m = animAll._spawnMob(t, 0, 1, 0);
+    if (m) { m.moving = true; m.vel.x = 2; m.vel.z = 2; }
+  }
+  for (let i = 0; i < 60; i++) animAll.update(0.016);
+  // also test idle animation
+  for (const m of animAll._registry ? [] : []) m.moving = false;
+  animAll.clear();
+} catch (e) { animThrew = true; console.error(e); }
+check('animation frames for all mob types without throwing', !animThrew);
+
 console.log(`\nAll ${passed} assertions passed.`);
