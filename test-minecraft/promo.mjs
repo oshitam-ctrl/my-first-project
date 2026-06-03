@@ -1,13 +1,14 @@
-// promo.mjs — records a ~90s vertical (9:16) intro video of プチヘルメース.
-// Playwright records the whole page (3D + game UI + our injected telops). The
-// "edit" is a choreographed camera + telop timeline driven from here. Silent.
+// promo.mjs — records a ~15s vertical Instagram REEL of プチヘルメース.
+// The whole choreography (camera + kinetic captions) runs PAGE-SIDE on one clock
+// so visuals and text are always in sync. Hook-first, hard jump cuts, big text,
+// loop seam. Silent (add trending audio in IG). ffmpeg trims to ~15s.
 import { chromium } from 'playwright';
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-const W = 720, H = 1280;                 // 9:16
+const W = 720, H = 1280;
 const ROOT = path.resolve(import.meta.dirname, '../public');
 const OUTDIR = '/tmp/promo-vid';
 const MIME = { '.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.json':'application/json','.webmanifest':'application/manifest+json','.png':'image/png' };
@@ -22,156 +23,89 @@ const errs=[]; page.on('pageerror',e=>errs.push(e.message));
 await page.goto(`http://localhost:${port}/minecraft`,{waitUntil:'load'});
 await page.waitForTimeout(1200);
 
-// ── inject the "director": overlay DOM + camera tween + telop/card/fade ──────
 await page.evaluate(() => {
   const css = document.createElement('style');
   css.textContent = `
-    #hud{display:none!important;} /* hide FPS/XYZ debug line */
-    #crosshair,.crosshair{display:none!important;}
-    #pp{position:fixed;inset:0;z-index:2147483000;pointer-events:none;font-family:'Noto Sans JP','Hiragino Sans',sans-serif;}
-    #pp .lt{position:absolute;left:6%;right:6%;bottom:13%;text-align:center;opacity:0;transform:translateY(14px);
-      transition:opacity .5s ease,transform .5s ease;}
-    #pp .lt .box{display:inline-block;background:rgba(43,111,106,.92);color:#f3efe6;padding:14px 20px;border-radius:16px;
-      font-weight:800;font-size:30px;line-height:1.5;box-shadow:0 10px 30px rgba(0,0,0,.45);max-width:92%;
-      border:2px solid rgba(255,255,255,.18);}
-    #pp .lt .sub{display:block;font-size:20px;font-weight:600;opacity:.92;margin-top:6px;}
-    #pp .card{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
-      background:linear-gradient(160deg,#2f7870,#1e433f);color:#f6f1e7;opacity:0;transition:opacity .6s ease;text-align:center;padding:8%;}
-    #pp .card h1{font-size:52px;font-weight:900;margin:0;letter-spacing:.02em;}
-    #pp .card h2{font-size:30px;font-weight:700;margin:0;opacity:.95;}
-    #pp .card p{font-size:24px;margin:0;opacity:.9;}
-    #pp .card .pill{margin-top:8px;background:#f6f1e7;color:#1e433f;font-weight:800;font-size:24px;padding:12px 22px;border-radius:999px;}
-    #pp .card .url{font-size:21px;opacity:.95;background:rgba(0,0,0,.22);padding:8px 14px;border-radius:10px;}
-    #pp #blk{position:absolute;inset:0;background:#0c1413;opacity:0;transition:opacity .5s ease;}
-    #pp .vig{position:absolute;inset:0;box-shadow:inset 0 0 160px 40px rgba(0,0,0,.45);pointer-events:none;}
+    #hud,#topbar,#hotbar,#crosshair,.pp-hide{display:none!important;}
+    #pp{position:fixed;inset:0;z-index:2147483000;pointer-events:none;font-family:'Noto Sans JP','IPAGothic',sans-serif;}
+    #pp .vig{position:absolute;inset:0;box-shadow:inset 0 0 180px 50px rgba(0,0,0,.5);}
+    #blk{position:absolute;inset:0;background:#0c1413;opacity:0;transition:opacity .22s linear;}
+    #fl{position:absolute;inset:0;background:#fff;opacity:0;}
+    #kx{position:absolute;left:5%;right:5%;top:12%;text-align:center;opacity:0;transform:scale(1.22);}
+    #kx .t{display:inline-block;color:#fff;font-weight:900;font-size:50px;line-height:1.26;
+      text-shadow:0 0 2px #0e2e2a,3px 3px 0 #0e2e2a,-2px 2px 0 #0e2e2a,2px -2px 0 #0e2e2a,-2px -2px 0 #0e2e2a,0 8px 22px rgba(0,0,0,.6);}
+    #kx.big .t{font-size:62px;}
+    #kx .hl{color:#ffd24a;}
+    #cta{position:absolute;left:8%;right:8%;bottom:14%;text-align:center;opacity:0;transform:translateY(16px);transition:opacity .25s,transform .25s;}
+    #cta .pill{display:inline-block;background:#ffd24a;color:#143b37;font-weight:900;font-size:40px;padding:14px 26px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.45);}
+    #cta .s{display:block;color:#fff;font-weight:800;font-size:26px;margin-top:12px;text-shadow:0 2px 8px rgba(0,0,0,.7);}
   `;
   document.head.appendChild(css);
   const pp = document.createElement('div'); pp.id='pp';
-  pp.innerHTML = `<div class="vig"></div><div id="blk"></div>
-    <div class="lt"><span class="box"></span></div>
-    <div class="card"></div>`;
+  pp.innerHTML = `<div class="vig"></div><div id="blk"></div><div id="fl"></div><div id="kx"><span class="t"></span></div><div id="cta"></div>`;
   document.body.appendChild(pp);
-  const ltEl = pp.querySelector('.lt'), boxEl = pp.querySelector('.lt .box');
-  const cardEl = pp.querySelector('.card'), blk = pp.querySelector('#blk');
-  const ease = t => t<0.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
-  const P = {
-    cur:[8,33,-14,0,-0.03],
+  const kx=pp.querySelector('#kx'), kt=pp.querySelector('#kx .t'), blk=pp.querySelector('#blk'), fl=pp.querySelector('#fl'), cta=pp.querySelector('#cta');
+  const ease=t=>t<0.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+  const P={ cur:[8,32,-18,0,-0.05],
     set(a){ this.cur=a.slice(); window.__view&&window.__view(...a); },
-    moveTo(to,dur){ const from=this.cur.slice(); const t0=performance.now();
-      const step=()=>{ const k=Math.min(1,(performance.now()-t0)/dur); const e=ease(k);
-        const a=from.map((v,i)=>v+(to[i]-v)*e); this.cur=a; window.__view&&window.__view(...a);
-        if(k<1) requestAnimationFrame(step); }; requestAnimationFrame(step); },
-    lower(html){ boxEl.innerHTML=html; ltEl.style.opacity='1'; ltEl.style.transform='translateY(0)'; },
-    lowerClear(){ ltEl.style.opacity='0'; ltEl.style.transform='translateY(14px)'; },
-    card(html){ cardEl.innerHTML=html; cardEl.style.opacity='1'; },
-    cardOut(){ cardEl.style.opacity='0'; },
-    black(v){ blk.style.opacity=String(v); },
-    time(t){ window.__time&&window.__time(t); },
+    moveTo(to,dur){ const from=this.cur.slice(),t0=performance.now();
+      const st=()=>{ const k=Math.min(1,(performance.now()-t0)/dur),e=ease(k); this.cur=from.map((v,i)=>v+(to[i]-v)*e); window.__view&&window.__view(...this.cur); if(k<1)requestAnimationFrame(st); }; requestAnimationFrame(st); },
+    kick(html,big){ kx.classList.toggle('big',!!big); kt.innerHTML=html; kx.style.transition='none'; kx.style.opacity='0'; kx.style.transform='scale(1.22)'; void kx.offsetWidth; kx.style.transition='opacity .14s ease, transform .16s cubic-bezier(.2,1.5,.3,1)'; kx.style.opacity=html?'1':'0'; kx.style.transform='scale(1)'; },
+    flash(){ fl.style.transition='none'; fl.style.opacity='.82'; void fl.offsetWidth; fl.style.transition='opacity .16s linear'; fl.style.opacity='0'; },
+    cta(html){ cta.innerHTML=html; cta.style.opacity='1'; cta.style.transform='translateY(0)'; },
+    black(v){ blk.style.opacity=String(v); }, time(t){ window.__time&&window.__time(t); },
+    timeRamp(a,b,dur){ const s=performance.now(); const st=()=>{ const k=Math.min(1,(performance.now()-s)/dur); window.__time&&window.__time(a+(b-a)*k); if(k<1)requestAnimationFrame(st); }; requestAnimationFrame(st); },
   };
-  window.__pp = P;
+  window.__pp=P;
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  // The full reel on ONE page-side clock → camera & captions always coincide.
+  // Recorded SLOW & flash-free (reliable under swiftshader); ffmpeg speeds it up
+  // ~1.5x afterwards for the snappy reel. Bakery-focused (no far jumps / no
+  // day-night relight → no render stalls). CTA card is appended in post.
+  // Quick black-dip cuts between beats (≈0.35s): read as punchy jump cuts AND
+  // give the screencast encoder a low-entropy breath each beat (prevents the
+  // ~10s continuous-motion stall). Recorded medium-paced; ffmpeg snaps it up.
+  window.__reel = async function(){
+    const cut = async (cam,text,big,to,dur,hold)=>{ P.black(1); await sleep(170); P.set(cam); P.kick(text,big); P.black(0); if(to)P.moveTo(to,dur); await sleep(hold); };
+    P.black(0);
+    P.set([8,32,-18,0,-0.05]); P.kick(`実在のパン屋が、<br><span class="hl">まるごとゲームに</span>🥖`,true); P.moveTo([8,31.6,-20.6,0,-0.06],1800); await sleep(2000);
+    await cut([14.2,31,-31,0.10,-0.10], `<span class="hl">ブラウザで、無料。</span>`, false, [13.9,31,-33.8,-0.05,-0.12],1500, 1500);
+    await cut([14.3,31,-35.4,0.15,-0.17], `焼きたてが<span class="hl">ずらり</span>🍞`, false, [13.8,31,-34.8,-0.02,-0.13],1400, 1400);
+    await cut([14,31,-44,0,-0.03], `畑の野菜から<br><span class="hl">パンを焼ける</span>🔥`, false, [14,31,-46.3,0,-0.02],1400, 1450);
+    await cut([14,31,-33.5,0,-0.05], `お店で<span class="hl">売れる</span>🛍️`, false, [14,31,-34.8,0,-0.08],1400, 1450);
+    await cut([14.4,31,-35.6,0.16,-0.2], `看板は<span class="hl">カンパーニュ</span>`, false, [13.8,31,-35,-0.03,-0.15],1400, 1400);
+    await cut([14,31,-34.4,0,-0.06], `スマホで、<span class="hl">すぐ遊べる</span>`, false, [14,31,-35.6,0,-0.09],1400, 1450);
+    await cut([8,32,-18,0,-0.05], `ぜんぶ、<span class="hl">ブラウザで。</span>`, true, [8,31.6,-20.6,0,-0.06],1800, 2000);
+  };
 });
 
-// start the game hidden behind black, settle, then run the show
-await page.evaluate(()=>{ window.__pp.black(1); });
+await page.evaluate(()=>window.__pp.black(1));
 await page.click('#overlay',{timeout:60000}).catch(()=>{});
 await page.waitForSelector('#overlay',{state:'hidden',timeout:15000}).catch(()=>{});
-await page.waitForTimeout(2400); // settle: world built + game running before reveal
 await page.evaluate(()=>{
-  window.__time && window.__time(0.30);
-  // make the bake panel look active later
-  const g=window.__bakery; if(g){ g.give&&g.give('levain',3); g.give&&g.give('wheat',4); g.give&&g.give('flour',4); g.give&&g.give('surplus_veg',5); g.give&&g.give('ripe_fruit',2); g.give&&g.give('natural_yeast',1);}
-  window.__pp.set([8,33,-14,0,-0.03]);
+  window.__time&&window.__time(0.5);
+  window.__pp.set([8,32,-18,0,-0.05]); // park at the hook framing so chunks preload
+  setInterval(()=>{ for (const el of document.querySelectorAll('div')) {
+    if (el.id==='pp'||el.closest('#pp')) continue; const t=el.textContent||'';
+    if (/今日のしごと|パン屋|工房ボタン|右上の|店主に|こちら|本日のパン|規格外|店頭|いらっしゃ|ありがとう|ようこそ|どこ|集めよう|小麦/.test(t)) el.classList.add('pp-hide');
+  } }, 80);
 });
-
-const wait = (ms)=>page.waitForTimeout(ms);
-const ev = (fn,arg)=>page.evaluate(fn,arg);
-const moveTo=(to,dur)=>ev((a)=>window.__pp.moveTo(a.to,a.dur),{to,dur});
-const setCam=(a)=>ev((x)=>window.__pp.set(x),a);
-const lower=(h)=>ev((x)=>window.__pp.lower(x),h);
-const lowerClear=()=>ev(()=>window.__pp.lowerClear());
-const card=(h)=>ev((x)=>window.__pp.card(x),h);
-const cardOut=()=>ev(()=>window.__pp.cardOut());
-const black=(v)=>ev((x)=>window.__pp.black(x),v);
-const setTime=(t)=>ev((x)=>window.__time&&window.__time(x),t);
-const clickBtn=(emoji)=>ev((e)=>{ const b=[...document.querySelectorAll('#topbar button')].find(x=>x.textContent.trim()===e); if(b) b.click(); },emoji);
-const openShop=()=>ev(()=>window.__shop&&window.__shop.open());
-const closePanel=()=>ev(()=>{ const b=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='✕'&&x.offsetParent!==null); if(b)b.click(); });
-
-async function cut(toCam){ await black(1); await wait(150); await setCam(toCam); await wait(60); await black(0); }
+// preload chunks along the reel path so jumps don't stall the recording
+for (const c of [[14,31,-44,0,-0.05],[8,32,-18,0,-0.05]]) {
+  await page.evaluate(a=>window.__pp.set(a), c); await page.waitForTimeout(1300);
+}
+await page.waitForTimeout(2000); // settle on the hook framing
 
 try {
-  // (Title + outro cards are appended via ffmpeg; in-record is a brisk tour.)
-  // Brisk: fast camera moves (~3s), quick cuts, exterior + interior mixed.
-
-  // ── S1: APPROACH — fly across the yard to the school ──────────────────────
-  await setCam([8,34,7,0,-0.05]); await black(0);
-  await lower(`旧・南方小学校が、まるごとゲームに。`);
-  moveTo([8,32.5,-15,0,-0.04], 3400); await wait(3000); await lowerClear();
-
-  // ── S2: SCHOOLYARD LIFE — sweep past the townsfolk ────────────────────────
-  await cut([3,33.5,-2,0.0,-0.12]);
-  await lower(`校庭には、町の人たち。`);
-  moveTo([31,33.5,-5,0.0,-0.12], 3600); await wait(3200); await lowerClear();
-
-  // ── S3: THE FIELD — harvest the “rescued” veg ─────────────────────────────
-  await cut([-4,33,7,0,-0.18]);
-  await lower(`畑で“規格外野菜”を収穫。`);
-  moveTo([-4,31.8,-3,0,-0.30], 3200); await wait(2800); await lowerClear();
-
-  // ── S4: STOREFRONT — the sign & window ────────────────────────────────────
-  await cut([8,32,-18,0,-0.05]);
-  await lower(`天然酵母のパン屋、開店。`);
-  moveTo([8,31.6,-21,0,-0.07], 3000); await wait(2700); await lowerClear();
-
-  // ── S5: INTO THE SHOP — fly the aisle of cases ────────────────────────────
-  await cut([14.2,31,-31,0.10,-0.10]);
-  await lower(`ショーケースに、焼きたてがずらり。`);
-  moveTo([13.8,31,-34.3,-0.08,-0.13], 3400); await wait(3000); await lowerClear();
-
-  // ── S6: HERO CAMPAGNE + counter ───────────────────────────────────────────
-  await cut([14.4,31,-35.6,0.16,-0.2]);
-  await lower(`看板は、天然酵母のカンパーニュ。`);
-  moveTo([13.7,31,-35.0,-0.05,-0.16], 2800); await wait(2500); await lowerClear();
-
-  // ── S7: WORKSHOP — one-tap bake ───────────────────────────────────────────
-  await cut([14,31,-44,0,-0.03]);
-  await lower(`畑の恵みから、パンを焼く。`);
-  moveTo([14,31,-46.4,0,-0.02], 3000); await wait(1300);
-  await clickBtn('🥖'); await wait(2800); await closePanel(); await wait(600); await lowerClear();
-
-  // ── S8: CUSTOMERS — 対面販売 + buy ────────────────────────────────────────
-  await cut([14,31,-33.4,0,-0.05]);
-  await lower(`お客さんで賑わう、対面販売。`);
-  moveTo([14,31,-34.6,0,-0.08], 3200); await wait(1500);
-  await openShop(); await wait(2800); await closePanel(); await wait(600); await lowerClear();
-
-  // ── S9: CAFE South in North ───────────────────────────────────────────────
-  await cut([-19,31,-27.5,0,-0.10]);
-  await lower(`姉妹カフェ「South in North」も。`);
-  moveTo([-19,31,-30,0,-0.16], 3200); await wait(2900); await lowerClear();
-
-  // ── S10: EXTERIOR FLY — dolly along the old school ────────────────────────
-  await cut([-3,35,-17,0.35,-0.10]);
-  await lower(`旧校舎まるごと、地域の拠点。`);
-  moveTo([39,35,-17,0.35,-0.10], 4000); await wait(3600); await lowerClear();
-
-  // ── S11: SCHOOLYARD — day → evening timelapse ─────────────────────────────
-  await cut([8,40,16,0,-0.42]);
-  await lower(`夕暮れまで、のんびり。`);
-  moveTo([8,38,2,0,-0.34], 4200);
-  for (let i=0;i<=5;i++){ await setTime(0.32+i*0.03); await wait(700); }
-  await lowerClear();
-
-  // ── Closing aerial pull-up → black (OUTRO card appended via ffmpeg) ───────
-  moveTo([8,46,10,0,-0.5], 2600); await wait(1300);
-  await black(1); await wait(1700); // tail black (auto-detected for trimming)
-} catch(e){ console.log('director error:', e.message); }
+  await page.evaluate(()=>window.__reel());   // runs the whole reel, resolves when done
+  await page.evaluate(()=>window.__pp.black(1));
+  await page.waitForTimeout(600);
+} catch(e){ console.log('reel error:', e.message); }
 
 console.log('pageerrors:', errs.length, errs.slice(0,3).join(' | '));
-await page.waitForTimeout(300);
+await page.waitForTimeout(200);
 const video = page.video();
-await ctx.close(); // finalizes the webm
-const vpath = video ? await video.path() : null;
-console.log('VIDEO:', vpath);
+await ctx.close();
+console.log('VIDEO:', video ? await video.path() : null);
 await browser.close();
 await new Promise(r=>server.close(r));

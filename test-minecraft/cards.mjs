@@ -20,6 +20,10 @@ const cards = {
   '/tmp/outro.png': `<div class="emoji">🥖</div><h2>毎日食べたい、<br>幸せ酵母を。</h2>
      <div class="pill">▶ いますぐプレイ</div>
      <div class="url">my-first-project-lyart-phi.vercel.app/minecraft</div>`,
+  '/tmp/cta.png': `<div class="emoji">🥖</div><h1 style="font-size:50px">ブラウザで、無料。</h1>
+     <div class="pill">▶ 今すぐプレイ</div>
+     <p style="font-size:22px">🔖 保存して、あとで</p>
+     <div class="url">my-first-project-lyart-phi.vercel.app/minecraft</div>`,
 };
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport:{width:720,height:1280}, deviceScaleFactor:1 });
