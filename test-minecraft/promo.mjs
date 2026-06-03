@@ -97,63 +97,73 @@ const clickBtn=(emoji)=>ev((e)=>{ const b=[...document.querySelectorAll('#topbar
 const openShop=()=>ev(()=>window.__shop&&window.__shop.open());
 const closePanel=()=>ev(()=>{ const b=[...document.querySelectorAll('button')].find(x=>x.textContent.trim()==='✕'&&x.offsetParent!==null); if(b)b.click(); });
 
-async function cut(toCam){ await black(1); await wait(300); await setCam(toCam); await wait(120); await black(0); }
+async function cut(toCam){ await black(1); await wait(150); await setCam(toCam); await wait(60); await black(0); }
 
 try {
-  // ── Scene 1: TITLE (push toward facade, dawn) ─────────────────────────────
-  await setCam([8,33,-14,0,-0.02]);
-  await black(0);
-  await card(`<h1>🥖 プチヘルメース</h1><h2>ブラウザで遊べる、パン屋さんの物語</h2>`);
-  moveTo([8,32,-19,0,-0.04], 5200);
-  await wait(3600); await cardOut(); await wait(1500);
+  // (Title + outro cards are appended via ffmpeg; in-record is a brisk tour.)
+  // Brisk: fast camera moves (~3s), quick cuts, exterior + interior mixed.
 
-  // ── Scene 2: STOREFRONT ───────────────────────────────────────────────────
-  await lower(`天然酵母のパン屋<span class="sub">旧・南方小学校が、ゲームの世界に。</span>`);
-  moveTo([8,31.7,-21.3,0,-0.06], 7000);
-  await wait(7000); await lowerClear();
+  // ── S1: APPROACH — fly across the yard to the school ──────────────────────
+  await setCam([8,34,7,0,-0.05]); await black(0);
+  await lower(`旧・南方小学校が、まるごとゲームに。`);
+  moveTo([8,32.5,-15,0,-0.04], 3400); await wait(3000); await lowerClear();
 
-  // ── Scene 3: INTO THE SHOP — fly down the aisle of cases ──────────────────
+  // ── S2: SCHOOLYARD LIFE — sweep past the townsfolk ────────────────────────
+  await cut([3,33.5,-2,0.0,-0.12]);
+  await lower(`校庭には、町の人たち。`);
+  moveTo([31,33.5,-5,0.0,-0.12], 3600); await wait(3200); await lowerClear();
+
+  // ── S3: THE FIELD — harvest the “rescued” veg ─────────────────────────────
+  await cut([-4,33,7,0,-0.18]);
+  await lower(`畑で“規格外野菜”を収穫。`);
+  moveTo([-4,31.8,-3,0,-0.30], 3200); await wait(2800); await lowerClear();
+
+  // ── S4: STOREFRONT — the sign & window ────────────────────────────────────
+  await cut([8,32,-18,0,-0.05]);
+  await lower(`天然酵母のパン屋、開店。`);
+  moveTo([8,31.6,-21,0,-0.07], 3000); await wait(2700); await lowerClear();
+
+  // ── S5: INTO THE SHOP — fly the aisle of cases ────────────────────────────
   await cut([14.2,31,-31,0.10,-0.10]);
-  await lower(`ショーケースには、<span class="sub">バゲット・カンパーニュ・クロワッサン。</span>`);
-  moveTo([13.8,31,-34.4,-0.10,-0.13], 6800);
-  await wait(6900); await lowerClear();
+  await lower(`ショーケースに、焼きたてがずらり。`);
+  moveTo([13.8,31,-34.3,-0.08,-0.13], 3400); await wait(3000); await lowerClear();
 
-  // ── Scene 4: HERO CAMPAGNE + counter ──────────────────────────────────────
+  // ── S6: HERO CAMPAGNE + counter ───────────────────────────────────────────
+  await cut([14.4,31,-35.6,0.16,-0.2]);
   await lower(`看板は、天然酵母のカンパーニュ。`);
-  moveTo([14.4,31,-35,0.14,-0.22], 6000);
-  await wait(6100); await lowerClear();
+  moveTo([13.7,31,-35.0,-0.05,-0.16], 2800); await wait(2500); await lowerClear();
 
-  // ── Scene 5: WORKSHOP + one-tap bake panel ────────────────────────────────
-  await cut([14,31,-43,0,-0.04]);
-  await lower(`畑の“規格外野菜”から酵母をおこして焼く<span class="sub">— もったいないを、おいしいに。</span>`);
-  moveTo([14,31,-46,0,-0.02], 7500);
-  await wait(1800);
-  await clickBtn('🥖'); await wait(3600); await closePanel(); // open then close bake panel
-  await wait(1500); await lowerClear();
+  // ── S7: WORKSHOP — one-tap bake ───────────────────────────────────────────
+  await cut([14,31,-44,0,-0.03]);
+  await lower(`畑の恵みから、パンを焼く。`);
+  moveTo([14,31,-46.4,0,-0.02], 3000); await wait(1300);
+  await clickBtn('🥖'); await wait(2800); await closePanel(); await wait(600); await lowerClear();
 
-  // ── Scene 6: CUSTOMERS + counter (baker greet + price card) + buy panel ───
-  await cut([14,31,-33.6,0,-0.05]);
-  await lower(`お客さんで賑わう、対面販売。<span class="sub">「いらっしゃいませ！」</span>`);
-  moveTo([14,31,-34.6,0,-0.08], 8000);
-  await wait(2400); await openShop(); await wait(3600); await closePanel();
-  await wait(1300); await lowerClear();
+  // ── S8: CUSTOMERS — 対面販売 + buy ────────────────────────────────────────
+  await cut([14,31,-33.4,0,-0.05]);
+  await lower(`お客さんで賑わう、対面販売。`);
+  moveTo([14,31,-34.6,0,-0.08], 3200); await wait(1500);
+  await openShop(); await wait(2800); await closePanel(); await wait(600); await lowerClear();
 
-  // ── Scene 7: CAFE South in North ──────────────────────────────────────────
+  // ── S9: CAFE South in North ───────────────────────────────────────────────
   await cut([-19,31,-27.5,0,-0.10]);
   await lower(`姉妹カフェ「South in North」も。`);
-  moveTo([-19,31,-30,0,-0.16], 7000);
-  await wait(7100); await lowerClear();
+  moveTo([-19,31,-30,0,-0.16], 3200); await wait(2900); await lowerClear();
 
-  // ── Scene 8: SCHOOLYARD — aerial, day → evening timelapse ─────────────────
-  await cut([8,45,20,0,-0.5]);
-  await lower(`広い校庭で、夕暮れまでのんびり。`);
-  moveTo([8,42,6,0,-0.42], 8000);
-  for (let i=0;i<=7;i++){ await setTime(0.30+i*0.024); await wait(900); }
+  // ── S10: EXTERIOR FLY — dolly along the old school ────────────────────────
+  await cut([-3,35,-17,0.35,-0.10]);
+  await lower(`旧校舎まるごと、地域の拠点。`);
+  moveTo([39,35,-17,0.35,-0.10], 4000); await wait(3600); await lowerClear();
+
+  // ── S11: SCHOOLYARD — day → evening timelapse ─────────────────────────────
+  await cut([8,40,16,0,-0.42]);
+  await lower(`夕暮れまで、のんびり。`);
+  moveTo([8,38,2,0,-0.34], 4200);
+  for (let i=0;i<=5;i++){ await setTime(0.32+i*0.03); await wait(700); }
   await lowerClear();
 
-  // ── Closing aerial pull-up → black (the OUTRO card is appended via ffmpeg) ─
-  moveTo([8,48,12,0,-0.5], 4500);
-  await wait(2400);
+  // ── Closing aerial pull-up → black (OUTRO card appended via ffmpeg) ───────
+  moveTo([8,46,10,0,-0.5], 2600); await wait(1300);
   await black(1); await wait(1700); // tail black (auto-detected for trimming)
 } catch(e){ console.log('director error:', e.message); }
 
