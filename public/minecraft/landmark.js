@@ -465,47 +465,39 @@ export function buildPetitHermes(stamp, B) {
   // CALCITE "price tag" accents east of passageway on teal wall (decorative)
   for (let kx = 52; kx <= 55; kx += 2) stamp(kx, 4, bkPartZ, B.CALCITE);
 
-  // ── SALES COUNTER (SPRUCE_PLANKS bar) — 対面販売 counter at z=18 ──────────
+  // ── SALES COUNTER — 対面販売 counter at z=18, ONE block tall (waist height) ─
   // You step in through the door (x49..50, z=20), stand in the z=19 lobby, and
-  // face a WAIST-HIGH counter (1 block tall) with bread + equipment on top at
-  // EYE LEVEL (y=3). A 1-wide pass-through at the WEST end (x46) — off the
-  // entrance sightline — lets you slip behind to the sales floor and workshop.
-  // West counter arm (x47..48, z=18, y2 only) — baker stands behind at x47, z=17
-  fillBox(bkX0 + 1, 2, counterZ, 48, 2, counterZ, B.SPRUCE_PLANKS);
-  // Centre span x49..51 — 1-block-tall counter front, dead ahead of the door
-  fillBox(49, 2, counterZ, 51, 2, counterZ, B.SPRUCE_PLANKS);
-  // East counter arm (x52..55) — base for the taller glass display case above
-  fillBox(52, 2, counterZ, bkX1 - 1, 3, counterZ, B.SPRUCE_PLANKS);
+  // LOOK DOWN onto the counter: the bread + equipment sit at y=2 (top y=32,
+  // ~0.6 below eye), so you can see the whole spread and over the counter into
+  // the shop. A 1-wide pass-through at the WEST end (x46) lets you slip behind.
+  // Spruce base row at y=2 (the display items below overwrite x47..51; any
+  // gap stays a plain plank counter).
+  fillBox(bkX0 + 1, 2, counterZ, 51, 2, counterZ, B.SPRUCE_PLANKS);
+  // East counter arm (x52..55) — base for the low glass display case above
+  fillBox(52, 2, counterZ, bkX1 - 1, 2, counterZ, B.SPRUCE_PLANKS);
 
-  // ── GLASS-FRONTED DISPLAY CASE (core bakery feature) ────────────────────
-  // Structure at z=18..19, x=52..55:
-  //   z=19, y=2..4 → GLASS front panel (what customers see from corridor)
-  //   z=19, y=2, x=52 → SPRUCE west side wall of case
-  //   z=18, y=2..4 → BREAD loaves packed in two tiers behind the glass
-  //   z=18..19, y=4 → CALCITE "marble" display surface / case top
-  // GLASS front (overwrites the counter top on z=19 for x52..55)
-  fillBox(52, 2, counterZ, bkX1 - 1, 4, counterZ, B.GLASS);
-  // West case wall (solid spruce at x=52)
-  fillBox(52, 2, counterZ, 52, 4, counterZ, B.SPRUCE_PLANKS);
-  // BREAD loaves inside the case (z=18, two rows: lower y=2, upper y=3)
-  for (let cx2 = 53; cx2 <= bkX1 - 1; cx2++) {
-    stamp(cx2, 2, counterZ - 1, B.BREAD); // bottom row of loaves (visible thru glass)
-    stamp(cx2, 3, counterZ - 1, B.BREAD); // upper row of loaves
-  }
-  // BREAD also on top of the display surface (y=4 at z=18, "tray" visible over case top)
-  for (let cx2 = 53; cx2 <= bkX1 - 1; cx2++) stamp(cx2, 4, counterZ - 1, B.BREAD);
-  // CALCITE case top / marble counter surface
-  fillBox(52, 4, counterZ, bkX1 - 1, 4, counterZ, B.CALCITE);
+  // ── GLASS-FRONTED DISPLAY CASE (low, so you can see over it) ─────────────
+  // Lowered to 2 blocks: GLASS front at y=2..3, CALCITE "marble" top at y=3,
+  // BREAD loaves behind the glass at y=2 (z=17). Top at y=33, just at eye line.
+  // GLASS front (x53..55, z=18, y2..3)
+  fillBox(53, 2, counterZ, bkX1 - 1, 3, counterZ, B.GLASS);
+  // West case wall (solid spruce at x=52, y2..3)
+  fillBox(52, 2, counterZ, 52, 3, counterZ, B.SPRUCE_PLANKS);
+  // BREAD loaves inside the case (z=17, one row at y=2, visible thru the glass)
+  for (let cx2 = 53; cx2 <= bkX1 - 1; cx2++) stamp(cx2, 2, counterZ - 1, B.BREAD);
+  // CALCITE case top / marble surface (x52..55, z=18, y=3)
+  fillBox(52, 3, counterZ, bkX1 - 1, 3, counterZ, B.CALCITE);
 
-  // ── COUNTER TOP: bread + equipment at EYE LEVEL (y=3, on the 1-block counter)
+  // ── COUNTER DISPLAY: bread + equipment at WAIST height (y=2, look DOWN on it)
   // Authentic 対面販売 spread, read left-to-right by someone in the z=19 lobby:
   // loaf · scale · REGISTER (the pay point, dead ahead) · jar · loaf.
-  // (x46 is left clear — it becomes the side pass-through carved below.)
-  stamp(47, 3, counterZ, B.BREAD);     // fresh loaf in front of the baker
-  if (B.SCALE != null) stamp(48, 3, counterZ, B.SCALE);       // はかり (量り売り)
-  if (B.REGISTER != null) stamp(49, 3, counterZ, B.REGISTER); // レジ —会計位置
-  if (B.JAR != null) stamp(50, 3, counterZ, B.JAR);           // 保存瓶 beside register
-  stamp(51, 3, counterZ, B.BREAD);     // loaf bridging toward the glass case
+  // These sit at y=2 (on the 1-block counter), top y=32 ≈ 0.6 below eye, so the
+  // whole counter is visible. (x46 is the side pass-through carved below.)
+  stamp(47, 2, counterZ, B.BREAD);     // fresh loaf in front of the baker
+  if (B.SCALE != null) stamp(48, 2, counterZ, B.SCALE);       // はかり (量り売り)
+  if (B.REGISTER != null) stamp(49, 2, counterZ, B.REGISTER); // レジ —会計位置
+  if (B.JAR != null) stamp(50, 2, counterZ, B.JAR);           // 保存瓶 beside register
+  stamp(51, 2, counterZ, B.BREAD);     // loaf bridging toward the glass case
 
   // ── SIDE PASS-THROUGH: 1-wide gap at the WEST end (x46, z=18) ──────────────
   // Off the entrance sightline. Lets the player slip behind the counter →
