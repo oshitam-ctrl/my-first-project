@@ -71,6 +71,11 @@ const T = {
   lantern: 60,   // glowing lantern tile (warm amber)
   bread_top:  61, // bread loaf — golden-brown crusty top with a score slash
   bread_side: 62, // bread loaf — warm crumb/crust side face
+  register_front: 63, // cash register — body + LCD display + key grid + drawer
+  register_side:  64, // cash register — plain body side with drawer seam
+  scale_top:      65, // kitchen scale — round dial seen from above on the pan
+  scale_side:     66, // kitchen scale — metal base + dial + pan lip
+  jar_side:       67, // glass canister — clear body, lid band, flour contents
 };
 
 // Block definitions. `faces` = [top, bottom, side] tile indices.
@@ -130,6 +135,10 @@ export const BLOCKS = {
   // 56 = BREAD — a basket/tray of fresh artisan loaves for display in the bakery.
   // top face: golden crust with score; bottom: dark pan base; sides: warm crumb.
   56: { name: 'Bread', faces: [T.bread_top, T.bread_top, T.bread_side], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  // 57/58/59 = bakery counter equipment (対面販売 service counter props).
+  57: { name: 'Register', faces: [T.register_front, T.register_side, T.register_side], solid: true, opaque: true, hardness: 0.6, tool: null, tier: null },
+  58: { name: 'Scale', faces: [T.scale_top, T.scale_side, T.scale_side], solid: true, opaque: true, hardness: 0.6, tool: null, tier: null },
+  59: { name: 'Jar', faces: [T.jar_side, T.jar_side, T.jar_side], solid: true, opaque: false, hardness: 0.3, tool: null, tier: null, drop: null },
   49: { name: 'Bookshelf', faces: [T.bookshelf, T.bookshelf, T.bookshelf], solid: true, opaque: true, hardness: 1.5, tool: 'axe', tier: null },
   50: { name: 'Hay Bale', faces: [T.hay_bale, T.hay_bale, T.hay_bale], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
   51: { name: 'Spruce Planks', faces: [T.spruce_planks, T.spruce_planks, T.spruce_planks], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
@@ -634,6 +643,104 @@ const painters = {
     // highlight along bottom of top crust (golden where bread rises)
     c.fillStyle = 'rgba(228, 185, 80, 0.55)';
     c.fillRect(1, 3, TILE - 2, 2);
+  },
+
+  // register_front: cash register face — dark charcoal body, a mint LCD display
+  // up top, a 3×2 key grid below, and a drawer seam with a brass knob.
+  [T.register_front]: (c) => {
+    noisePx(c, [70, 72, 80], 12);              // dark charcoal body
+    // mint LCD display window (top third)
+    c.fillStyle = 'rgba(150, 210, 180, 0.92)';
+    c.fillRect(3, 2, 10, 4);
+    c.strokeStyle = 'rgba(28, 30, 36, 0.9)';   // dark bezel
+    c.lineWidth = 1;
+    c.strokeRect(3, 2, 10, 4);
+    // key grid — 3 columns × 2 rows of pale buttons
+    c.fillStyle = 'rgba(202, 202, 208, 0.88)';
+    for (const ky of [9, 12]) for (const kx of [3, 7, 11]) c.fillRect(kx, ky, 2, 2);
+    // drawer seam near the bottom + brass knob
+    c.strokeStyle = 'rgba(28, 28, 34, 0.9)';
+    c.beginPath();
+    c.moveTo(1, 14.5);
+    c.lineTo(15, 14.5);
+    c.stroke();
+    c.fillStyle = 'rgba(206, 168, 86, 0.95)';  // brass pull
+    c.fillRect(7, 15, 2, 1);
+    // warm rim highlight on the top edge
+    c.fillStyle = 'rgba(255, 255, 255, 0.10)';
+    c.fillRect(0, 0, TILE, 1);
+  },
+
+  // register_side: plain charcoal body with the drawer seam + a soft highlight.
+  [T.register_side]: (c) => {
+    noisePx(c, [70, 72, 80], 12);
+    c.strokeStyle = 'rgba(28, 28, 34, 0.9)';
+    c.lineWidth = 1;
+    c.beginPath();
+    c.moveTo(1, 14.5);
+    c.lineTo(15, 14.5);
+    c.stroke();
+    c.fillStyle = 'rgba(255, 255, 255, 0.08)'; // vertical body highlight
+    c.fillRect(2, 1, 1, 13);
+  },
+
+  // scale_top: brushed-metal weighing pan seen from above with a round dial
+  // ring and a red pointer needle.
+  [T.scale_top]: (c) => {
+    noisePx(c, [205, 208, 212], 10);           // brushed metal pan
+    c.strokeStyle = 'rgba(120, 125, 130, 0.9)';// dial ring
+    c.lineWidth = 1.5;
+    c.beginPath();
+    c.arc(8, 8, 6, 0, Math.PI * 2);
+    c.stroke();
+    c.fillStyle = 'rgba(236, 238, 241, 0.6)';  // pale pan centre
+    c.beginPath();
+    c.arc(8, 8, 4, 0, Math.PI * 2);
+    c.fill();
+    c.strokeStyle = 'rgba(200, 40, 40, 0.9)';  // red needle to upper-right
+    c.lineWidth = 1;
+    c.beginPath();
+    c.moveTo(8, 8);
+    c.lineTo(11, 5);
+    c.stroke();
+  },
+
+  // scale_side: metal column with a darker base block, a round dial face up top
+  // (white face + red needle), and a thin pan lip across the top.
+  [T.scale_side]: (c) => {
+    noisePx(c, [180, 184, 190], 12);           // metal body
+    c.fillStyle = 'rgba(120, 124, 130, 0.9)';  // darker base block
+    c.fillRect(2, 11, 12, 4);
+    c.fillStyle = 'rgba(232, 234, 238, 0.85)'; // pan lip
+    c.fillRect(1, 1, 14, 2);
+    c.strokeStyle = 'rgba(110, 115, 120, 0.9)';// dial ring
+    c.lineWidth = 1;
+    c.beginPath();
+    c.arc(8, 6, 4, 0, Math.PI * 2);
+    c.stroke();
+    c.fillStyle = 'rgba(245, 246, 248, 0.85)'; // white dial face
+    c.beginPath();
+    c.arc(8, 6, 3, 0, Math.PI * 2);
+    c.fill();
+    c.strokeStyle = 'rgba(200, 40, 40, 0.9)';  // red needle
+    c.beginPath();
+    c.moveTo(8, 6);
+    c.lineTo(10, 4);
+    c.stroke();
+  },
+
+  // jar_side: glossy glass canister — faint glass tint, a warm cork/metal lid
+  // band, a golden flour fill in the lower half, and a bright specular streak.
+  [T.jar_side]: (c) => {
+    noisePx(c, [190, 215, 222], 8);            // faint glass tint
+    c.fillStyle = 'rgba(220, 238, 242, 0.45)'; // glass body inset
+    c.fillRect(2, 3, 12, 11);
+    c.fillStyle = 'rgba(220, 180, 110, 0.5)';  // flour/sugar contents, lower half
+    c.fillRect(3, 8, 10, 6);
+    c.fillStyle = 'rgba(150, 120, 70, 0.92)';  // cork/metal lid band
+    c.fillRect(2, 1, 12, 3);
+    c.fillStyle = 'rgba(255, 255, 255, 0.5)';  // specular highlight streak
+    c.fillRect(4, 4, 2, 8);
   },
 };
 

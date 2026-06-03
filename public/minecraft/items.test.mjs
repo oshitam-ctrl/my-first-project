@@ -58,7 +58,7 @@ assert.strictEqual(isFood('apple'), true, 'apple is food');
 
 // Counts
 assert.strictEqual(toolCount, 16, 'exactly 16 tools (16 base)');
-assert.strictEqual(blockCount, 53, 'exactly 53 block items (52 original + bread_block)');
+assert.strictEqual(blockCount, 56, 'exactly 56 block items (52 original + bread_block + register + scale + jar)');
 assert.strictEqual(foodCount, 23, 'exactly 23 food items');
 
 // Petit Hermès signature items
@@ -135,6 +135,19 @@ assert.ok(ITEMS.bread_block.desc.includes('パン'), 'bread_block desc mentions 
 // bread_block is décor, not food
 assert.strictEqual(ITEMS.bread_block.food, undefined, 'bread_block has no food property');
 
+// New bakery counter equipment block-items (register / scale / jar)
+assert.ok(ITEMS.register && ITEMS.register.block === 57, 'register item maps to block 57');
+assert.strictEqual(blockToItem(57), 'register', 'blockToItem(57) round-trips to register');
+assert.ok(ITEMS.register.name.includes('レジ'), 'register name is レジ');
+assert.strictEqual(ITEMS.register.food, undefined, 'register has no food property');
+assert.ok(ITEMS.scale && ITEMS.scale.block === 58, 'scale item maps to block 58');
+assert.strictEqual(blockToItem(58), 'scale', 'blockToItem(58) round-trips to scale');
+assert.ok(ITEMS.scale.name.includes('はかり'), 'scale name is はかり');
+assert.ok(ITEMS.jar && ITEMS.jar.block === 59, 'jar item maps to block 59');
+assert.strictEqual(blockToItem(59), 'jar', 'blockToItem(59) round-trips to jar');
+assert.ok(ITEMS.jar.name.includes('保存瓶'), 'jar name is 保存瓶');
+
 console.log(`OK: ${ids.length} items (${blockCount} blocks, ${toolCount} tools, ${foodCount} food)`);
 console.log('OK: desc field assertions passed');
 console.log('OK: bread_block assertions passed');
+console.log('OK: register/scale/jar block-item assertions passed');

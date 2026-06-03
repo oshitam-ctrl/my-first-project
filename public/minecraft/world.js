@@ -13,6 +13,9 @@ const LB = {
   WATER: 7, WHEAT_CROP: 53, VEG_CROP: 54, FURNACE: 21, CRAFTING_TABLE: 20, PLANK: 9, PUMPKIN: 14,
   LANTERN: 55,
   BREAD: 56,   // artisan bread block — golden loaf for bakery display/shelves
+  REGISTER: 57, // レジ — cash register, bakery counter equipment
+  SCALE: 58,    // はかり — kitchen scale, bakery counter equipment
+  JAR: 59,      // 保存瓶 — glass canister/jar for the counter top
 };
 // Fixed world placement of the Petit Hermès landmark (centred in front of spawn).
 // Chosen so the entrance is at world x=8 and the facade plane at world z=-24
