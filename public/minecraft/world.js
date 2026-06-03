@@ -16,6 +16,12 @@ const LB = {
   REGISTER: 57, // レジ — cash register, bakery counter equipment
   SCALE: 58,    // はかり — kitchen scale, bakery counter equipment
   JAR: 59,      // 保存瓶 — glass canister/jar for the counter top
+  BAGUETTE: 60, // バゲット display loaf
+  CAMPAGNE: 61, // カンパーニュ (看板) display boule
+  PASTRY: 62,   // クロワッサン display pastry
+  OPEN_SIGN: 65, // 営業中 OPEN sign
+  SHOP_SIGN: 63, // 店名サイン shop-name sign
+  AFRAME: 64,    // A型黒板 sidewalk chalkboard
 };
 // Fixed world placement of the Petit Hermès landmark (centred in front of spawn).
 // Chosen so the entrance is at world x=8 and the facade plane at world z=-24

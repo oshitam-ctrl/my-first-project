@@ -30,7 +30,7 @@ export function createAudio() {
   let waterGain = null;      // river bed level (only audible near water)
   let birdGain = null;       // sub-gain birds route through (scaled by night/indoor)
   // Current scene -> target levels. Updated by setAmbienceScene().
-  let scene = { outdoor: true, nearWater: false, night: false };
+  let scene = { outdoor: true, nearWater: false, night: false, inBakery: false };
   // Per-layer target gains derived from the scene (set in applyAmbienceScene).
   let ambTargets = { master: 1, insect: 0.05, wind: 0.06, water: 0, bird: 1 };
 
@@ -321,11 +321,12 @@ export function createAudio() {
   // night -> fewer birds (handled in scheduler) + a touch more insects.
   function applyAmbienceScene() {
     const indoorMul = scene.outdoor ? 1 : 0.18; // muffle beds when inside
-    ambTargets.master = scene.outdoor ? 1 : 0.5;
+    // Inside the bakery: a touch warmer/cosier than a bare indoor space.
+    ambTargets.master = scene.outdoor ? 1 : (scene.inBakery ? 0.6 : 0.5);
     ambTargets.insect = (scene.night ? 0.09 : 0.05) * indoorMul;
     ambTargets.wind = 0.06 * indoorMul;
     ambTargets.water = (scene.nearWater ? 0.08 : 0.0) * indoorMul;
-    ambTargets.bird = scene.outdoor ? 1 : 0.25;
+    ambTargets.bird = scene.outdoor ? 1 : (scene.inBakery ? 0.12 : 0.25);
     rampAmbience();
   }
 
@@ -413,6 +414,7 @@ export function createAudio() {
       if ('outdoor' in opts) scene.outdoor = !!opts.outdoor;
       if ('nearWater' in opts) scene.nearWater = !!opts.nearWater;
       if ('night' in opts) scene.night = !!opts.night;
+      if ('inBakery' in opts) scene.inBakery = !!opts.inBakery;
       applyAmbienceScene();
     },
 
@@ -517,6 +519,15 @@ export function createAudio() {
       const t0 = ctx.currentTime;
       blip('triangle', 523 * vary(0.02), 0.22, 0.004, 0.16, t0);        // C5
       blip('sine', 784 * vary(0.02), 0.18, 0.004, 0.22, t0 + 0.09);     // G5
+    },
+
+    // chime = shop door bell "カランコロン": two bright sine notes + warm body.
+    chime() {
+      if (!enabled || !ensure()) return;
+      const t0 = ctx.currentTime;
+      blip('sine', 1318 * vary(0.01), 0.20, 0.003, 0.28, t0);          // E6
+      blip('sine', 1976 * vary(0.01), 0.16, 0.003, 0.36, t0 + 0.11);   // B6 shimmer
+      blip('triangle', 659 * vary(0.01), 0.10, 0.004, 0.40, t0);       // warm body
     },
 
     // pop = a soft bubble "ぷくっ" (fermentation matured): quick upward sine.

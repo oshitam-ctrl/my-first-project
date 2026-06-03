@@ -14,6 +14,7 @@ import { createSky } from './sky.js';
 import { itemDef, blockToItem, isFood } from './items.js';
 import { createFermentation } from './fermentation.js';
 import { createBakery } from './bakery.js';
+import { createShop, SHOP_STOCK } from './shop.js';
 import { createGuide } from './guide.js';
 
 // ---------------------------------------------------------------------------
@@ -1403,6 +1404,18 @@ if (settings.mobs !== false) {
     const m = mobs.spawnAt(type, x, 31, z);
     if (m) { m.npcName = name; m.npcLine = line; customers.push(m); }
   }
+  // ── Customers INSIDE the bakery — browsing the cases (the shop feels alive) ──
+  // World coords on the browse floor (x10..19, z-35..-31). Tethered to an anchor
+  // so they mill near a display without pathfinding into walls/counter.
+  const SHOP_GUESTS = [
+    ['customer', 11, -33, 'ご近所の奥さん', 'このカンパーニュ、美味しそう…どれにしようかしら🍞'],
+    ['customer', 18, -34, '常連の大学生', 'バゲット、外はパリッ、中はもっちりなんだよね🥖'],
+    ['child',    15, -32, 'ゆうき',       'クロワッサンのいいにおい！ねえ、これ買って〜🥐'],
+  ];
+  for (const [type, x, z, name, line] of SHOP_GUESTS) {
+    const m = mobs.spawnAt(type, x, 31, z);
+    if (m) { m.npcName = name; m.npcLine = line; m.shopGuest = true; m.anchor = { x, z }; customers.push(m); }
+  }
 }
 // nearest named yard NPC to the player (for proximity speech bubbles)
 function nearestNpc(maxD) {
@@ -1450,6 +1463,21 @@ Object.assign(speechEl.style, {
   fontSize: '14px', lineHeight: '1.5', textAlign: 'center', boxShadow: '0 6px 20px rgba(0,0,0,.4)', pointerEvents: 'none',
 });
 document.body.appendChild(speechEl);
+// 🏷 price card — shown when the player is at the counter (legible product menu;
+// freeform in-world 3D text isn't feasible, so we surface prices as a HUD card).
+const priceCardEl = document.createElement('div');
+Object.assign(priceCardEl.style, {
+  position: 'fixed', right: 'calc(12px + env(safe-area-inset-right,0px))', top: '20%', zIndex: '7', display: 'none',
+  padding: '10px 13px', borderRadius: '12px', background: 'rgba(47,111,105,.94)', color: '#f3efe6',
+  font: '12px/1.7 system-ui,"Noto Sans JP",sans-serif', boxShadow: '0 6px 20px rgba(0,0,0,.4)',
+  pointerEvents: 'none', whiteSpace: 'pre',
+});
+document.body.appendChild(priceCardEl);
+function priceCardText() {
+  const lines = SHOP_STOCK.map((s) => `${itemDef(s.id)?.name || s.id} … 規格外野菜 ${s.cost}`);
+  return '🏷 本日のパン（規格外野菜と交換）\n' + lines.join('\n') + '\n🛍️ 右上のボタンで購入';
+}
+let wasInBakery = false; // edge-detect shop entry for the door chime + greeting
 const guide = createGuide(); // bottom-center wayfinding compass
 const BREADS = ['bread', 'campagne', 'baguette', 'pain_de_mie', 'rosemary_bread', 'apple_bread', 'fruit_bread', 'toast'];
 // Bakery doorway world position — the entrance to the shop bay (easier to find than the baker NPC deep inside).
@@ -1492,6 +1520,20 @@ function updateQuest() {
     if (npc) { speechEl.style.display = 'block'; speechEl.textContent = `🧑 ${npc.npcName}：${npc.npcLine}`; }
     else speechEl.style.display = 'none';
   }
+  // ── Door chime + いらっしゃいませ on entering the shop (rising edge) ──────────
+  const inBakery = playing && player.pos.x > 9 && player.pos.x < 20 && player.pos.z > -39 && player.pos.z < -30.5;
+  if (inBakery && !wasInBakery) {
+    sfx.resume(); sfx.chime && sfx.chime();
+    if (!nearBaker) { // don't stomp the baker's own line
+      speechEl.style.display = 'block';
+      speechEl.textContent = '👩‍🍳 いらっしゃいませ！プチヘルメースへようこそ🥖';
+      setTimeout(() => { if (speechEl.textContent.includes('ようこそ')) speechEl.style.display = 'none'; }, 3500);
+    }
+  }
+  wasInBakery = inBakery;
+  // ── Price card near the counter ─────────────────────────────────────────────
+  if (nearCounter()) { priceCardEl.style.display = 'block'; priceCardEl.textContent = priceCardText(); }
+  else priceCardEl.style.display = 'none';
   updateGuide(bread);
 }
 
@@ -1534,6 +1576,28 @@ const bakery = createBakery({
   const tb = document.getElementById('topbar');
   if (tb) tb.insertBefore(b, tb.firstChild);
 }
+
+// --- 店頭 (shop counter): the player-as-customer "buy bread" side ---
+const COUNTER = { x: 14.5, z: -34 }; // world centre of the counter/browse area
+function nearCounter() { return playing && Math.hypot(player.pos.x - COUNTER.x, player.pos.z - COUNTER.z) < 5.5; }
+const shop = createShop({
+  inv, sfx, toast, itemDef, particles,
+  onBuy: (id) => { if (settings.shake) shakeMag = 0.12; particles.burst(player.pos.x, player.pos.y + 1.2, player.pos.z, 0xffd9a8, 8, 1.8); },
+});
+// 🛍️ top-bar button opens the counter when you're standing at it.
+{
+  const b = document.createElement('button');
+  b.textContent = '🛍️'; b.title = '店頭で買う';
+  b.addEventListener('click', (e) => {
+    e.stopPropagation(); sfx.resume();
+    if (!playing) return;
+    if (nearCounter()) shop.open(); else toast('🛍️ カウンターに近づいてね');
+  });
+  const tb = document.getElementById('topbar');
+  if (tb) tb.insertBefore(b, tb.firstChild);
+}
+window.__shop = { open: () => shop.open(), buy: (id) => shop.__buy(id), isOpen: () => shop.isOpen() };
+
 // debug/verification hooks for the bakery loop (harmless in prod)
 window.__bakery = {
   give: (id, n = 1) => inv.collect(id, n),
@@ -1760,7 +1824,9 @@ function updateAmbience(dt) {
     for (let dz = -2; dz <= 2 && !nearWater; dz++)
       for (let dy = -1; dy <= 1; dy++)
         if (world.getBlock(px + dx, py + dy, pz + dz) === 7) { nearWater = true; break; }
-  sfx.setAmbienceScene({ outdoor: !indoor, nearWater, night: curSun < 0.25 });
+  // Inside the bakery bay → a warmer, cosier indoor bed (oven-shop ambience).
+  const inBakery = p.x > 9 && p.x < 20 && p.z > -49 && p.z < -30 && p.y >= 29 && p.y <= 36;
+  sfx.setAmbienceScene({ outdoor: !indoor, nearWater, night: curSun < 0.25, inBakery });
 }
 
 // ---------------------------------------------------------------------------

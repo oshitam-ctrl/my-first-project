@@ -58,7 +58,7 @@ assert.strictEqual(isFood('apple'), true, 'apple is food');
 
 // Counts
 assert.strictEqual(toolCount, 16, 'exactly 16 tools (16 base)');
-assert.strictEqual(blockCount, 56, 'exactly 56 block items (52 original + bread_block + register + scale + jar)');
+assert.strictEqual(blockCount, 62, 'exactly 62 block items (56 + baguette/campagne/pastry display + open/shop/a-frame signs)');
 assert.strictEqual(foodCount, 23, 'exactly 23 food items');
 
 // Petit Hermès signature items
@@ -146,6 +146,21 @@ assert.ok(ITEMS.scale.name.includes('はかり'), 'scale name is はかり');
 assert.ok(ITEMS.jar && ITEMS.jar.block === 59, 'jar item maps to block 59');
 assert.strictEqual(blockToItem(59), 'jar', 'blockToItem(59) round-trips to jar');
 assert.ok(ITEMS.jar.name.includes('保存瓶'), 'jar name is 保存瓶');
+
+// Product display blocks (baguette / campagne / pastry)
+assert.ok(ITEMS.baguette_disp && ITEMS.baguette_disp.block === 60, 'baguette_disp → 60');
+assert.strictEqual(blockToItem(60), 'baguette_disp', 'blockToItem(60) round-trips');
+assert.ok(ITEMS.campagne_disp && ITEMS.campagne_disp.block === 61, 'campagne_disp → 61');
+assert.strictEqual(blockToItem(61), 'campagne_disp', 'blockToItem(61) round-trips');
+assert.ok(ITEMS.pastry_disp && ITEMS.pastry_disp.block === 62, 'pastry_disp → 62');
+assert.strictEqual(blockToItem(62), 'pastry_disp', 'blockToItem(62) round-trips');
+// Storefront signage blocks (open / shop name / a-frame)
+assert.ok(ITEMS.open_sign && ITEMS.open_sign.block === 65, 'open_sign → 65');
+assert.strictEqual(blockToItem(65), 'open_sign', 'blockToItem(65) round-trips');
+assert.ok(ITEMS.shop_sign && ITEMS.shop_sign.block === 63, 'shop_sign → 63');
+assert.strictEqual(blockToItem(63), 'shop_sign', 'blockToItem(63) round-trips');
+assert.ok(ITEMS.aframe && ITEMS.aframe.block === 64, 'aframe → 64');
+assert.strictEqual(blockToItem(64), 'aframe', 'blockToItem(64) round-trips');
 
 console.log(`OK: ${ids.length} items (${blockCount} blocks, ${toolCount} tools, ${foodCount} food)`);
 console.log('OK: desc field assertions passed');
