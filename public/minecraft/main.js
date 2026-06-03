@@ -1391,7 +1391,7 @@ const NPC_ROSTER = [
   ['ninja', 40, -14,   '影', '……（校庭を見回し、こくりとうなずく）'],
 ];
 if (settings.mobs !== false) {
-  baker = mobs.spawnAt('baker', 11, 31, -33); // behind the counter (local 47,2,17), beside the side pass-through
+  baker = mobs.spawnAt('baker', 14, 31, -37); // behind the deep counter (local 50,2,13); customers reach it from the counter front (z=15)
   // Barista inside the "South in North" cafe room (local x17,y2,z11 → world -19,31,-39)
   barista = mobs.spawnAt('customer', -19, 31, -39);
   if (barista) {

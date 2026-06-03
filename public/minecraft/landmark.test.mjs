@@ -82,50 +82,66 @@ for (const [key, id] of grid) {
 }
 assert.ok(maxY < 35, `max solid y should be < 35 (parapet y=16), got ${maxY}`);
 
-// ── Baker cell is AIR: local (47,2,17) must be walkable (behind the counter) ──
-const bakerCell = get(47, 2, 17);
+// ── Baker cell is AIR: local (50,2,13) must be walkable (behind the deep counter)
+const bakerCell = get(50, 2, 13);
 assert.ok(
   bakerCell === B.AIR || bakerCell === -1,
-  `baker cell (47,2,17) must be AIR, got ${bakerCell}`
+  `baker cell (50,2,13) must be AIR, got ${bakerCell}`
 );
 
-// ── 対面販売 counter: ONE row back at z=18, leaving z=19 as a customer "lobby"
-//    you step into. The counter is ONE block tall (y=2) and made of the display
-//    goods, so you look DOWN onto it: (x49..50, z=18, y=2) must be SOLID, the
-//    row above (y=3) must be AIR (nothing towering above eye), and the lobby row
-//    z=19 must be walkable AIR. ─────────────────────────────────────────────
+// ── Service counter at z=14, ONE block tall (top y2), with the spacious browsing
+//    floor in front (z15..19). The counter front (x49..50, z=14) must be SOLID,
+//    the row above (y=3) must be AIR (look down onto it), and the floor a customer
+//    stands on (z=16) must be walkable AIR. ─────────────────────────────────────
 for (const wx of [49, 50]) {
-  assert.ok(get(wx, 2, 18) !== B.AIR && get(wx, 2, 18) !== -1, `bakery counter front (${wx},2,18) must be SOLID, got ${get(wx,2,18)}`);
-  assert.ok(get(wx, 3, 18) === B.AIR || get(wx, 3, 18) === -1, `above the low counter (${wx},3,18) must be AIR (nothing above eye), got ${get(wx,3,18)}`);
-  assert.ok(get(wx, 2, 19) === B.AIR || get(wx, 2, 19) === -1, `customer lobby (${wx},2,19) must be AIR, got ${get(wx,2,19)}`);
+  assert.ok(get(wx, 2, 14) !== B.AIR && get(wx, 2, 14) !== -1, `bakery counter front (${wx},2,14) must be SOLID, got ${get(wx,2,14)}`);
+  assert.ok(get(wx, 3, 14) === B.AIR || get(wx, 3, 14) === -1, `above the low counter (${wx},3,14) must be AIR, got ${get(wx,3,14)}`);
+  assert.ok(get(wx, 2, 16) === B.AIR || get(wx, 2, 16) === -1, `browsing floor (${wx},2,16) must be walkable AIR, got ${get(wx,2,16)}`);
 }
 
-// ── Side pass-through: the WEST end (x46, z=18) must be OPEN (AIR) so the player
-//    can still slip behind the counter to the sales floor and workshop. ────────
+// ── Counter staff gap: x52, z=14 must be OPEN (AIR) so the baker can step out. ──
 {
-  const c = get(46, 2, 18);
-  assert.ok(c === B.AIR || c === -1, `west-end counter pass-through (46,2,18) must be AIR, got ${c}`);
+  const c = get(52, 2, 14);
+  assert.ok(c === B.AIR || c === -1, `counter staff gap (52,2,14) must be AIR, got ${c}`);
 }
 
-// ── Equipment ON the low counter at WAIST height (y=2, z=18): REGISTER + SCALE. ─
+// ── Equipment ON the counter at WAIST height (y=2, z=14): REGISTER + SCALE. ─────
 let hasRegister = false, hasScale = false;
 for (let x = 46; x <= 55; x++) {
-  if (get(x, 2, 18) === B.REGISTER) hasRegister = true;
-  if (get(x, 2, 18) === B.SCALE) hasScale = true;
+  if (get(x, 2, 14) === B.REGISTER) hasRegister = true;
+  if (get(x, 2, 14) === B.SCALE) hasScale = true;
 }
-assert.ok(hasRegister, 'expected a REGISTER (id 57) on the low counter (y=2, z=18)');
-assert.ok(hasScale, 'expected a SCALE (id 58) on the low counter (y=2, z=18)');
+assert.ok(hasRegister, 'expected a REGISTER (id 57) on the counter (y=2, z=14)');
+assert.ok(hasScale, 'expected a SCALE (id 58) on the counter (y=2, z=14)');
 
-// ── Bakery SALES region has real interior AIR ─────────────────────────────────
-// sales zone: x46..55, y2..6, z12..18
-let airCount_sales = 0;
+// ── SPACIOUS browsing floor: lots of open AIR in front of the counter ─────────
+// browsing area: x46..55, y2..6, z15..19
+let airCount_browse = 0;
 for (let x = 46; x <= 55; x++)
   for (let y = 2; y <= 6; y++)
-    for (let z = 12; z <= 18; z++) {
+    for (let z = 15; z <= 19; z++) {
       const id = get(x, y, z);
-      if (id === B.AIR || id === -1) airCount_sales++;
+      if (id === B.AIR || id === -1) airCount_browse++;
     }
-assert.ok(airCount_sales > 200, `bakery sales region should have >200 AIR cells, got ${airCount_sales}`);
+assert.ok(airCount_browse > 180, `bakery browsing area should be SPACIOUS: >180 AIR cells in x46..55,y2..6,z15..19, got ${airCount_browse}`);
+
+// ── Hero カンパーニュ pedestal island (CALCITE base + BREAD loaf, centre floor) ─
+assert.ok(get(50, 2, 17) === B.CALCITE, `hero campagne pedestal base (50,2,17) must be CALCITE, got ${get(50,2,17)}`);
+assert.ok(get(50, 3, 17) === B.BREAD, `hero campagne loaf (50,3,17) must be BREAD, got ${get(50,3,17)}`);
+
+// ── 天然酵母 fermentation-jar feature: JAR/GLASS jars + teal lids on west shelf ─
+let jarFeature = 0, jarLids = 0;
+for (let z = 15; z <= 19; z++) {
+  if (get(45, 5, z) === B.JAR || get(45, 5, z) === B.GLASS) jarFeature++;
+  if (get(45, 6, z) === B.BLUE_WOOL) jarLids++;
+}
+assert.ok(jarFeature >= 3, `expected >=3 fermentation jars (JAR/GLASS) on the west shelf, got ${jarFeature}`);
+assert.ok(jarLids >= 3, `expected >=3 BLUE_WOOL jar lids, got ${jarLids}`);
+
+// ── Petit Hermès brand band: BREAD emblem on the teal partition band (x52..55,y5)
+let brandLoaf = false;
+for (let x = 52; x <= 55; x++) if (get(x, 5, 11) === B.BREAD) brandLoaf = true;
+assert.ok(brandLoaf, 'expected a BREAD brand emblem on the partition band (x52..55,y5,z11)');
 
 // ── Classroom interior floor >= 8×8 of OAK_PLANKS (Classroom 1: x12..21, z3..19) ─
 let floorCount = 0;
@@ -474,21 +490,21 @@ assert.ok(f2LanternCount >= 10, `2F rooms should have >=10 ceiling LANTERN block
 // FIX C — BAKERY SALES AREA POLISH (glass case, pendant lamps, teal, BLUE_WOOL)
 // ══════════════════════════════════════════════════════════════════════════════
 
-// GLASS display case: at least one GLASS block in the bakery sales zone z=12..19
+// GLASS display cases: the two wall cases (west x46 + east x55) pack the sales zone
 let bakeryGlassCount = 0;
 for (let x = bkX0; x <= bkX1; x++)
   for (let y = 2; y <= 6; y++)
     for (let z = 12; z <= 19; z++)
       if (get(x, y, z) === B.GLASS) bakeryGlassCount++;
-assert.ok(bakeryGlassCount >= 3, `bakery sales zone should have >=3 GLASS blocks (display case), got ${bakeryGlassCount}`);
+assert.ok(bakeryGlassCount >= 8, `bakery should have >=8 GLASS blocks (wall display cases), got ${bakeryGlassCount}`);
 
-// LANTERN pendant lamps over counter (y=3..6, z=17..19, x=45..56 sales zone)
+// LANTERN pendant lamps over the browsing floor + counter (y=3..6, z=14..19)
 let bakeryCounterLanternCount = 0;
 for (let x = bkX0; x <= bkX1; x++)
   for (let y = 3; y <= 6; y++)
-    for (let z = 17; z <= 19; z++)
+    for (let z = 14; z <= 19; z++)
       if (get(x, y, z) === B.LANTERN) bakeryCounterLanternCount++;
-assert.ok(bakeryCounterLanternCount >= 2, `bakery counter should have >=2 pendant LANTERN blocks over it, got ${bakeryCounterLanternCount}`);
+assert.ok(bakeryCounterLanternCount >= 3, `bakery should have >=3 pendant LANTERN blocks, got ${bakeryCounterLanternCount}`);
 
 // BLUE_WOOL teal accent near bakery counter (the teal partition wall / accent wall)
 let bakeryTealCount = 0;
@@ -646,7 +662,7 @@ for (const nx of northWallCheckXs)
 
 console.log(`OK: ${calls} stamp calls, ${solid} solid blocks placed, max y=${maxY}.`);
 console.log(`  dims ${w}x${d}x${clearH}; distinct block ids: ${tally.size}`);
-console.log(`  bakery sales AIR=${airCount_sales}, classroom floor=${floorCount}, corridor walkable=${corridorAir}`);
+console.log(`  bakery browsing AIR=${airCount_browse}, classroom floor=${floorCount}, corridor walkable=${corridorAir}`);
 console.log(`  理科室: benches=${scienceBenchCount}, water sinks=${scienceWaterCount}, calcite basins=${scienceCalciteCount}`);
 console.log(`  音楽室: piano BLACK_WOOL=${musicPianoFound}, WHITE_WOOL keys=${musicKeysFound}, stands=${musicStandFound}`);
 console.log(`  図書室: shelves=${libraryShelfCount}, book-wools=${libraryBookWoolCount}, tables=${libraryTableFound}`);
