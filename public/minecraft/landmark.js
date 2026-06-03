@@ -444,8 +444,9 @@ export function buildPetitHermes(stamp, B) {
   // ==========================================================================
   const bkX0 = 45, bkX1 = 56;           // bakery bay x extents
   const bkPartZ = 11;                    // partition wall between sales and workshop
-  const bakerZ  = 18;                    // baker standing z (local)
-  const counterZ = 19;                   // counter z (between baker and corridor)
+  const bakerZ  = 17;                    // baker standing z (local) — behind the counter
+  const counterZ = 18;                   // counter z — one row back from the door so z=19
+                                         // is a customer "lobby" you step into facing it
 
   // ── PARTITION WALL (STONE_BRICKS base, teal BLUE_WOOL face on sales side) ──
   fillBox(bkX0, 2, bkPartZ, bkX1, f1Hi, bkPartZ, B.STONE_BRICKS);
@@ -464,16 +465,16 @@ export function buildPetitHermes(stamp, B) {
   // CALCITE "price tag" accents east of passageway on teal wall (decorative)
   for (let kx = 52; kx <= 55; kx += 2) stamp(kx, 4, bkPartZ, B.CALCITE);
 
-  // ── SALES COUNTER (SPRUCE_PLANKS bar) — 対面販売 counter at z=19, y2..3 ───
-  // Solid counter front spans x46..55 directly ahead of the entrant (doorway
-  // x49..50, z=20): you walk in and meet the counter face-to-face, with bread
-  // and equipment on top. A 1-wide pass-through at the WEST end (x46) — off the
+  // ── SALES COUNTER (SPRUCE_PLANKS bar) — 対面販売 counter at z=18 ──────────
+  // You step in through the door (x49..50, z=20), stand in the z=19 lobby, and
+  // face a WAIST-HIGH counter (1 block tall) with bread + equipment on top at
+  // EYE LEVEL (y=3). A 1-wide pass-through at the WEST end (x46) — off the
   // entrance sightline — lets you slip behind to the sales floor and workshop.
-  // West counter arm (x46..48, z=19, y2..3) — baker stands behind at x47, z=18
-  fillBox(bkX0 + 1, 2, counterZ, 48, 3, counterZ, B.SPRUCE_PLANKS);
-  // Centre span x49..51 (was the open walk-in gap) — now SOLID counter front
-  fillBox(49, 2, counterZ, 51, 3, counterZ, B.SPRUCE_PLANKS);
-  // East counter arm (x52..55, z=19, y2..3) — double-width with glass case above
+  // West counter arm (x47..48, z=18, y2 only) — baker stands behind at x47, z=17
+  fillBox(bkX0 + 1, 2, counterZ, 48, 2, counterZ, B.SPRUCE_PLANKS);
+  // Centre span x49..51 — 1-block-tall counter front, dead ahead of the door
+  fillBox(49, 2, counterZ, 51, 2, counterZ, B.SPRUCE_PLANKS);
+  // East counter arm (x52..55) — base for the taller glass display case above
   fillBox(52, 2, counterZ, bkX1 - 1, 3, counterZ, B.SPRUCE_PLANKS);
 
   // ── GLASS-FRONTED DISPLAY CASE (core bakery feature) ────────────────────
@@ -496,19 +497,19 @@ export function buildPetitHermes(stamp, B) {
   // CALCITE case top / marble counter surface
   fillBox(52, 4, counterZ, bkX1 - 1, 4, counterZ, B.CALCITE);
 
-  // ── COUNTER TOP: bread + equipment facing the entrant (y=4, z=19) ─────────
-  // Authentic 対面販売 spread, read left-to-right by someone at the doorway:
+  // ── COUNTER TOP: bread + equipment at EYE LEVEL (y=3, on the 1-block counter)
+  // Authentic 対面販売 spread, read left-to-right by someone in the z=19 lobby:
   // loaf · scale · REGISTER (the pay point, dead ahead) · jar · loaf.
   // (x46 is left clear — it becomes the side pass-through carved below.)
-  stamp(47, 4, counterZ, B.BREAD);     // fresh loaf in front of the baker
-  if (B.SCALE != null) stamp(48, 4, counterZ, B.SCALE);       // はかり (量り売り)
-  if (B.REGISTER != null) stamp(49, 4, counterZ, B.REGISTER); // レジ —会計位置
-  if (B.JAR != null) stamp(50, 4, counterZ, B.JAR);           // 保存瓶 beside register
-  stamp(51, 4, counterZ, B.BREAD);     // loaf bridging toward the glass case
+  stamp(47, 3, counterZ, B.BREAD);     // fresh loaf in front of the baker
+  if (B.SCALE != null) stamp(48, 3, counterZ, B.SCALE);       // はかり (量り売り)
+  if (B.REGISTER != null) stamp(49, 3, counterZ, B.REGISTER); // レジ —会計位置
+  if (B.JAR != null) stamp(50, 3, counterZ, B.JAR);           // 保存瓶 beside register
+  stamp(51, 3, counterZ, B.BREAD);     // loaf bridging toward the glass case
 
-  // ── SIDE PASS-THROUGH: 1-wide gap at the WEST end (x46, z=19) ──────────────
+  // ── SIDE PASS-THROUGH: 1-wide gap at the WEST end (x46, z=18) ──────────────
   // Off the entrance sightline. Lets the player slip behind the counter →
-  // sales floor (z12..18) → workshop passage (x50..51, z=11). AIR y2..5.
+  // sales floor → workshop passage (x50..51, z=11). AIR y2..5.
   // Carved last so it overrides any counter/loaf placed above.
   fillBox(46, 2, counterZ, 46, 5, counterZ, B.AIR);
 

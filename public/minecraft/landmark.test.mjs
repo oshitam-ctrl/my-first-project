@@ -82,35 +82,37 @@ for (const [key, id] of grid) {
 }
 assert.ok(maxY < 35, `max solid y should be < 35 (parapet y=16), got ${maxY}`);
 
-// ── Baker cell is AIR: local (47,2,18) must be walkable ──────────────────────
-const bakerCell = get(47, 2, 18);
+// ── Baker cell is AIR: local (47,2,17) must be walkable (behind the counter) ──
+const bakerCell = get(47, 2, 17);
 assert.ok(
   bakerCell === B.AIR || bakerCell === -1,
-  `baker cell (47,2,18) must be AIR, got ${bakerCell}`
+  `baker cell (47,2,17) must be AIR, got ${bakerCell}`
 );
 
-// ── 対面販売 counter: the front directly ahead of the doorway (x49..50, z=19)
-//    must now be SOLID, so the entrant meets the counter face-to-face. ─────────
+// ── 対面販売 counter: now ONE row back at z=18, leaving z=19 as a customer
+//    "lobby" you step into. The counter front (x49..50, z=18) must be SOLID and
+//    only 1 block tall (y=2 solid, y=3 is the goods, the lobby row z=19 open). ─
 for (const wx of [49, 50]) {
-  const c = get(wx, 2, 19);
-  assert.ok(c === B.SPRUCE_PLANKS, `bakery counter front (${wx},2,19) must be SOLID SPRUCE_PLANKS, got ${c}`);
+  assert.ok(get(wx, 2, 18) === B.SPRUCE_PLANKS, `bakery counter front (${wx},2,18) must be SOLID SPRUCE_PLANKS, got ${get(wx,2,18)}`);
+  // lobby row directly inside the door must be walkable AIR
+  assert.ok(get(wx, 2, 19) === B.AIR || get(wx, 2, 19) === -1, `customer lobby (${wx},2,19) must be AIR, got ${get(wx,2,19)}`);
 }
 
-// ── Side pass-through: the WEST end (x46, z=19) must be OPEN (AIR) so the player
+// ── Side pass-through: the WEST end (x46, z=18) must be OPEN (AIR) so the player
 //    can still slip behind the counter to the sales floor and workshop. ────────
 {
-  const c = get(46, 2, 19);
-  assert.ok(c === B.AIR || c === -1, `west-end counter pass-through (46,2,19) must be AIR, got ${c}`);
+  const c = get(46, 2, 18);
+  assert.ok(c === B.AIR || c === -1, `west-end counter pass-through (46,2,18) must be AIR, got ${c}`);
 }
 
-// ── Equipment on the counter top (y=4, z=19): a REGISTER and a SCALE present. ──
+// ── Equipment on the counter top at EYE LEVEL (y=3, z=18): REGISTER + SCALE. ──
 let hasRegister = false, hasScale = false;
 for (let x = 46; x <= 55; x++) {
-  if (get(x, 4, 19) === B.REGISTER) hasRegister = true;
-  if (get(x, 4, 19) === B.SCALE) hasScale = true;
+  if (get(x, 3, 18) === B.REGISTER) hasRegister = true;
+  if (get(x, 3, 18) === B.SCALE) hasScale = true;
 }
-assert.ok(hasRegister, 'expected a REGISTER (id 57) on the counter top (y=4, z=19)');
-assert.ok(hasScale, 'expected a SCALE (id 58) on the counter top (y=4, z=19)');
+assert.ok(hasRegister, 'expected a REGISTER (id 57) on the counter top (y=3, z=18)');
+assert.ok(hasScale, 'expected a SCALE (id 58) on the counter top (y=3, z=18)');
 
 // ── Bakery SALES region has real interior AIR ─────────────────────────────────
 // sales zone: x46..55, y2..6, z12..18
