@@ -295,11 +295,16 @@ export function buildPetitHermes(stamp, B) {
   // CHALKBOARD MENU (BLACK_WOOL) on back wall z=2, mid-height — "COFFEE" board
   fillBox(cfX0 + 1, 3, 2, cfX1 - 1, 6, 2, B.BLACK_WOOL);
 
-  // SERVING COUNTER along z=19 (SPRUCE_PLANKS bar, y2..3), x13..20
-  fillBox(cfX0 + 1, 2, cfCounterZ, cfX1 - 1, 3, cfCounterZ, B.SPRUCE_PLANKS);
-  // Keep barista cell clear: local (17,2,11) = mid-room
-  // Coffee/cups on counter (HAY mugs at y=4)
-  for (let bx2 = cfX0 + 1; bx2 <= cfX1 - 1; bx2 += 3) stamp(bx2, 4, cfCounterZ, B.HAY);
+  // SERVING COUNTER along z=19 — ONE block tall (top y2), like the bakery: you
+  // step in and face it, looking DOWN onto the cups/coffee at eye level.
+  fillBox(cfX0 + 1, 2, cfCounterZ, cfX1 - 1, 2, cfCounterZ, B.SPRUCE_PLANKS);
+  // Cafe items ON the counter (y2): cups, coffee-bean jar, register, mug, pastry.
+  stamp(cfX0 + 1, 2, cfCounterZ, B.CALCITE);                         // x13: cups/saucers
+  if (B.JAR != null) stamp(cfX0 + 3, 2, cfCounterZ, B.JAR);          // x15: coffee-bean jar
+  if (B.REGISTER != null) stamp(cfX0 + 5, 2, cfCounterZ, B.REGISTER); // x17: register
+  stamp(cfX0 + 7, 2, cfCounterZ, B.HAY);                             // x19: warm mug
+  if (B.PASTRY != null) stamp(cfX1 - 1, 2, cfCounterZ, B.PASTRY);    // x20: croissant
+  // Barista stands just BEHIND the counter at local (17,2,18) — 対面 service.
 
   // TEAL side accent strip on west wall x=12, z3..19 (thin pillar/wainscot)
   for (let az = 3; az <= 19; az += 2) stamp(cfX0, 3, az, B.BLUE_WOOL);

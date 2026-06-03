@@ -1393,8 +1393,8 @@ const NPC_ROSTER = [
 ];
 if (settings.mobs !== false) {
   baker = mobs.spawnAt('baker', 14, 31, -37); // behind the deep counter (local 50,2,13); customers reach it from the counter front (z=15)
-  // Barista inside the "South in North" cafe room (local x17,y2,z11 → world -19,31,-39)
-  barista = mobs.spawnAt('customer', -19, 31, -39);
+  // Barista just BEHIND the cafe counter (local x17,y2,z18 → world -19,31,-32) — 対面
+  barista = mobs.spawnAt('customer', -19, 31, -32);
   if (barista) {
     barista.npcName = 'South in North のマスター';
     barista.npcLine = 'コーヒーいかが？ここ、昔の理科室なんだ。校庭で飲むと最高だよ☕';
