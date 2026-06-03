@@ -84,6 +84,11 @@ assert.doesNotThrow(
 );
 assert.doesNotThrow(() => { a.setEnabled(false); a.setEnabled(true); }, 'mute with ambience on');
 
+// 5. Shop door chime + bakery ambience scene.
+assert.strictEqual(typeof a.chime, 'function', 'chime exists');
+assert.doesNotThrow(() => a.chime(), 'chime()');
+assert.doesNotThrow(() => a.setAmbienceScene({ outdoor: false, inBakery: true }), 'setAmbienceScene inBakery');
+
 // cleanup pending scheduler timers so node exits.
 a.stopMusic();
 a.stopAmbience();

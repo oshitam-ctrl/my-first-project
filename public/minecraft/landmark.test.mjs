@@ -11,10 +11,12 @@ const B = {
   SANDSTONE: 39, SMOOTH_STONE: 41, CALCITE: 46, WHITE_WOOL: 31, BLUE_WOOL: 33,
   GREEN_WOOL: 35, BLACK_WOOL: 36, GRAVEL: 37, HAY: 50, STONE_BRICKS: 29,
   WATER: 7, WHEAT_CROP: 53, VEG_CROP: 54,
-  FURNACE: 60, CRAFTING_TABLE: 61, PLANK: 9, PUMPKIN: 62,
+  FURNACE: 21, CRAFTING_TABLE: 20, PLANK: 9, PUMPKIN: 14, // real ids (free 60-62 now used by products)
   LANTERN: 55,
-  BREAD: 56,   // artisan bread display block (new)
-  REGISTER: 57, SCALE: 58, JAR: 59, // bakery counter equipment (new)
+  BREAD: 56,   // artisan bread display block
+  REGISTER: 57, SCALE: 58, JAR: 59,         // bakery counter equipment
+  BAGUETTE: 60, CAMPAGNE: 61, PASTRY: 62,   // product display blocks
+  OPEN_SIGN: 65, SHOP_SIGN: 63, AFRAME: 64, // storefront signage
 };
 
 const { w, d, clearH } = LANDMARK;
@@ -143,6 +145,24 @@ let brandLoaf = false;
 for (let x = 52; x <= 55; x++) if (get(x, 5, 11) === B.BREAD) brandLoaf = true;
 assert.ok(brandLoaf, 'expected a BREAD brand emblem on the partition band (x52..55,y5,z11)');
 
+// ── Product VARIETY in the display cases (distinct breads, not one BREAD) ──────
+let caseVariety = 0;
+for (let z = 15; z <= 19; z++) {
+  if ([B.BAGUETTE, B.CAMPAGNE, B.PASTRY].includes(get(45, 2, z))) caseVariety++;
+  if ([B.BAGUETTE, B.CAMPAGNE, B.PASTRY].includes(get(56, 2, z))) caseVariety++;
+}
+assert.ok(caseVariety >= 4, `expected varied display products (baguette/campagne/pastry) in the cases, got ${caseVariety}`);
+
+// ── Storefront: shop-name sign + OPEN sign + window display + A-frame (facade) ─
+const cx = Math.floor(w / 2); // 44 — facade centre (matches landmark.js)
+assert.ok(get(cx, 6, 26) === B.SHOP_SIGN, `shop-name sign at (${cx},6,26)`);
+assert.ok(get(cx + 2, 3, 27) === B.OPEN_SIGN, `OPEN sign at (${cx + 2},3,27)`);
+assert.ok(get(cx - 3, 2, 28) === B.AFRAME, `A-frame at (${cx - 3},2,28)`);
+let windowBreads = 0;
+for (let x = cx - 4; x <= cx + 4; x++)
+  if ([B.BAGUETTE, B.CAMPAGNE, B.PASTRY].includes(get(x, 3, 25))) windowBreads++;
+assert.ok(windowBreads >= 4, `window display should show varied breads behind the facade glass, got ${windowBreads}`);
+
 // ── Classroom interior floor >= 8×8 of OAK_PLANKS (Classroom 1: x12..21, z3..19) ─
 let floorCount = 0;
 for (let x = 12; x <= 21; x++)
@@ -194,7 +214,7 @@ for (let x = 45; x <= 56 && !ovenFound; x++)
 assert.ok(ovenFound, 'expected FURNACE ovens in workshop back wall (z=2)');
 
 // ── Entrance opening: center cell (cx-1..cx, y=2..4, z=26) must be AIR ────────
-const cx = Math.floor(w / 2); // 44
+// (cx already declared above for the storefront-signage checks)
 assert.ok(
   (get(cx - 1, 2, 26) === B.AIR || get(cx - 1, 2, 26) === -1),
   `entrance cell (${cx - 1},2,26) must be AIR`

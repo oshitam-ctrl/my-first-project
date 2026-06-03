@@ -176,11 +176,28 @@ export function buildPetitHermes(stamp, B) {
   stamp(cx - 1, 5, dz, B.BLUE_WOOL);
   stamp(cx,     5, dz, B.BLUE_WOOL);
 
+  // ── STOREFRONT IDENTITY: shop-name sign, OPEN sign, window display, A-frame ──
+  // Petit Hermès brand sign on the name plate (centre, above the door).
+  if (B.SHOP_SIGN != null) stamp(cx, f1Hi - 1, dz, B.SHOP_SIGN);
+  // 営業中 OPEN sign at eye height on the east pillar face, toward the yard.
+  if (B.OPEN_SIGN != null) stamp(cx + 2, 3, dz + 1, B.OPEN_SIGN);
+  // WINDOW DISPLAY: a shallow bread shelf at z25, just behind the facade glass
+  // (z26, y3..6), flanking the doorway — varied loaves seen from the schoolyard.
+  {
+    const sd = (id) => (id != null ? id : B.BREAD); // fall back to BREAD if undefined
+    fillBox(cx - 4, 2, dz - 1, cx - 2, 2, dz - 1, B.SPRUCE_PLANKS); // west ledge x40..42
+    fillBox(cx + 2, 2, dz - 1, cx + 4, 2, dz - 1, B.SPRUCE_PLANKS); // east ledge x46..48
+    stamp(cx - 4, 3, dz - 1, sd(B.BAGUETTE)); stamp(cx - 3, 3, dz - 1, sd(B.CAMPAGNE)); stamp(cx - 2, 3, dz - 1, sd(B.PASTRY));
+    stamp(cx + 2, 3, dz - 1, sd(B.CAMPAGNE)); stamp(cx + 3, 3, dz - 1, sd(B.BAGUETTE)); stamp(cx + 4, 3, dz - 1, sd(B.PASTRY));
+  }
+
   // Brick stoop (steps widening into yard)
   fillBox(cx - 2, f1, dz + 1, cx + 1, f1, dz + 2, B.BRICK); // landing
   for (let s = 1; s <= 3; s++) {
     fillBox(cx - 1 - s, f1, dz + 2 + s, cx + s, f1, dz + 2 + s, B.BRICK);
   }
+  // A-frame sidewalk chalkboard beside the entrance (west, off the walk path).
+  if (B.AFRAME != null) stamp(cx - 3, 2, dz + 2, B.AFRAME);
 
   // ==========================================================================
   // 5) CORRIDOR (廊下) — GROUND FLOOR, z21..25, full width x5..82.
@@ -446,6 +463,9 @@ export function buildPetitHermes(stamp, B) {
   const counterZ = 14;                   // service counter pushed DEEP, leaving z15..19 a
                                          // SPACIOUS customer browsing floor (the shop)
   const bakerZ   = 13;                   // baker stands BEHIND the counter
+  // Distinct bakery products for the cases; fall back to plain BREAD if the host
+  // palette doesn't define them (keeps the headless landmark test compatible).
+  const DISP = (id) => (id != null ? id : B.BREAD);
 
   // ── A) PARTITION WALL (STONE_BRICKS base + teal BLUE_WOOL sales face) ──────
   fillBox(bkX0, 2, bkPartZ, bkX1, f1Hi, bkPartZ, B.STONE_BRICKS);
@@ -471,31 +491,33 @@ export function buildPetitHermes(stamp, B) {
   if (B.SCALE != null)    stamp(48, 2, counterZ, B.SCALE);    // はかり
   if (B.REGISTER != null) stamp(49, 2, counterZ, B.REGISTER); // レジ — pay point, dead ahead
   if (B.JAR != null)      stamp(50, 2, counterZ, B.JAR);      // 保存瓶
-  stamp(51, 2, counterZ, B.BREAD);
-  stamp(53, 2, counterZ, B.BREAD);
-  stamp(55, 2, counterZ, B.BREAD);
+  stamp(51, 2, counterZ, DISP(B.CAMPAGNE));  // 看板 campagne
+  stamp(53, 2, counterZ, DISP(B.BAGUETTE));  // baguette
+  stamp(55, 2, counterZ, DISP(B.PASTRY));    // croissant
   fillBox(52, 2, counterZ, 52, 5, counterZ, B.AIR);           // staff gap (baker steps out)
 
-  // ── D) WEST display case (x45 back / x46 glass front), packed with BREAD ───
+  // ── D) WEST display case (x45 back / x46 glass front), varied breads ───────
   fillBox(bkX0, 2, 15, bkX0, 3, 19, B.SPRUCE_PLANKS);  // case back/base on x45
   fillBox(46, 2, 15, 46, 3, 19, B.GLASS);              // glass front toward the floor
-  for (let z = 15; z <= 19; z++) stamp(bkX0, 2, z, B.BREAD);   // loaves behind glass
+  const WEST = [B.BAGUETTE, B.CAMPAGNE, B.PASTRY, B.BAGUETTE, B.CAMPAGNE];
+  for (let z = 15; z <= 19; z++) stamp(bkX0, 2, z, DISP(WEST[z - 15])); // loaves behind glass
   fillBox(bkX0, 3, 15, bkX0, 3, 19, B.CALCITE);        // marble case top
   stamp(bkX0, 2, 16, B.CALCITE); stamp(bkX0, 2, 18, B.CALCITE); // price-tag accents
 
   // ── E) EAST display case (x56 back / x55 glass front) + upper bread shelf ──
   fillBox(bkX1, 2, 15, bkX1, 3, 19, B.SPRUCE_PLANKS);
   fillBox(55, 2, 15, 55, 3, 19, B.GLASS);
-  for (let z = 15; z <= 19; z++) stamp(bkX1, 2, z, B.BREAD);
+  const EAST = [B.CAMPAGNE, B.PASTRY, B.BAGUETTE, B.BAGUETTE, B.PASTRY];
+  for (let z = 15; z <= 19; z++) stamp(bkX1, 2, z, DISP(EAST[z - 15]));
   fillBox(bkX1, 3, 15, bkX1, 3, 19, B.CALCITE);
   stamp(bkX1, 2, 16, B.CALCITE); stamp(bkX1, 2, 18, B.CALCITE);
   fillBox(bkX1, 5, 15, bkX1, 5, 19, B.SPRUCE_PLANKS);  // upper shelf plank
-  for (let z = 15; z <= 19; z += 2) stamp(bkX1, 6, z, B.BREAD); // loaves on upper shelf
+  stamp(bkX1, 6, 15, B.BREAD); stamp(bkX1, 6, 17, B.BREAD); stamp(bkX1, 6, 19, B.BREAD); // extra loaves up top
 
   // ── F) HERO カンパーニュ pedestal island (centre floor, in the door sightline)
   fillBox(50, 2, 17, 51, 2, 17, B.CALCITE);  // marble pedestal (top y2)
-  stamp(50, 3, 17, B.BREAD);                 // 看板 campagne loaf
-  stamp(51, 3, 17, B.BREAD);
+  stamp(50, 3, 17, B.BREAD);                 // 看板 loaf (kept as BREAD)
+  stamp(51, 3, 17, DISP(B.CAMPAGNE));        // signature campagne beside it
 
   // ── G) 天然酵母 fermentation-jar feature (west wall upper shelf y4..6) ──────
   fillBox(bkX0, 4, 15, bkX0, 4, 19, B.SPRUCE_PLANKS);  // jar shelf plank on x45

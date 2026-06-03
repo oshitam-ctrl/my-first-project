@@ -718,6 +718,13 @@ export function createMobs(opts) {
       if (mob.stateT <= 0) { mob.state = 'idle'; mob.headingT = 0; }
       return;
     }
+    // Shop guests are tethered to a browse spot: if they drift too far, gently
+    // steer back. Keeps them milling near a display case (alive) without any
+    // pathfinding into walls/the counter/the staff gap.
+    if (mob.shopGuest && mob.anchor) {
+      const ax = mob.anchor.x - mob.pos.x, az = mob.anchor.z - mob.pos.z;
+      if (Math.hypot(ax, az) > 2.2) { steer(mob, ax, az, mob.def.speed * 0.6); return; }
+    }
     // wander: pick a new heading every few seconds; sometimes idle. "calm"
     // mobs (e.g. the baker) mostly stand still with only rare gentle steps.
     const calm = mob.def.calm;

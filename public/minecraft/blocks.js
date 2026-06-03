@@ -76,6 +76,15 @@ const T = {
   scale_top:      65, // kitchen scale — round dial seen from above on the pan
   scale_side:     66, // kitchen scale — metal base + dial + pan lip
   jar_side:       67, // glass canister — clear body, lid band, flour contents
+  baguette_top:   68, // baguette — long stick with diagonal ear-cuts
+  baguette_side:  69, // baguette — warm crumb side
+  campagne_top:   70, // campagne boule — cross-score (クープ) + heavy flour
+  campagne_side:  71, // campagne — floured domed crust
+  pastry_top:     72, // croissant — nested crescent lamination, glossy
+  pastry_side:    73, // croissant — laminated layered bands
+  sign_open:      74, // 営業中 — teal field, bold "OPEN" + lamp dot
+  sign_name:      75, // shop sign — cream field, teal "PH" monogram + wheat
+  sign_aframe:    76, // A-frame chalkboard — slate + chalk lines + loaf glyph
 };
 
 // Block definitions. `faces` = [top, bottom, side] tile indices.
@@ -139,6 +148,14 @@ export const BLOCKS = {
   57: { name: 'Register', faces: [T.register_front, T.register_side, T.register_side], solid: true, opaque: true, hardness: 0.6, tool: null, tier: null },
   58: { name: 'Scale', faces: [T.scale_top, T.scale_side, T.scale_side], solid: true, opaque: true, hardness: 0.6, tool: null, tier: null },
   59: { name: 'Jar', faces: [T.jar_side, T.jar_side, T.jar_side], solid: true, opaque: false, hardness: 0.3, tool: null, tier: null, drop: null },
+  // 60/61/62 = bakery product display blocks (distinct breads for the cases).
+  60: { name: 'Baguette', faces: [T.baguette_top, T.baguette_top, T.baguette_side], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  61: { name: 'Campagne', faces: [T.campagne_top, T.campagne_top, T.campagne_side], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  62: { name: 'Pastry',   faces: [T.pastry_top,   T.pastry_top,   T.pastry_side],   solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  // 22/63/64 = shop signage blocks (storefront identity).
+  65: { name: 'Open Sign', faces: [T.sign_open, T.sign_open, T.sign_open], solid: true, opaque: true, hardness: 0.4, tool: null, tier: null },
+  63: { name: 'Shop Sign', faces: [T.sign_name, T.sign_name, T.sign_name], solid: true, opaque: true, hardness: 0.4, tool: null, tier: null },
+  64: { name: 'A-Frame',   faces: [T.sign_aframe, T.sign_aframe, T.sign_aframe], solid: true, opaque: true, hardness: 0.4, tool: null, tier: null },
   49: { name: 'Bookshelf', faces: [T.bookshelf, T.bookshelf, T.bookshelf], solid: true, opaque: true, hardness: 1.5, tool: 'axe', tier: null },
   50: { name: 'Hay Bale', faces: [T.hay_bale, T.hay_bale, T.hay_bale], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
   51: { name: 'Spruce Planks', faces: [T.spruce_planks, T.spruce_planks, T.spruce_planks], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
@@ -741,6 +758,109 @@ const painters = {
     c.fillRect(2, 1, 12, 3);
     c.fillStyle = 'rgba(255, 255, 255, 0.5)';  // specular highlight streak
     c.fillRect(4, 4, 2, 8);
+  },
+
+  // baguette_top: a long thin stick with the classic diagonal "ear" cuts.
+  [T.baguette_top]: (c) => {
+    noisePx(c, [205, 150, 70], 18);               // golden crust
+    c.fillStyle = 'rgba(110, 70, 24, 0.55)';      // end crust caps (it's a stick)
+    c.fillRect(0, 0, TILE, 2); c.fillRect(0, TILE - 2, TILE, 2);
+    c.strokeStyle = 'rgba(247, 224, 156, 0.92)';  // cream ear-cut slashes
+    c.lineWidth = 1.5;
+    for (let i = 0; i < 4; i++) {
+      const y = 3 + i * 3.4;
+      c.beginPath(); c.moveTo(5, y); c.lineTo(11, y + 2.2); c.stroke();
+    }
+    c.fillStyle = 'rgba(248, 238, 215, 0.5)';     // light flour dust
+    for (let i = 0; i < 8; i++) c.fillRect((Math.random() * 15) | 0, (Math.random() * 15) | 0, 1, 1);
+  },
+  // baguette_side: warm crumb with thin top/bottom crust strips.
+  [T.baguette_side]: (c) => {
+    noisePx(c, [192, 132, 56], 18);
+    c.fillStyle = 'rgba(100, 58, 16, 0.7)';
+    c.fillRect(0, 0, TILE, 2); c.fillRect(0, TILE - 2, TILE, 2);
+    c.fillStyle = 'rgba(222, 176, 92, 0.4)';      // crumb band
+    c.fillRect(1, 3, TILE - 2, TILE - 6);
+    c.fillStyle = 'rgba(150, 92, 34, 0.5)';       // a few open-crumb holes
+    for (const [hx, hy] of [[3, 6], [8, 5], [12, 8], [6, 10], [11, 11]]) c.fillRect(hx, hy, 2, 1);
+  },
+  // campagne_top: rustic round boule — bold cross score (クープ) + heavy flour.
+  [T.campagne_top]: (c) => {
+    noisePx(c, [198, 142, 66], 22);
+    c.fillStyle = 'rgba(110, 68, 20, 0.5)';       // rounded crust rim
+    c.fillRect(0, 0, TILE, 2); c.fillRect(0, TILE - 2, TILE, 2);
+    c.fillRect(0, 0, 2, TILE); c.fillRect(TILE - 2, 0, 2, TILE);
+    c.strokeStyle = 'rgba(245, 222, 150, 0.92)';  // cross-score
+    c.lineWidth = 1.5;
+    c.beginPath(); c.moveTo(4, 8); c.lineTo(12, 8); c.stroke();
+    c.beginPath(); c.moveTo(8, 4); c.lineTo(8, 12); c.stroke();
+    c.fillStyle = 'rgba(248, 240, 220, 0.75)';    // heavy flour dusting
+    for (let i = 0; i < 22; i++) c.fillRect((Math.random() * 15) | 0, (Math.random() * 15) | 0, 1, 1);
+  },
+  // campagne_side: domed floured crust — dark crust arc + light crown.
+  [T.campagne_side]: (c) => {
+    noisePx(c, [185, 128, 52], 20);
+    c.fillStyle = 'rgba(96, 56, 16, 0.7)';        // dark base crust
+    c.fillRect(0, TILE - 3, TILE, 3);
+    c.fillStyle = 'rgba(236, 214, 168, 0.55)';    // floured crown band
+    c.fillRect(1, 2, TILE - 2, 3);
+    c.fillStyle = 'rgba(248, 240, 220, 0.6)';
+    for (let i = 0; i < 12; i++) c.fillRect((Math.random() * 15) | 0, (Math.random() * 9) | 0, 1, 1);
+  },
+  // pastry_top: croissant — nested crescent lamination arcs + glossy sheen.
+  [T.pastry_top]: (c) => {
+    noisePx(c, [214, 168, 86], 16);               // golden buttery
+    c.strokeStyle = 'rgba(240, 205, 120, 0.85)';  // lamination crescents
+    c.lineWidth = 1;
+    for (let i = 0; i < 5; i++) { c.beginPath(); c.arc(8, 14, 3 + i * 2.2, Math.PI * 1.15, Math.PI * 1.85); c.stroke(); }
+    c.fillStyle = 'rgba(120, 74, 26, 0.5)';       // crescent tips
+    c.fillRect(2, 11, 2, 2); c.fillRect(12, 11, 2, 2);
+    c.fillStyle = 'rgba(255, 246, 220, 0.4)';     // glossy highlight
+    c.fillRect(6, 4, 4, 2);
+  },
+  // pastry_side: laminated dough — alternating layer bands.
+  [T.pastry_side]: (c) => {
+    noisePx(c, [206, 158, 80], 14);
+    for (let i = 0; i < 4; i++) {
+      c.fillStyle = i % 2 ? 'rgba(232, 188, 100, 0.6)' : 'rgba(150, 98, 40, 0.5)';
+      c.fillRect(1, 2 + i * 3, TILE - 2, 2);
+    }
+    c.fillStyle = 'rgba(255, 246, 220, 0.35)';
+    c.fillRect(2, 2, TILE - 4, 1);
+  },
+
+  // sign_open: 営業中 — teal field, cream plate, bold "OPEN" + amber lamp dot.
+  [T.sign_open]: (c) => {
+    noisePx(c, [47, 120, 112], 8);              // teal field
+    c.fillStyle = 'rgba(243, 234, 217, 0.96)';  // cream plate
+    c.fillRect(1, 3, 14, 9);
+    c.fillStyle = '#234b46';                     // dark teal text
+    c.font = 'bold 6px system-ui, sans-serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('OPEN', 8, 8);
+    c.fillStyle = '#ffb24d';                      // amber "open" lamp
+    c.beginPath(); c.arc(13, 2, 1.6, 0, Math.PI * 2); c.fill();
+  },
+  // sign_name: shop sign — cream field, teal "PH" monogram + gold wheat sprig.
+  [T.sign_name]: (c) => {
+    noisePx(c, [235, 228, 210], 8);             // cream field
+    c.strokeStyle = '#2f7870'; c.lineWidth = 1.5; c.strokeRect(1, 1, 14, 14); // teal border
+    c.fillStyle = '#2b6f6a';                      // teal monogram
+    c.font = 'bold 8px Georgia, serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('PH', 7, 8);
+    c.strokeStyle = '#c79a3c'; c.lineWidth = 1;   // gold wheat sprig
+    c.beginPath(); c.moveTo(13, 12); c.lineTo(12, 5); c.stroke();
+    for (const wy of [6, 8, 10]) { c.beginPath(); c.moveTo(12, wy); c.lineTo(14, wy - 1); c.stroke(); }
+  },
+  // sign_aframe: sidewalk chalkboard — slate field, chalk lines + a loaf glyph.
+  [T.sign_aframe]: (c) => {
+    noisePx(c, [40, 44, 46], 10);               // slate
+    c.strokeStyle = 'rgba(232, 232, 226, 0.85)'; c.lineWidth = 1;
+    for (const ly of [4, 7, 10]) { c.beginPath(); c.moveTo(3, ly); c.lineTo(13, ly); c.stroke(); }
+    c.fillStyle = '#d9a23e';                      // little gold loaf glyph
+    c.beginPath(); c.ellipse(8, 13, 4, 2, 0, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = 'rgba(120, 80, 30, 0.8)'; c.beginPath(); c.moveTo(6, 13); c.lineTo(10, 13); c.stroke();
   },
 };
 
