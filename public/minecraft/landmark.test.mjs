@@ -14,6 +14,7 @@ const B = {
   FURNACE: 60, CRAFTING_TABLE: 61, PLANK: 9, PUMPKIN: 62,
   LANTERN: 55,
   BREAD: 56,   // artisan bread display block (new)
+  REGISTER: 57, SCALE: 58, JAR: 59, // bakery counter equipment (new)
 };
 
 const { w, d, clearH } = LANDMARK;
@@ -88,12 +89,28 @@ assert.ok(
   `baker cell (47,2,18) must be AIR, got ${bakerCell}`
 );
 
-// ── Customer walk-in: the bakery counter must be OPEN at the doorway columns
-//    (x49..50, z=19) so players can actually enter the shop. ──────────────────
+// ── 対面販売 counter: the front directly ahead of the doorway (x49..50, z=19)
+//    must now be SOLID, so the entrant meets the counter face-to-face. ─────────
 for (const wx of [49, 50]) {
   const c = get(wx, 2, 19);
-  assert.ok(c === B.AIR || c === -1, `bakery walk-in (${wx},2,19) must be AIR (open entrance), got ${c}`);
+  assert.ok(c === B.SPRUCE_PLANKS, `bakery counter front (${wx},2,19) must be SOLID SPRUCE_PLANKS, got ${c}`);
 }
+
+// ── Side pass-through: the WEST end (x46, z=19) must be OPEN (AIR) so the player
+//    can still slip behind the counter to the sales floor and workshop. ────────
+{
+  const c = get(46, 2, 19);
+  assert.ok(c === B.AIR || c === -1, `west-end counter pass-through (46,2,19) must be AIR, got ${c}`);
+}
+
+// ── Equipment on the counter top (y=4, z=19): a REGISTER and a SCALE present. ──
+let hasRegister = false, hasScale = false;
+for (let x = 46; x <= 55; x++) {
+  if (get(x, 4, 19) === B.REGISTER) hasRegister = true;
+  if (get(x, 4, 19) === B.SCALE) hasScale = true;
+}
+assert.ok(hasRegister, 'expected a REGISTER (id 57) on the counter top (y=4, z=19)');
+assert.ok(hasScale, 'expected a SCALE (id 58) on the counter top (y=4, z=19)');
 
 // ── Bakery SALES region has real interior AIR ─────────────────────────────────
 // sales zone: x46..55, y2..6, z12..18

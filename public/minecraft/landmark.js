@@ -464,13 +464,15 @@ export function buildPetitHermes(stamp, B) {
   // CALCITE "price tag" accents east of passageway on teal wall (decorative)
   for (let kx = 52; kx <= 55; kx += 2) stamp(kx, 4, bkPartZ, B.CALCITE);
 
-  // ── SALES COUNTER (SPRUCE_PLANKS bar) — L-shape at z=19, y2..3 ─────────
-  // West arm: x46..48 (baker stands behind at x47, z=18).
-  // East arm: x52..55 (fronts the glass display case).
-  // Gap at x49..50 = 2-wide customer WALK-IN — stays OPEN.
-  // Counter top (y=3) is spruce plank.  Counter face (y=2) toward z=20 corridor.
-  // West counter arm (x46..48, z=19, y2..3)
+  // ── SALES COUNTER (SPRUCE_PLANKS bar) — 対面販売 counter at z=19, y2..3 ───
+  // Solid counter front spans x46..55 directly ahead of the entrant (doorway
+  // x49..50, z=20): you walk in and meet the counter face-to-face, with bread
+  // and equipment on top. A 1-wide pass-through at the WEST end (x46) — off the
+  // entrance sightline — lets you slip behind to the sales floor and workshop.
+  // West counter arm (x46..48, z=19, y2..3) — baker stands behind at x47, z=18
   fillBox(bkX0 + 1, 2, counterZ, 48, 3, counterZ, B.SPRUCE_PLANKS);
+  // Centre span x49..51 (was the open walk-in gap) — now SOLID counter front
+  fillBox(49, 2, counterZ, 51, 3, counterZ, B.SPRUCE_PLANKS);
   // East counter arm (x52..55, z=19, y2..3) — double-width with glass case above
   fillBox(52, 2, counterZ, bkX1 - 1, 3, counterZ, B.SPRUCE_PLANKS);
 
@@ -494,15 +496,21 @@ export function buildPetitHermes(stamp, B) {
   // CALCITE case top / marble counter surface
   fillBox(52, 4, counterZ, bkX1 - 1, 4, counterZ, B.CALCITE);
 
-  // ── BREAD LOAVES on the open (west) counter top ──────────────────────────
-  // West arm tops at y=4 (above y=3 plank face): every other x for spacing.
-  // Uses the new BREAD block — looks like freshly baked loaves on the counter.
-  for (let bx2 = bkX0 + 1; bx2 <= 48; bx2 += 2) stamp(bx2, 4, counterZ, B.BREAD);
+  // ── COUNTER TOP: bread + equipment facing the entrant (y=4, z=19) ─────────
+  // Authentic 対面販売 spread, read left-to-right by someone at the doorway:
+  // loaf · scale · REGISTER (the pay point, dead ahead) · jar · loaf.
+  // (x46 is left clear — it becomes the side pass-through carved below.)
+  stamp(47, 4, counterZ, B.BREAD);     // fresh loaf in front of the baker
+  if (B.SCALE != null) stamp(48, 4, counterZ, B.SCALE);       // はかり (量り売り)
+  if (B.REGISTER != null) stamp(49, 4, counterZ, B.REGISTER); // レジ —会計位置
+  if (B.JAR != null) stamp(50, 4, counterZ, B.JAR);           // 保存瓶 beside register
+  stamp(51, 4, counterZ, B.BREAD);     // loaf bridging toward the glass case
 
-  // ── CUSTOMER WALK-IN: open 2-wide gap at x49..50, z=19 ─────────────────
-  // Must stay AIR y2..5 so customers can enter and reach the workshop door.
+  // ── SIDE PASS-THROUGH: 1-wide gap at the WEST end (x46, z=19) ──────────────
+  // Off the entrance sightline. Lets the player slip behind the counter →
+  // sales floor (z12..18) → workshop passage (x50..51, z=11). AIR y2..5.
   // Carved last so it overrides any counter/loaf placed above.
-  fillBox(49, 2, counterZ, 50, 5, counterZ, B.AIR);
+  fillBox(46, 2, counterZ, 46, 5, counterZ, B.AIR);
 
   // ── BREAD DISPLAY SHELVES on east bay wall (x=56, sales zone z=12..18) ───
   // Two SPRUCE_PLANKS shelf planks at y=3 and y=5.

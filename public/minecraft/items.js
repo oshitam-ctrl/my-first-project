@@ -120,6 +120,10 @@ const _defs = [
   // Bakery display block — artisan loaf, golden-brown crust. Décor only (it is the
   // bread you see in the display case and on shelves, not food consumed by right-click).
   block('bread_block', 'パン', 56, 0xd28840, '焼きたてのパン。お店の主役。ショーケースや棚に並べて。'),
+  // Bakery counter equipment (対面販売の機材) — décor blocks for the service counter.
+  block('register', 'レジ', 57, 0x484850, 'お店のレジ。対面カウンターの主役。会計はここで。'),
+  block('scale', 'はかり', 58, 0xc0c4ca, 'パンの量り売りに使う台ばかり。カウンターに置こう。'),
+  block('jar', '保存瓶', 59, 0xc8d8de, '小麦粉や砂糖を入れるガラスの保存瓶。並べると映える。'),
 
   // --- Materials ---
   material('stick', '棒', 0x9c7a4d, '木から作る棒。道具のクラフトに使う。'),
