@@ -89,12 +89,14 @@ assert.ok(
   `baker cell (47,2,17) must be AIR, got ${bakerCell}`
 );
 
-// ── 対面販売 counter: now ONE row back at z=18, leaving z=19 as a customer
-//    "lobby" you step into. The counter front (x49..50, z=18) must be SOLID and
-//    only 1 block tall (y=2 solid, y=3 is the goods, the lobby row z=19 open). ─
+// ── 対面販売 counter: ONE row back at z=18, leaving z=19 as a customer "lobby"
+//    you step into. The counter is ONE block tall (y=2) and made of the display
+//    goods, so you look DOWN onto it: (x49..50, z=18, y=2) must be SOLID, the
+//    row above (y=3) must be AIR (nothing towering above eye), and the lobby row
+//    z=19 must be walkable AIR. ─────────────────────────────────────────────
 for (const wx of [49, 50]) {
-  assert.ok(get(wx, 2, 18) === B.SPRUCE_PLANKS, `bakery counter front (${wx},2,18) must be SOLID SPRUCE_PLANKS, got ${get(wx,2,18)}`);
-  // lobby row directly inside the door must be walkable AIR
+  assert.ok(get(wx, 2, 18) !== B.AIR && get(wx, 2, 18) !== -1, `bakery counter front (${wx},2,18) must be SOLID, got ${get(wx,2,18)}`);
+  assert.ok(get(wx, 3, 18) === B.AIR || get(wx, 3, 18) === -1, `above the low counter (${wx},3,18) must be AIR (nothing above eye), got ${get(wx,3,18)}`);
   assert.ok(get(wx, 2, 19) === B.AIR || get(wx, 2, 19) === -1, `customer lobby (${wx},2,19) must be AIR, got ${get(wx,2,19)}`);
 }
 
@@ -105,14 +107,14 @@ for (const wx of [49, 50]) {
   assert.ok(c === B.AIR || c === -1, `west-end counter pass-through (46,2,18) must be AIR, got ${c}`);
 }
 
-// ── Equipment on the counter top at EYE LEVEL (y=3, z=18): REGISTER + SCALE. ──
+// ── Equipment ON the low counter at WAIST height (y=2, z=18): REGISTER + SCALE. ─
 let hasRegister = false, hasScale = false;
 for (let x = 46; x <= 55; x++) {
-  if (get(x, 3, 18) === B.REGISTER) hasRegister = true;
-  if (get(x, 3, 18) === B.SCALE) hasScale = true;
+  if (get(x, 2, 18) === B.REGISTER) hasRegister = true;
+  if (get(x, 2, 18) === B.SCALE) hasScale = true;
 }
-assert.ok(hasRegister, 'expected a REGISTER (id 57) on the counter top (y=3, z=18)');
-assert.ok(hasScale, 'expected a SCALE (id 58) on the counter top (y=3, z=18)');
+assert.ok(hasRegister, 'expected a REGISTER (id 57) on the low counter (y=2, z=18)');
+assert.ok(hasScale, 'expected a SCALE (id 58) on the low counter (y=2, z=18)');
 
 // ── Bakery SALES region has real interior AIR ─────────────────────────────────
 // sales zone: x46..55, y2..6, z12..18
