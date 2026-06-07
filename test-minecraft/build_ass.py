@@ -18,8 +18,10 @@ ScaledBorderAndShadow: yes
 Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
 """
 styles = ""
+# MarginV raised so captions sit around the lower-middle (above Instagram's UI),
+# not pinned to the very bottom.
 for sid, col in COL.items():
-    styles += f"Style: S{sid},IPAGothic,58,{col},&H00141414,&H00000000,1,0,0,0,100,100,0,0,1,5,2,2,70,70,210,1\n"
+    styles += f"Style: S{sid},IPAGothic,60,{col},&H00141414,&H00000000,1,0,0,0,100,100,0,0,1,6,3,2,80,80,660,1\n"
 styles += "Style: Credit,IPAGothic,28,&H00FFFFFF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,3,2,0,8,40,40,30,1\n"
 total_end = T[-1]["end"] + 0.5
 ev = "\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
