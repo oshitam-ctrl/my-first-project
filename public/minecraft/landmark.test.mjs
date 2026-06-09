@@ -143,16 +143,16 @@ assert.ok(airCount_browse > 180, `bakery browsing area should be SPACIOUS: >180 
 assert.ok(get(50, 2, 17) === B.CALCITE, `hero campagne pedestal base (50,2,17) must be CALCITE, got ${get(50,2,17)}`);
 assert.ok(get(50, 3, 17) === B.BREAD, `hero campagne loaf (50,3,17) must be BREAD, got ${get(50,3,17)}`);
 
-// ── 天然酵母 fermentation-jar feature: JAR/GLASS jars + teal lids on west shelf ─
+// ── 酵母瓶棚 (S3): YEAST_SHELF jar cells + BRAND_GREEN trim on the west shelf ──
 let jarFeature = 0, jarLids = 0;
 for (let z = 15; z <= 19; z++) {
-  if (get(45, 5, z) === B.JAR || get(45, 5, z) === B.GLASS) jarFeature++;
-  if (get(45, 6, z) === B.BLUE_WOOL) jarLids++;
+  if (get(45, 5, z) === B.YEAST_SHELF) jarFeature++;
+  if (get(45, 6, z) === B.BRAND_GREEN) jarLids++;
 }
-assert.ok(jarFeature >= 3, `expected >=3 fermentation jars (JAR/GLASS) on the west shelf, got ${jarFeature}`);
-assert.ok(jarLids >= 3, `expected >=3 BLUE_WOOL jar lids, got ${jarLids}`);
+assert.ok(jarFeature >= 3, `expected >=3 YEAST_SHELF cells on the west wall shelf (45,5,z15..19), got ${jarFeature}`);
+assert.ok(jarLids >= 3, `expected >=3 BRAND_GREEN trim blocks above the yeast shelf (45,6,z), got ${jarLids}`);
 
-// ── Petit Hermès brand band: BREAD emblem on the teal partition band (x52..55,y5)
+// ── Petit Hermès brand band: BREAD emblem on the brand-green partition band (x52..55,y5)
 let brandLoaf = false;
 for (let x = 52; x <= 55; x++) if (get(x, 5, 11) === B.BREAD) brandLoaf = true;
 assert.ok(brandLoaf, 'expected a BREAD brand emblem on the partition band (x52..55,y5,z11)');
@@ -196,15 +196,14 @@ for (let z = 21; z <= 25; z++) {
 }
 assert.ok(corridorAir >= 4, `corridor should have >=4 walkable z-cells at x=44, got ${corridorAir}`);
 
-// ── Blackboard / chalkboard present in x12..21 bay ───────────────────────────
-// Bay x12..21 is now the "South in North" cafe: the chalkboard menu board
-// (BLACK_WOOL) is placed on the back wall z=2, y3..6 — same position as a
-// classroom blackboard, so the same assertion catches both uses.
+// ── Menu board present in x12..21 bay ────────────────────────────────────────
+// Bay x12..21 is the "South in North" cafe: S3 replaced the BLACK_WOOL chalk
+// menu with a real GREEN_BOARD school board on the PLASTER back wall z=2.
 let bbFound = false;
 for (let x = 12; x <= 21 && !bbFound; x++)
   for (let y = 3; y <= 6 && !bbFound; y++)
-    if (get(x, y, 2) === B.BLACK_WOOL) bbFound = true;
-assert.ok(bbFound, 'expected BLACK_WOOL chalkboard menu on cafe bay back wall (z=2)');
+    if (get(x, y, 2) === B.GREEN_BOARD) bbFound = true;
+assert.ok(bbFound, 'expected GREEN_BOARD menu on cafe bay back wall (z=2)');
 
 // ── Cafe "South in North" has SPRUCE_PLANKS counter at z=19 ─────────────────
 let cafeCounterFound = false;
@@ -212,13 +211,13 @@ for (let x = 13; x <= 20 && !cafeCounterFound; x++)
   if (get(x, 2, 19) === B.SPRUCE_PLANKS || get(x, 3, 19) === B.SPRUCE_PLANKS) cafeCounterFound = true;
 assert.ok(cafeCounterFound, 'expected SPRUCE_PLANKS cafe counter at z=19, x12..21');
 
-// ── Cafe has BLUE_WOOL teal accent ────────────────────────────────────────────
+// ── Cafe has BRAND_GREEN accent (S3: teal retired for the brand deep-green) ───
 let cafeTealFound = false;
 for (let x = 12; x <= 21 && !cafeTealFound; x++)
   for (let y = 2; y <= 7 && !cafeTealFound; y++)
     for (let z = 2; z <= 19 && !cafeTealFound; z++)
-      if (get(x, y, z) === B.BLUE_WOOL) cafeTealFound = true;
-assert.ok(cafeTealFound, 'expected BLUE_WOOL teal accent in cafe bay');
+      if (get(x, y, z) === B.BRAND_GREEN) cafeTealFound = true;
+assert.ok(cafeTealFound, 'expected BRAND_GREEN accent in cafe bay');
 
 // ── Workshop ovens (FURNACE) on back wall z=2 ────────────────────────────────
 let ovenFound = false;
@@ -336,11 +335,11 @@ for (let x = 69; x <= 78 && !libraryLanternFound; x++)
 assert.ok(libraryLanternFound, 'expected LANTERN reading lamps in 図書室 (x69..78)');
 
 // ── BAKERY CORRIDOR DOORWAY MARKER ───────────────────────────────────────────
-// BLUE_WOOL 暖簾 lintel at y=6, around x48..51, z=20
+// BRAND_GREEN 暖簾 lintel at y=6, around x48..51, z=20 (S3: teal → deep green)
 let bakeryLintelFound = false;
 for (let x = 47; x <= 52 && !bakeryLintelFound; x++)
-  if (get(x, 6, 20) === B.BLUE_WOOL) bakeryLintelFound = true;
-assert.ok(bakeryLintelFound, 'expected BLUE_WOOL lintel at y=6, z=20 above bakery doorway');
+  if (get(x, 6, 20) === B.BRAND_GREEN) bakeryLintelFound = true;
+assert.ok(bakeryLintelFound, 'expected BRAND_GREEN lintel at y=6, z=20 above bakery doorway');
 
 // BREAD emblems near bakery doorway (x48..51, z=20, y=2..3).
 // Previously HAY; now replaced with the BREAD block so the entrance reads as "パン屋".
@@ -380,12 +379,12 @@ for (let x = 49; x <= 52 && !workshopLanternFound; x++)
     if (get(x, y, 12) === B.LANTERN) workshopLanternFound = true;
 assert.ok(workshopLanternFound, 'expected LANTERN over workshop partition door (z=12)');
 
-// WHITE_WOOL arrow marker on workshop side of partition
+// (S3) The WHITE_WOOL "→工房" arrow at z=12 was retired: that plane is now the
+// ヒーロー面陳列 wall of bread. Assert the hero wall instead (full checks below).
 let workshopArrowFound = false;
 for (let x = 53; x <= 56 && !workshopArrowFound; x++)
-  for (let z = 11; z <= 14 && !workshopArrowFound; z++)
-    if (get(x, 3, z) === B.WHITE_WOOL || get(x, 4, z) === B.WHITE_WOOL) workshopArrowFound = true;
-assert.ok(workshopArrowFound, 'expected WHITE_WOOL arrow marker on workshop side of partition door');
+  if (get(x, 3, 12) === B.SLAT_SHELF) workshopArrowFound = true;
+assert.ok(workshopArrowFound, 'expected SLAT_SHELF hero-wall bank east of the passage at z=12 (replaced the old arrow)');
 
 // ── STAIR DOORWAY MARKERS ─────────────────────────────────────────────────────
 // West stair: BLUE_WOOL lintel at y=6, z=20, x5..10
@@ -467,13 +466,14 @@ assert.strictEqual(
 );
 
 // Bakery must be a properly enclosed bay: dividers at x=44 and x=57 solid mid-bay.
+// S3 re-skinned the sales-zone divider faces (z12..19) with warm-white PLASTER.
 assert.strictEqual(
-  get(44, 4, 12), B.SANDSTONE,
-  `Bakery west divider (44,4,12) must be SANDSTONE — bakery bay must be enclosed`
+  get(44, 4, 12), B.PLASTER,
+  `Bakery west divider (44,4,12) must be PLASTER (S3 white wall) — bay must stay enclosed`
 );
 assert.strictEqual(
-  get(57, 4, 12), B.SANDSTONE,
-  `Bakery east divider (57,4,12) must be SANDSTONE — bakery bay must be enclosed`
+  get(57, 4, 12), B.PLASTER,
+  `Bakery east divider (57,4,12) must be PLASTER (S3 white wall) — bay must stay enclosed`
 );
 
 // Bakery corridor doorway (carved AFTER dividers) must still be AIR/passable.
@@ -540,12 +540,12 @@ for (let x = bkX0; x <= bkX1; x++)
       if (get(x, y, z) === B.LANTERN) bakeryCounterLanternCount++;
 assert.ok(bakeryCounterLanternCount >= 3, `bakery should have >=3 pendant LANTERN blocks, got ${bakeryCounterLanternCount}`);
 
-// BLUE_WOOL teal accent near bakery counter (the teal partition wall / accent wall)
+// BRAND_GREEN band on the partition (S3: the teal BLUE_WOOL face was retired)
 let bakeryTealCount = 0;
 for (let x = bkX0; x <= bkX1; x++)
   for (let y = 2; y <= f1Hi; y++)
-    if (get(x, y, bkPartZ) === B.BLUE_WOOL) bakeryTealCount++;
-assert.ok(bakeryTealCount >= 4, `bakery partition wall should have >=4 BLUE_WOOL teal face blocks, got ${bakeryTealCount}`);
+    if (get(x, y, bkPartZ) === B.BRAND_GREEN) bakeryTealCount++;
+assert.ok(bakeryTealCount >= 4, `bakery partition wall should have >=4 BRAND_GREEN band blocks, got ${bakeryTealCount}`);
 
 // ── BREAD BLOCK in bakery sales region ─────────────────────────────────────
 // The new BREAD block (id 56) replaces HAY in all sales-area display contexts.
@@ -740,15 +740,15 @@ assert.ok(noticeCount >= 10, `expected >=10 NOTICE_BOARD blocks (corridor pairs 
 // Trophy case near the east stair displays the 校章
 assert.strictEqual(get(77, 3, 21), B.SCHOOL_EMBLEM, `trophy case (77,3,21) must show SCHOOL_EMBLEM, got ${get(77,3,21)}`);
 
-// ── GREEN_BOARD upgrade: classrooms + 理科室 use the real 緑黒板 ─────────────
+// ── GREEN_BOARD upgrade: 旧給食室献立表 + 理科室 + 2F use the real 緑黒板 ────
 let gfGreenBoard = 0, sciGreenBoard = 0, f2GreenBoard = 0;
 for (let x = 58; x <= 67; x++) for (let y = 3; y <= 6; y++) if (get(x, y, 2) === B.GREEN_BOARD) gfGreenBoard++;
 for (let x = 23; x <= 32; x++) for (let y = 3; y <= 6; y++) if (get(x, y, 2) === B.GREEN_BOARD) sciGreenBoard++;
 for (let x = 12; x <= 21; x++) for (let y = g1 + 1; y <= g2 - 1; y++) if (get(x, y, 2) === B.GREEN_BOARD) f2GreenBoard++;
-assert.ok(gfGreenBoard >= 8, `GF classroom 4 blackboard must be GREEN_BOARD (>=8 cells), got ${gfGreenBoard}`);
+assert.ok(gfGreenBoard >= 8, `旧給食室 献立表 must be GREEN_BOARD (>=8 cells on z=2, x58..67), got ${gfGreenBoard}`);
 assert.ok(sciGreenBoard >= 8, `理科室 blackboard must be GREEN_BOARD (>=8 cells), got ${sciGreenBoard}`);
 assert.ok(f2GreenBoard >= 8, `2F classroom 1 blackboard must be GREEN_BOARD (>=8 cells), got ${f2GreenBoard}`);
-// The cafe menu board stays BLACK_WOOL until S3 (asserted above as bbFound)
+// The cafe menu board is GREEN_BOARD since S3 (asserted above as bbFound)
 
 // ── SASH_WINDOW upgrade: 2F bands + end walls; GF facade keeps GLASS ─────────
 assert.ok((tally.get(B.SASH_WINDOW) || 0) >= 40, `expected >=40 SASH_WINDOW panes, got ${tally.get(B.SASH_WINDOW) || 0}`);
@@ -840,6 +840,97 @@ for (const cxn of [58, 60, 62]) {
   assert.strictEqual(get(cxn, 1, 30), B.CALCITE, `parking cone (${cxn},1,30) must be CALCITE, got ${get(cxn,1,30)}`);
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// S3 — パン屋v3 (hero wall / price cards / yeast shelf) + South in North v2 +
+//      旧給食室 (old school-lunch kitchen)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── ヒーロー面陳列: SLAT_SHELF wall of bread at z=12 behind the baker ─────────
+const slatTotal = tally.get(B.SLAT_SHELF) || 0;
+assert.ok(slatTotal >= 12, `expected >=12 SLAT_SHELF blocks (hero wall banks + cooling rack), got ${slatTotal}`);
+let heroProducts = 0;
+const HERO_IDS = [B.CAMPAGNE, B.BAGUETTE, B.PAIN_DE_MIE, B.BASKET_BREAD];
+for (let x = 45; x <= 56; x++)
+  for (const hy of [4, 6])
+    if (HERO_IDS.includes(get(x, hy, 12))) heroProducts++;
+assert.ok(heroProducts >= 10, `hero wall (z=12, y4/y6) should display >=10 products, got ${heroProducts}`);
+// The baker's walk gap through the hero wall (x50..52, z=12, body space y2..4) stays open
+for (let gx = 50; gx <= 52; gx++)
+  for (let gy = 2; gy <= 4; gy++) {
+    const gid = get(gx, gy, 12);
+    assert.ok(gid === B.AIR || gid === -1 || gid === B.LANTERN,
+      `hero-wall walk gap (${gx},${gy},12) must stay passable, got ${gid}`);
+  }
+
+// ── 見せる工房: GLASS window in the z=11 partition (46..48, y3..4) ────────────
+let workshopWindow = 0;
+for (let x = 46; x <= 48; x++)
+  for (const wy of [3, 4])
+    if (get(x, wy, 11) === B.GLASS) workshopWindow++;
+assert.ok(workshopWindow >= 4, `見せる工房 window: expected >=4 GLASS panes at (46..48, y3..4, z11), got ${workshopWindow}`);
+// GREEN_BOARD menu on the partition east of the passage
+let bakeryMenuBoard = 0;
+for (let x = 52; x <= 55; x++)
+  for (const my2 of [3, 4])
+    if (get(x, my2, 11) === B.GREEN_BOARD) bakeryMenuBoard++;
+assert.ok(bakeryMenuBoard >= 6, `bakery GREEN_BOARD menu expected at (52..55, y3..4, z11), got ${bakeryMenuBoard}`);
+
+// ── かご & 値札: BASKET_BREAD + PRICE_CARD dressing ───────────────────────────
+const basketTotal = tally.get(B.BASKET_BREAD) || 0;
+assert.ok(basketTotal >= 6, `expected >=6 BASKET_BREAD blocks (hero wall + counter + floor baskets), got ${basketTotal}`);
+const priceCardTotal = tally.get(B.PRICE_CARD) || 0;
+assert.ok(priceCardTotal >= 6, `expected >=6 PRICE_CARD blocks (case interiors + case tops), got ${priceCardTotal}`);
+
+// ── パン屋 sales floor is bright SCHOOL_FLOOR ─────────────────────────────────
+assert.strictEqual(get(50, 1, 16), B.SCHOOL_FLOOR, `bakery sales floor (50,1,16) must be SCHOOL_FLOOR, got ${get(50,1,16)}`);
+
+// ── 工房: STAINLESS prep table + 一升パン + cooling loaves ────────────────────
+assert.strictEqual(get(54, 2, 7), B.ISSHOU_PAN, `一升パン expected at (54,2,7), got ${get(54,2,7)}`);
+assert.strictEqual(get(48, 2, 4), B.STAINLESS, `workshop prep table (48,2,4) must be STAINLESS, got ${get(48,2,4)}`);
+let coolingLoaves = 0;
+for (let x = 47; x <= 49; x++) if (get(x, 4, 8) === B.PAIN_DE_MIE) coolingLoaves++;
+assert.ok(coolingLoaves >= 2, `cooling rack should carry >=2 PAIN_DE_MIE loaves at (47..49,4,8), got ${coolingLoaves}`);
+
+// ── South in North v2: counter line-up + school desks + SNS tripod ────────────
+assert.strictEqual(get(13, 2, 19), B.COFFEE_KIT, `cafe counter (13,2,19) must be COFFEE_KIT, got ${get(13,2,19)}`);
+assert.strictEqual(get(15, 2, 19), B.CURRY_POT, `cafe counter (15,2,19) must be CURRY_POT, got ${get(15,2,19)}`);
+assert.strictEqual(get(19, 2, 19), B.QUICHE, `cafe counter (19,2,19) must be QUICHE, got ${get(19,2,19)}`);
+assert.strictEqual(get(20, 2, 19), B.MENU_STAND, `cafe counter (20,2,19) must be MENU_STAND, got ${get(20,2,19)}`);
+let cafeDesks = 0, cafeChairs = 0;
+for (let x = 12; x <= 21; x++)
+  for (let z = 3; z <= 19; z++) {
+    if (get(x, 2, z) === B.SCHOOL_DESK) cafeDesks++;
+    if (get(x, 2, z) === B.SCHOOL_CHAIR) cafeChairs++;
+  }
+assert.ok(cafeDesks >= 4, `cafe should seat guests at >=4 SCHOOL_DESK tables, got ${cafeDesks}`);
+assert.ok(cafeChairs >= 8, `cafe should have >=8 SCHOOL_CHAIR seats, got ${cafeChairs}`);
+assert.strictEqual(get(13, 3, 4), B.MENU_STAND, `SNS tripod head (13,3,4) must be MENU_STAND, got ${get(13,3,4)}`);
+assert.strictEqual(get(13, 2, 4), B.SPRUCE_LOG, `SNS tripod legs (13,2,4) must be SPRUCE_LOG, got ${get(13,2,4)}`);
+
+// ── 旧給食室 (x58..67): STAINLESS lines, pots, ovens, sink, hatch ─────────────
+let kitchenStainless = 0;
+for (let x = 58; x <= 67; x++)
+  for (let y = 2; y <= 4; y++)
+    for (let z = 2; z <= 20; z++)
+      if (get(x, y, z) === B.STAINLESS) kitchenStainless++;
+assert.ok(kitchenStainless >= 10, `旧給食室 should have >=10 STAINLESS blocks (prep lines + hatch), got ${kitchenStainless}`);
+assert.ok(has(B.CURRY_POT), 'expected CURRY_POT present (cafe counter + 給食室 line)');
+assert.ok(has(B.QUICHE), 'expected QUICHE present (cafe counter + 給食室 line)');
+assert.strictEqual(get(60, 2, 5), B.SOUP_POT, `給食室 SOUP_POT expected at (60,2,5), got ${get(60,2,5)}`);
+assert.strictEqual(get(63, 2, 5), B.CURRY_POT, `給食室 CURRY_POT expected at (63,2,5), got ${get(63,2,5)}`);
+assert.strictEqual(get(61, 2, 9), B.QUICHE, `給食室 QUICHE expected at (61,2,9), got ${get(61,2,9)}`);
+assert.strictEqual(get(64, 2, 9), B.COOKIE_TRAY, `給食室 COOKIE_TRAY expected at (64,2,9), got ${get(64,2,9)}`);
+assert.strictEqual(get(60, 3, 2), B.FURNACE, `給食室 oven stack (60,3,2) must be FURNACE, got ${get(60,3,2)}`);
+assert.strictEqual(get(66, 2, 3), B.WATER, `給食室 sink water (66,2,3) expected, got ${get(66,2,3)}`);
+assert.strictEqual(get(60, 1, 10), B.SMOOTH_STONE, `給食室 tile floor (60,1,10) must be SMOOTH_STONE, got ${get(60,1,10)}`);
+assert.strictEqual(get(63, 2, 20), B.STAINLESS, `配膳口 hatch (63,2,20) must be STAINLESS, got ${get(63,2,20)}`);
+assert.strictEqual(get(66, 4, 20), B.NOTICE_BOARD, `給食室 corridor sign (66,4,20) must be NOTICE_BOARD, got ${get(66,4,20)}`);
+// Kitchen doorway columns (x61..62) stay AIR despite the hatch beside them
+for (const kx of [61, 62]) {
+  const kid = get(kx, 2, 20);
+  assert.ok(kid === B.AIR || kid === -1, `給食室 doorway (${kx},2,20) must stay AIR, got ${kid}`);
+}
+
 // ── Counting reports ─────────────────────────────────────────────────────────
 let northWallSolid = 0;
 for (const nx of northWallCheckXs)
@@ -860,7 +951,9 @@ console.log(`  BUG-1 fix: 2F north wall (z=2, y${g1}..${g2}) solid at sampled x:
 console.log(`  BUG-2 fix: stair landing(7,8,12)=${get(7,8,12)===B.LANTERN?'LANT':get(7,8,12)}, shaft(7,8,13)=${get(7,8,13)}, catwalk(9,8,15)=${get(9,8,15)}, railing=${shaftRailingFound}`);
 console.log(`  FIX A: GF divider(22,4,10)=${get(22,4,10)===B.SANDSTONE?'SOLID':'ERASED'}, divider(57,4,10)=${get(57,4,10)===B.SANDSTONE?'SOLID':'ERASED'}`);
 console.log(`  FIX B: 2F desks=${f2DeskCount}, chairs=${f2ChairCount}, lockers=${f2LockerCount}, ceiling lanterns=${f2LanternCount}, corridor doors open=${f2CorridorDoorwaysOk}`);
-console.log(`  FIX C: bakery GLASS=${bakeryGlassCount}, counter LANTERNs=${bakeryCounterLanternCount}, BLUE_WOOL teal=${bakeryTealCount}`);
+console.log(`  FIX C: bakery GLASS=${bakeryGlassCount}, counter LANTERNs=${bakeryCounterLanternCount}, BRAND_GREEN band=${bakeryTealCount}`);
+console.log(`  S3 パン屋v3: slat=${slatTotal}, hero products=${heroProducts}, baskets=${basketTotal}, price cards=${priceCardTotal}, 工房窓=${workshopWindow}, menu board=${bakeryMenuBoard}, yeast=${jarFeature}`);
+console.log(`  S3 cafe/給食室: cafe desks=${cafeDesks}, chairs=${cafeChairs}, kitchen stainless=${kitchenStainless}, cooling loaves=${coolingLoaves}`);
 console.log(`  BREAD redesign: BREAD blocks in sales+corridor=${bakeryBreadCount}, HAY in sales zone=${salesHayCount}`);
 console.log(`  S2 校舎: 下駄箱=${shoeCubbyCount}, 手洗=${sinkCount}, 掲示=${noticeCount}, sash=${tally.get(B.SASH_WINDOW) || 0}, 緑黒板 gf/sci/2f=${gfGreenBoard}/${sciGreenBoard}/${f2GreenBoard}`);
 console.log(`  S2 広場: 机=${plazaDesks}, 椅子=${plazaChairs}, ようこそ板=${plazaWelcome}, ギャラリー=${plazaGallery}`);

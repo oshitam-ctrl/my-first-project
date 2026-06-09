@@ -167,18 +167,19 @@ export function buildPetitHermes(stamp, B) {
   // Shopfront: name plate band above door
   fillBox(cx - 2, f1Hi - 1, dz, cx + 2, f1Hi - 1, dz, B.STONE_BRICKS);
   fillBox(cx - 1, f1Hi - 1, dz, cx + 1, f1Hi - 1, dz, B.CALCITE); // crest disc
-  // Teal/white pilasters flanking the entrance (striped)
+  // Brand-green/white pilasters flanking the entrance (striped) — S3: the teal
+  // BLUE_WOOL accents are retired in favour of the brand deep-green #5C6B4A.
   for (let y = 3; y <= f1Hi - 1; y++) {
-    const stripe = (y % 2 === 0) ? B.BLUE_WOOL : B.WHITE_WOOL;
+    const stripe = (y % 2 === 0) ? B.BRAND_GREEN : B.WHITE_WOOL;
     stamp(cx - 3, y, dz, stripe);
     stamp(cx + 3, y, dz, stripe);
   }
   // HAY bread emblems at base of pilasters
   stamp(cx - 3, 2, dz, B.HAY);
   stamp(cx + 3, 2, dz, B.HAY);
-  // BLUE_WOOL 暖簾 in the top of the doorway
-  stamp(cx - 1, 5, dz, B.BLUE_WOOL);
-  stamp(cx,     5, dz, B.BLUE_WOOL);
+  // BRAND_GREEN 暖簾 in the top of the doorway
+  stamp(cx - 1, 5, dz, B.BRAND_GREEN);
+  stamp(cx,     5, dz, B.BRAND_GREEN);
 
   // ── STOREFRONT IDENTITY: shop-name sign, OPEN sign, window display, A-frame ──
   // Petit Hermès brand sign on the name plate (centre, above the door).
@@ -298,41 +299,46 @@ export function buildPetitHermes(stamp, B) {
   const cfX0 = 12, cfX1 = 21; // cafe bay x extents
   const cfCounterZ = 19;       // counter faces the corridor
 
-  // TEAL accent wall on west (inner corridor side): paint the corridor-face at z=20
-  // Actually: paint the back wall z=2 with teal accent (BLUE_WOOL) + chalkboard menu
-  fillBox(cfX0, 2, 2, cfX1, f1Hi, 2, B.BLUE_WOOL);
-  // CHALKBOARD MENU (BLACK_WOOL) on back wall z=2, mid-height — "COFFEE" board
-  fillBox(cfX0 + 1, 3, 2, cfX1 - 1, 6, 2, B.BLACK_WOOL);
+  // S3 v2: PLASTER white wall on the back z=2 + GREEN_BOARD menu (handwritten
+  // spice-curry / quiche menu on a real school board). The teal is retired.
+  fillBox(cfX0, 2, 2, cfX1, f1Hi, 2, B.PLASTER);
+  // GREEN_BOARD MENU on back wall z=2, mid-height (x13..20, y3..5)
+  fillBox(cfX0 + 1, 3, 2, cfX1 - 1, 5, 2, B.GREEN_BOARD);
 
   // SERVING COUNTER along z=19 — ONE block tall (top y2), like the bakery: you
   // step in and face it, looking DOWN onto the cups/coffee at eye level.
   fillBox(cfX0 + 1, 2, cfCounterZ, cfX1 - 1, 2, cfCounterZ, B.SPRUCE_PLANKS);
-  // Cafe items ON the counter (y2): cups, coffee-bean jar, register, mug, pastry.
-  stamp(cfX0 + 1, 2, cfCounterZ, B.CALCITE);                         // x13: cups/saucers
-  if (B.JAR != null) stamp(cfX0 + 3, 2, cfCounterZ, B.JAR);          // x15: coffee-bean jar
+  // Cafe items ON the counter (y2): coffee kit, curry pot, register, quiche, menu.
+  stamp(cfX0 + 1, 2, cfCounterZ, B.COFFEE_KIT);                       // x13: coffee gear
+  stamp(cfX0 + 3, 2, cfCounterZ, B.CURRY_POT);                        // x15: spice-curry pot
   if (B.REGISTER != null) stamp(cfX0 + 5, 2, cfCounterZ, B.REGISTER); // x17: register
-  stamp(cfX0 + 7, 2, cfCounterZ, B.HAY);                             // x19: warm mug
-  if (B.PASTRY != null) stamp(cfX1 - 1, 2, cfCounterZ, B.PASTRY);    // x20: croissant
+  stamp(cfX0 + 7, 2, cfCounterZ, B.QUICHE);                           // x19: quiche of the day
+  stamp(cfX1 - 1, 2, cfCounterZ, B.MENU_STAND);                       // x20: menu stand
   // Barista stands just BEHIND the counter at local (17,2,18) — 対面 service.
 
-  // TEAL side accent strip on west wall x=12, z3..19 (thin pillar/wainscot)
-  for (let az = 3; az <= 19; az += 2) stamp(cfX0, 3, az, B.BLUE_WOOL);
+  // BRAND_GREEN side accent strip on west wall x=12, z3..19 (thin pillar/wainscot)
+  for (let az = 3; az <= 19; az += 2) stamp(cfX0, 3, az, B.BRAND_GREEN);
 
-  // CAFE TABLES (small 1×1 SPRUCE_PLANKS tops) + BIRCH_PLANKS chairs around them
+  // SNS tripod near the back wall (お客さんの「映え」撮影スポット)
+  stamp(cfX0 + 1, 2, 4, B.SPRUCE_LOG);   // tripod legs
+  stamp(cfX0 + 1, 3, 4, B.MENU_STAND);   // camera/menu mount on top
+
+  // CAFE TABLES — real SCHOOL_DESK tops + SCHOOL_CHAIR seats (机椅子は校庭にも
+  // 持ち出せる旧教室の机そのまま、というSouth in Northの売り)
   // Table cluster 1: around z=7
-  stamp(cfX0 + 2, 2, 7,  B.SPRUCE_PLANKS); // table
-  stamp(cfX0 + 4, 2, 7,  B.SPRUCE_PLANKS); // table
-  stamp(cfX0 + 2, 2, 8,  B.BIRCH_PLANKS);  // chair (south)
-  stamp(cfX0 + 2, 2, 6,  B.BIRCH_PLANKS);  // chair (north)
-  stamp(cfX0 + 4, 2, 8,  B.BIRCH_PLANKS);
-  stamp(cfX0 + 4, 2, 6,  B.BIRCH_PLANKS);
+  stamp(cfX0 + 2, 2, 7,  B.SCHOOL_DESK); // table
+  stamp(cfX0 + 4, 2, 7,  B.SCHOOL_DESK); // table
+  stamp(cfX0 + 2, 2, 8,  B.SCHOOL_CHAIR); // chair (south)
+  stamp(cfX0 + 2, 2, 6,  B.SCHOOL_CHAIR); // chair (north)
+  stamp(cfX0 + 4, 2, 8,  B.SCHOOL_CHAIR);
+  stamp(cfX0 + 4, 2, 6,  B.SCHOOL_CHAIR);
   // Table cluster 2: around z=13
-  stamp(cfX0 + 2, 2, 13, B.SPRUCE_PLANKS);
-  stamp(cfX0 + 5, 2, 13, B.SPRUCE_PLANKS);
-  stamp(cfX0 + 2, 2, 14, B.BIRCH_PLANKS);
-  stamp(cfX0 + 2, 2, 12, B.BIRCH_PLANKS);
-  stamp(cfX0 + 5, 2, 14, B.BIRCH_PLANKS);
-  stamp(cfX0 + 5, 2, 12, B.BIRCH_PLANKS);
+  stamp(cfX0 + 2, 2, 13, B.SCHOOL_DESK);
+  stamp(cfX0 + 5, 2, 13, B.SCHOOL_DESK);
+  stamp(cfX0 + 2, 2, 14, B.SCHOOL_CHAIR);
+  stamp(cfX0 + 2, 2, 12, B.SCHOOL_CHAIR);
+  stamp(cfX0 + 5, 2, 14, B.SCHOOL_CHAIR);
+  stamp(cfX0 + 5, 2, 12, B.SCHOOL_CHAIR);
 
   // POTTED PLANTS (OAK_LEAVES pots) in two corners for warmth
   stamp(cfX0 + 1, 2, 3, B.OAK_LEAVES); // back-west corner
@@ -397,10 +403,46 @@ export function buildPetitHermes(stamp, B) {
     stamp(scX0 + 3, f1Hi - 1, 14, B.LANTERN);
   }
 
-  // Generic GF classrooms (Classroom 4 remains standard)
+  // Generic GF classrooms — none remain on the ground floor:
   // Classroom 2 (23-32) replaced by 理科室 above
   // Classroom 3 (34-43) replaced by コミュニティー広場 below (S2)
-  classroom_gf(58, 67);  // Classroom 4 (GF)
+  // Classroom 4 (58-67) replaced by 旧給食室 below (S3)
+  void classroom_gf; // helper retained for reference (2F uses its own variant)
+
+  // ==========================================================================
+  // 7c3) 旧給食室 (old school-lunch kitchen) — GF x58..67 (S3).
+  //      South in North の調理場: スパイスカレーとキッシュはここで仕込む。
+  //      STAINLESS prep lines with the day's pots, FURNACE oven bank, sink,
+  //      献立表 GREEN_BOARD, west JAR shelf, serving hatch toward the corridor.
+  // ==========================================================================
+  {
+    const kkX0 = 58, kkX1 = 67;
+    // Tile floor: SMOOTH_STONE across the work zone
+    fillBox(kkX0 + 1, 1, 3, kkX1 - 1, 1, 19, B.SMOOTH_STONE);
+    // STAINLESS prep lines (two parallel runs)
+    fillBox(59, 2, 5, 65, 2, 5, B.STAINLESS);
+    fillBox(59, 2, 9, 65, 2, 9, B.STAINLESS);
+    // The day's cooking ON the lines: soup / spice curry / quiche / 焼き菓子
+    stamp(60, 2, 5, B.SOUP_POT);
+    stamp(63, 2, 5, B.CURRY_POT);
+    stamp(61, 2, 9, B.QUICHE);
+    stamp(64, 2, 9, B.COOKIE_TRAY);
+    // Oven bank: FURNACE ×2 stacks against the back wall z=2
+    fillBox(60, 2, 2, 61, 3, 2, B.FURNACE);
+    // Big kitchen sink in the east back corner: CALCITE basin + WATER
+    stamp(66, 2, 2, B.CALCITE);
+    stamp(66, 2, 3, B.WATER);
+    // 献立表 GREEN_BOARD on the remaining z=2 wall (between ovens and sink)
+    fillBox(62, 3, 2, 65, 5, 2, B.GREEN_BOARD);
+    // West storage shelf (x=58): SPRUCE plank with a JAR preserve row on top
+    fillBox(kkX0, 3, 6, kkX0, 3, 12, B.SPRUCE_PLANKS);
+    if (B.JAR != null) fillBox(kkX0, 4, 6, kkX0, 4, 12, B.JAR);
+    // Serving hatch (配膳口) beside the corridor doorway — STAINLESS counter
+    // block in the z=20 wall at x=63 (doorway columns x61..62 stay AIR).
+    stamp(63, 2, 20, B.STAINLESS);
+    // 「旧給食室 → South in North キッチン」 sign on the corridor-side wall
+    stamp(66, 4, 20, B.NOTICE_BOARD);
+  }
 
   // ==========================================================================
   // 7c2) コミュニティー広場 (community plaza) — GF x34..43, beside the 昇降口.
@@ -493,14 +535,16 @@ export function buildPetitHermes(stamp, B) {
   //                 staff gap at x52 so the baker can step out.
   //      z=13     = baker stands BEHIND the counter → world (14,31,-37).
   //      x45/x46, z15..19 = WEST glass display case packed with BREAD; above it
-  //                 a 天然酵母 jar shelf (GLASS/JAR + teal lids) at y4..6.
+  //                 the 酵母瓶棚 (YEAST_SHELF + BRAND_GREEN trim) at y4..6.
   //      x55/x56, z15..19 = EAST glass display case + upper BREAD shelf.
   //      x50..51, z=17    = hero カンパーニュ pedestal island (CALCITE + BREAD).
-  //      z=11 partition   = BLACK_WOOL chalkboard MENU (west) + teal brand band
-  //                 with a CALCITE frame & BREAD emblem (east) — looks like PH.
+  //      z=12             = ヒーロー面陳列: SLAT_SHELF wall of bread behind the
+  //                 baker (two banks, passage gap x50..52 kept open).
+  //      z=11 partition   = PLASTER white wall + 見せる工房 GLASS window (west)
+  //                 + GREEN_BOARD menu & BRAND_GREEN band w/ BREAD emblem (east).
   //      Warm CALCITE-shade LANTERN pendants over the floor + counter.
   //      OAK_LEAVES potted plants flank the entrance (z=19).
-  //    Palette: teal BLUE_WOOL + cream CALCITE + warm SPRUCE.  HAY ONLY in the
+  //    Palette: brand deep-green + cream CALCITE + warm SPRUCE.  HAY ONLY in the
   //    workshop (flour sacks); the sales zone uses the BREAD block throughout.
   // ==========================================================================
   const bkX0 = 45, bkX1 = 56;            // bakery bay x extents (x45/x56 = wall display faces)
@@ -512,22 +556,44 @@ export function buildPetitHermes(stamp, B) {
   // palette doesn't define them (keeps the headless landmark test compatible).
   const DISP = (id) => (id != null ? id : B.BREAD);
 
-  // ── A) PARTITION WALL (STONE_BRICKS base + teal BLUE_WOOL sales face) ──────
-  fillBox(bkX0, 2, bkPartZ, bkX1, f1Hi, bkPartZ, B.STONE_BRICKS);
-  fillBox(50, 2, bkPartZ, 51, 4, bkPartZ, B.AIR);              // workshop passage
-  fillBox(bkX0, 2, bkPartZ, bkX1, f1Hi, bkPartZ, B.BLUE_WOOL); // teal sales face
-  fillBox(50, 2, bkPartZ, 51, 4, bkPartZ, B.AIR);              // re-open passage
+  // ── A0) SALES FLOOR + WHITE WALLS (S3 v3: bright renovated-classroom shop) ─
+  // SCHOOL_FLOOR across the whole sales zone (z12..19)
+  fillBox(bkX0, 1, 12, bkX1, 1, 19, B.SCHOOL_FLOOR);
+  // PLASTER re-skin of the bay-divider inner faces (x44 west / x57 east)
+  fillBox(44, 2, 12, 44, f1Hi, 19, B.PLASTER);
+  fillBox(57, 2, 12, 57, f1Hi, 19, B.PLASTER);
 
-  // ── B) CHALKBOARD MENU + Petit Hermès brand band on the partition (z=11) ───
-  // Chalkboard west of the passage (x46..49, y3..5) under a WHITE_WOOL header.
-  fillBox(bkX0 + 1, 3, bkPartZ, 49, 5, bkPartZ, B.BLACK_WOOL);
-  fillBox(bkX0 + 1, 6, bkPartZ, 49, 6, bkPartZ, B.WHITE_WOOL);
-  stamp(46, 4, bkPartZ, B.CALCITE); stamp(48, 4, bkPartZ, B.CALCITE); // price-tag accents
-  // Brand band EAST of the passage (x52..55): teal banner + CALCITE marble frame
-  // + a centred BREAD emblem — "this is プチヘルメース".
-  fillBox(52, 5, bkPartZ, 55, 5, bkPartZ, B.BLUE_WOOL);
-  fillBox(52, 6, bkPartZ, 55, 6, bkPartZ, B.CALCITE);
+  // ── A) PARTITION WALL (STONE_BRICKS core + warm-white PLASTER sales face) ──
+  fillBox(bkX0, 2, bkPartZ, bkX1, f1Hi, bkPartZ, B.STONE_BRICKS);
+  fillBox(bkX0, 2, bkPartZ, bkX1, f1Hi, bkPartZ, B.PLASTER);   // 漆喰 sales face
+  fillBox(50, 2, bkPartZ, 51, 4, bkPartZ, B.AIR);              // workshop passage
+
+  // ── B) 見せる工房 window + GREEN_BOARD menu + brand band on the partition ──
+  // GLASS window west of the passage (x46..48, y3..4): customers watch the
+  // FURNACE ovens at z=2 from the sales floor — the open-workshop signature.
+  fillBox(46, 3, bkPartZ, 48, 4, bkPartZ, B.GLASS);
+  // GREEN_BOARD menu EAST of the passage (x52..55, y3..4): プチカンパーニュ食べ比べ etc.
+  fillBox(52, 3, bkPartZ, 55, 4, bkPartZ, B.GREEN_BOARD);
+  // Brand band above the menu (x52..55, y5..6): deep-green #5C6B4A banner
+  // with a centred BREAD emblem — "this is プチヘルメース".
+  fillBox(52, 5, bkPartZ, 55, 6, bkPartZ, B.BRAND_GREEN);
   stamp(53, 5, bkPartZ, B.BREAD); stamp(54, 5, bkPartZ, B.BREAD); // loaf emblem
+
+  // ── B2) ヒーロー面陳列 — the WALL OF BREAD at z=12, behind the baker.
+  // Two slat-shelf banks flank the workshop passage (x50..52 stays open so the
+  // baker can walk from the counter row z13 through the z11 passage):
+  // SLAT_SHELF rows at y3/y5, products at y4/y6 (カンパーニュ/バゲット/食パン/かご).
+  {
+    const HERO = [B.CAMPAGNE, B.BAGUETTE, B.PAIN_DE_MIE, B.BASKET_BREAD];
+    const heroXs = [45, 46, 47, 48, 49, 53, 54, 55, 56];
+    for (let i = 0; i < heroXs.length; i++) {
+      const hx = heroXs[i];
+      stamp(hx, 3, 12, B.SLAT_SHELF);
+      stamp(hx, 5, 12, B.SLAT_SHELF);
+      stamp(hx, 4, 12, DISP(HERO[i % 4]));
+      stamp(hx, 6, 12, DISP(HERO[(i + 2) % 4]));
+    }
+  }
 
   // ── C) SERVICE COUNTER at z=14, ONE block tall (top y2), staff gap at x52 ──
   // Customers stand on the open z15..19 floor and look DOWN onto the counter.
@@ -536,9 +602,9 @@ export function buildPetitHermes(stamp, B) {
   if (B.SCALE != null)    stamp(48, 2, counterZ, B.SCALE);    // はかり
   if (B.REGISTER != null) stamp(49, 2, counterZ, B.REGISTER); // レジ — pay point, dead ahead
   if (B.JAR != null)      stamp(50, 2, counterZ, B.JAR);      // 保存瓶
-  stamp(51, 2, counterZ, DISP(B.CAMPAGNE));  // 看板 campagne
-  stamp(53, 2, counterZ, DISP(B.BAGUETTE));  // baguette
-  stamp(55, 2, counterZ, DISP(B.PASTRY));    // croissant
+  stamp(51, 2, counterZ, DISP(B.BASKET_BREAD)); // かご盛りプチカンパーニュ
+  stamp(53, 2, counterZ, DISP(B.PAIN_DE_MIE));  // 食パン
+  stamp(55, 2, counterZ, DISP(B.COOKIE_TRAY));  // 焼き菓子トレー
   fillBox(52, 2, counterZ, 52, 5, counterZ, B.AIR);           // staff gap (baker steps out)
 
   // ── D) WEST display case (x45 back / x46 glass front), varied breads ───────
@@ -547,7 +613,8 @@ export function buildPetitHermes(stamp, B) {
   const WEST = [B.BAGUETTE, B.CAMPAGNE, B.PASTRY, B.BAGUETTE, B.CAMPAGNE];
   for (let z = 15; z <= 19; z++) stamp(bkX0, 2, z, DISP(WEST[z - 15])); // loaves behind glass
   fillBox(bkX0, 3, 15, bkX0, 3, 19, B.CALCITE);        // marble case top
-  stamp(bkX0, 2, 16, B.CALCITE); stamp(bkX0, 2, 18, B.CALCITE); // price-tag accents
+  stamp(bkX0, 2, 16, B.PRICE_CARD); stamp(bkX0, 2, 18, B.PRICE_CARD); // ¥600 price cards
+  stamp(46, 4, 16, B.PRICE_CARD); stamp(46, 4, 18, B.PRICE_CARD);     // cards on the case top
 
   // ── E) EAST display case (x56 back / x55 glass front) + upper bread shelf ──
   fillBox(bkX1, 2, 15, bkX1, 3, 19, B.SPRUCE_PLANKS);
@@ -555,7 +622,8 @@ export function buildPetitHermes(stamp, B) {
   const EAST = [B.CAMPAGNE, B.PASTRY, B.BAGUETTE, B.BAGUETTE, B.PASTRY];
   for (let z = 15; z <= 19; z++) stamp(bkX1, 2, z, DISP(EAST[z - 15]));
   fillBox(bkX1, 3, 15, bkX1, 3, 19, B.CALCITE);
-  stamp(bkX1, 2, 16, B.CALCITE); stamp(bkX1, 2, 18, B.CALCITE);
+  stamp(bkX1, 2, 16, B.PRICE_CARD); stamp(bkX1, 2, 18, B.PRICE_CARD); // price cards
+  stamp(55, 4, 16, B.PRICE_CARD); stamp(55, 4, 18, B.PRICE_CARD);     // cards on the case top
   fillBox(bkX1, 5, 15, bkX1, 5, 19, B.SPRUCE_PLANKS);  // upper shelf plank
   stamp(bkX1, 6, 15, B.BREAD); stamp(bkX1, 6, 17, B.BREAD); stamp(bkX1, 6, 19, B.BREAD); // extra loaves up top
 
@@ -564,13 +632,18 @@ export function buildPetitHermes(stamp, B) {
   stamp(50, 3, 17, B.BREAD);                 // 看板 loaf (kept as BREAD)
   stamp(51, 3, 17, DISP(B.CAMPAGNE));        // signature campagne beside it
 
-  // ── G) 天然酵母 fermentation-jar feature (west wall upper shelf y4..6) ──────
-  fillBox(bkX0, 4, 15, bkX0, 4, 19, B.SPRUCE_PLANKS);  // jar shelf plank on x45
+  // ── G) 酵母瓶棚 — YEAST_SHELF feature on the west wall (y5, x45, z15..19):
+  // いちご/柿/ゆず/ハーブ…色とりどりの酵母瓶がプクプク並ぶ名物棚。
+  // BRAND_GREEN trim row above replaces the old teal jar lids.
+  fillBox(bkX0, 4, 15, bkX0, 4, 19, B.SPRUCE_PLANKS);  // shelf plank on x45
   for (let z = 15; z <= 19; z++) {
-    if (B.JAR != null) stamp(bkX0, 5, z, (z % 2 ? B.JAR : B.GLASS));
-    else               stamp(bkX0, 5, z, B.GLASS);
-    stamp(bkX0, 6, z, B.BLUE_WOOL);                    // teal jar lids
+    stamp(bkX0, 5, z, B.YEAST_SHELF);                  // jar shelf cells
+    stamp(bkX0, 6, z, B.BRAND_GREEN);                  // deep-green trim band
   }
+
+  // ── G2) Floor baskets (かご売りの一升パン気分) beside the cases ────────────
+  stamp(48, 2, 19, B.BASKET_BREAD);
+  stamp(53, 2, 19, B.BASKET_BREAD);
 
   // ── H) PENDANT LAMPS over the browsing floor + counter (warm amber) ────────
   if (B.LANTERN != null) {
@@ -597,14 +670,19 @@ export function buildPetitHermes(stamp, B) {
   stamp(45, 2, 2, B.HAY); stamp(45, 3, 2, B.HAY);
   stamp(45, 4, 2, B.WHITE_WOOL);
   stamp(45, 2, 3, B.WHITE_WOOL); stamp(45, 3, 3, B.HAY);
-  // Prep/kneading table in centre of workshop (z=4..6)
-  fillBox(47, 2, 4, 53, 2, 4, B.SPRUCE_PLANKS);
+  // Prep/kneading table in centre of workshop (z=4..6) — STAINLESS work top
+  fillBox(47, 2, 4, 53, 2, 4, B.STAINLESS);
   stamp(48, 2, 5, B.CRAFTING_TABLE); stamp(50, 2, 5, B.CRAFTING_TABLE);
-  // Fermentation jar shelf (SPRUCE shelf + GLASS jars + BLUE_WOOL lids) z=9
+  // Cooling rack: SLAT_SHELF with fresh 食パン loaves cooling on top (z=8)
+  fillBox(47, 3, 8, 49, 3, 8, B.SLAT_SHELF);
+  fillBox(47, 4, 8, 49, 4, 8, B.PAIN_DE_MIE);
+  // 一升パン (風呂敷包みの特注パン) waiting for pickup
+  stamp(54, 2, 7, B.ISSHOU_PAN);
+  // Confiture shelf (SPRUCE plank + JAR preserves + BRAND_GREEN lids) z=9
   fillBox(53, 3, 9, 55, 3, 9, B.SPRUCE_PLANKS); // shelf plank
   for (let jx = 53; jx <= 55; jx++) {
-    stamp(jx, 4, 9, B.GLASS);
-    stamp(jx, 5, 9, B.BLUE_WOOL);
+    stamp(jx, 4, 9, (B.JAR != null ? B.JAR : B.GLASS));
+    stamp(jx, 5, 9, B.BRAND_GREEN);
   }
   // CALCITE + WATER sink in east corner of workshop
   stamp(55, 2, 2, B.CALCITE); stamp(55, 2, 3, B.WATER);
@@ -617,8 +695,8 @@ export function buildPetitHermes(stamp, B) {
   //     "bread on display" not "hay"), and a LANTERN above.
   //     Corridor side (z=21) gets the decorative elements.
   // ==========================================================================
-  // 暖簾 lintel: BLUE_WOOL row at y=6, x48..51, z=20 (top of doorway arch)
-  fillBox(48, 6, 20, 51, 6, 20, B.BLUE_WOOL);
+  // 暖簾 lintel: BRAND_GREEN row at y=6, x48..51, z=20 (top of doorway arch)
+  fillBox(48, 6, 20, 51, 6, 20, B.BRAND_GREEN);
   // BREAD emblems flanking doorway at y=2, z=20 (corridor wall face).
   // These golden-bread blocks signal "パン屋" to approaching players.
   stamp(48, 2, 20, B.BREAD); // west emblem
@@ -630,10 +708,10 @@ export function buildPetitHermes(stamp, B) {
     stamp(49, 6, 21, B.LANTERN); // lantern above bakery doorway, corridor side
     stamp(50, 6, 21, B.LANTERN); // pair for width
   }
-  // Teal pilaster stripes on wall beside bakery doorway (corridor face z=20)
+  // Brand-green pilaster stripes on wall beside bakery doorway (corridor z=20)
   // west pilaster: x47, y2..5
   for (let py = 2; py <= 5; py++) {
-    const col = (py % 2 === 0) ? B.BLUE_WOOL : B.WHITE_WOOL;
+    const col = (py % 2 === 0) ? B.BRAND_GREEN : B.WHITE_WOOL;
     stamp(47, py, 20, col); // west pilaster (overwrites wall)
     stamp(52, py, 20, col); // east pilaster
   }
@@ -652,14 +730,9 @@ export function buildPetitHermes(stamp, B) {
     stamp(50, 5, 12, B.LANTERN);
     stamp(51, 5, 12, B.LANTERN);
   }
-  // "→ 工房" arrow marker: WHITE_WOOL arrow on east face of teal partition wall (z=11)
-  // place arrow at x=53, y=3..4, z=12 (workshop side, points east into workshop)
-  // Arrow tip: single block
-  stamp(53, 3, 12, B.WHITE_WOOL);
-  stamp(53, 4, 12, B.WHITE_WOOL);
-  // Arrow tail: two blocks forming a horizontal shaft
-  stamp(54, 3, 12, B.WHITE_WOOL);
-  stamp(55, 3, 12, B.WHITE_WOOL);
+  // (S3) The old WHITE_WOOL "→ 工房" arrow at z=12 was removed: the z=12 plane
+  // is now the ヒーロー面陳列 wall of bread (section B2). The lit lintel +
+  // passage gap x50..52 keep the workshop door obvious without it.
 
   // ==========================================================================
   // 9) WEST STAIR TOWER — x5..10, z3..19, y1..8+.
