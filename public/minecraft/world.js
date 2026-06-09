@@ -89,7 +89,10 @@ const LANTERN = 55; // glowing lantern block (blockLight 14)
 // Satoyama valley block aliases (palette ids from LB)
 const SMOOTH_STONE = 41, CALCITE = 46, WHITE_WOOL = 31, BLUE_WOOL = 33, GREEN_WOOL = 35, GRAVEL = 37, HAY = 50;
 const WHEAT_CROP = 53, VEG_CROP = 54, BRICK = 13, COBBLE = 10, GLASS = 12;
-const SANDSTONE = 39, STONE_BRICKS = 29, SPRUCE_PLANKS = 51;
+const SANDSTONE = 39, STONE_BRICKS = 29, SPRUCE_PLANKS = 51, BIRCH_PLANKS = 52;
+// S4 周辺v2 block aliases (palette ids from LB)
+const CEDAR_LOG = 78, CEDAR_LEAVES = 79, RICE = 81, TIN_ROOF = 82, KAWARA = 83;
+const GUARD_RAIL = 99, VENDING = 80, NOTICE_BOARD = 74, SAKURA_LEAVES = 77;
 
 // ─── 里山バレー constants ────────────────────────────────────────────────────
 // Valley centre, floor height, radii (world coords)
@@ -486,8 +489,14 @@ export class World {
         if (rv === 'water' && !isBridge) {
           // Carve 2 below VFLOOR and fill with water
           data[idx(lx, VFLOOR - 2, lz)] = DIRT;      // channel bed
-          data[idx(lx, VFLOOR - 1, lz)] = WATER;      // shallow water
-          data[idx(lx, VFLOOR, lz)] = AIR;             // open surface
+          // S4: 飛び石 — COBBLE stepping stones flush with the water surface,
+          // every other cell (checkered) across the river. Spec asked for
+          // z −44..−40, but the river there falls INSIDE the landmark
+          // exclusion box (river cx ≈ −21 ≥ EX0) and is never carved; use the
+          // nearest stretch just north of the box instead (z −60..−56).
+          const stone = wz >= -60 && wz <= -56 && ((wx + wz) & 1) === 0;
+          data[idx(lx, VFLOOR - 1, lz)] = stone ? COBBLE : WATER; // shallow water / stone
+          data[idx(lx, VFLOOR, lz)] = AIR;             // open surface (kept clear)
           data[idx(lx, VFLOOR + 1, lz)] = AIR;
           continue;
         }
@@ -523,6 +532,14 @@ export class World {
           // Drive centre line
           if (dz2 === 'road' && wz === DRIVE_Z && (((wx % 5) + 5) % 5) < 3) {
             data[idx(lx, VFLOOR, lz)] = CALCITE;
+          }
+          // S4: ガードレール — GUARD_RAIL posts on the east shoulder beside the
+          // river-facing stretch (z −60..40), every 2nd cell; skip the drive
+          // junction and the bus stop (±2 each).
+          if (rz === 'shoulder' && wx === ROAD_X + 3 &&
+              wz >= -60 && wz <= 40 && (wz & 1) === 0 &&
+              Math.abs(wz - DRIVE_Z) > 2 && Math.abs(wz - BUS_Z) > 2) {
+            data[idx(lx, VFLOOR + 1, lz)] = GUARD_RAIL;
           }
           continue;
         }
@@ -565,8 +582,10 @@ export class World {
           // Paddy: sunken 1 below VFLOOR → water + wheat-crop sticking up
           data[idx(lx, VFLOOR - 1, lz)] = WATER;
           data[idx(lx, VFLOOR, lz)] = AIR;
-          // Sparse wheat-crop "rice" blades (deterministic ~60%)
-          if (hash2(wx, wz, 0xabcde) < 0.60) data[idx(lx, VFLOOR, lz)] = WHEAT_CROP;
+          // Sparse rice blades (deterministic ~60%) — S4: real RICE block.
+          // (The QUEST harvest plot keeps WHEAT_CROP — it lives in landmark.js
+          // inside the exclusion box, which this paddy code never reaches.)
+          if (hash2(wx, wz, 0xabcde) < 0.60) data[idx(lx, VFLOOR, lz)] = RICE;
         } else if (pz === 'field') {
           // Dry-grass field
           data[idx(lx, VFLOOR, lz)] = DRY_GRASS;
@@ -607,17 +626,22 @@ export class World {
         else if (biome === 'mountain') density = onRim ? 0.14 : 0.012; // dense mountain forest
         // desert: no trees
         if (density === 0 || hash2(wx, wz, this.seed) >= density) continue;
-        const conifer = biome === 'snowy' || (onRim && hash2(wx, wz, this.seed ^ 0xf1) < 0.5);
-        // species: spruce/conifers dominant on rim for satoyama look, mixed lower
+        // S4: 杉の里山 — rim conifers become tall, narrow-crowned CEDAR (杉).
+        const rimCedar = onRim && hash2(wx, wz, this.seed ^ 0xf1) < 0.5;
+        const conifer = biome === 'snowy' || rimCedar;
+        // species: cedar dominant on rim for the satoyama look, mixed lower
         let log = WOOD, leaf = LEAVES;
-        if (conifer) { log = SPRUCE_LOG; leaf = SPRUCE_LEAVES; }
+        if (rimCedar) { log = CEDAR_LOG; leaf = CEDAR_LEAVES; }
+        else if (conifer) { log = SPRUCE_LOG; leaf = SPRUCE_LEAVES; }
         else if (biome === 'forest' && hash2(wx, wz, this.seed ^ 7) < 0.45) { log = BIRCH_LOG; leaf = BIRCH_LEAVES; }
-        const th = baseH + Math.floor(hash2(wx, wz, this.seed ^ 99) * 3);
+        const th = rimCedar
+          ? 8 + Math.floor(hash2(wx, wz, this.seed ^ 99) * 4)      // sugi: 8..11 tall
+          : baseH + Math.floor(hash2(wx, wz, this.seed ^ 99) * 3);
         const topY = h + th;
-        // canopy
-        for (let dy = -2; dy <= 1; dy++) {
+        // canopy (cedar: one extra lower ring for a longer, narrow cone)
+        for (let dy = rimCedar ? -3 : -2; dy <= 1; dy++) {
           const ly = topY + dy;
-          const r = conifer ? (dy >= 0 ? 1 : dy === -1 ? 1 : 2) : (dy >= 0 ? 1 : 2);
+          const r = conifer ? (dy >= 0 ? 1 : dy <= -2 ? 2 : 1) : (dy >= 0 ? 1 : 2);
           for (let dz = -r; dz <= r; dz++) {
             for (let ddx = -r; ddx <= r; ddx++) {
               if (ddx === 0 && dz === 0 && dy < 1) continue;
@@ -678,6 +702,27 @@ export class World {
             }
           }
         }
+      }
+    }
+
+    // ── S4: ドライブ桜 — small sakura trees on the school-drive shoulders ────
+    // Every 7 cells along the drive, both shoulders (z = DRIVE_Z ± 3).
+    // 2-block trunk + r=1 SAKURA_LEAVES canopy. All positions sit at
+    // x ≤ DRIVE_X1 (= EX0−1), i.e. strictly west of the exclusion box; the
+    // inExclusionBox guard keeps that invariant even if constants shift.
+    for (let tx = DRIVE_X0 + 1; tx <= DRIVE_X1; tx += 7) {
+      for (const sdz of [-3, 3]) {
+        const tz = DRIVE_Z + sdz;
+        if (inExclusionBox(tx, tz)) continue;
+        const lxp = tx - ox, lzp = tz - oz;
+        this._stamp(data, lxp, VFLOOR + 1, lzp, WOOD, true);  // trunk (oak log)
+        this._stamp(data, lxp, VFLOOR + 2, lzp, WOOD, true);
+        for (let ddz = -1; ddz <= 1; ddz++) {
+          for (let ddx = -1; ddx <= 1; ddx++) {
+            this._stamp(data, lxp + ddx, VFLOOR + 3, lzp + ddz, SAKURA_LEAVES, false);
+          }
+        }
+        this._stamp(data, lxp, VFLOOR + 4, lzp, SAKURA_LEAVES, false); // crown top
       }
     }
 
@@ -803,6 +848,9 @@ export class World {
   // SANDSTONE/PLANK walls, GLASS windows, BRICK gable roof, VEG_CROP garden.
   _stampFarmhouse(data, ox, oz, hx, hz) {
     const g = VFLOOR;
+    // S4: per-house roof material — 60% トタン (tin) / 40% 瓦 (kawara),
+    // chosen deterministically from the house anchor so all chunks agree.
+    const roofId = hash2(hx, hz, 0x5407) < 0.6 ? TIN_ROOF : KAWARA;
     // Main building: 7×7 footprint (dx,dz in -3..3)
     for (let dz = -3; dz <= 3; dz++) {
       for (let dx = -3; dx <= 3; dx++) {
@@ -816,11 +864,11 @@ export class World {
           const isWin = wy === 2 && ((Math.abs(dx) === 3 && dz === 0) || (Math.abs(dz) === 3 && dx === 0));
           this._stamp(data, lx, g + wy, lz, isWin ? GLASS : SANDSTONE, true);
         }
-        this._stamp(data, lx, g + 4, lz, BRICK, true); // gable roof layer 1
+        this._stamp(data, lx, g + 4, lz, roofId, true); // gable roof layer 1
       }
     }
-    // Peaked roof cap (+5) — centre strip (dark brick ridge)
-    for (let dx = -2; dx <= 2; dx++) this._stamp(data, hx + dx - ox, g + 5, hz - oz, BRICK, true);
+    // Peaked roof cap (+5) — centre ridge strip (same tin/kawara material)
+    for (let dx = -2; dx <= 2; dx++) this._stamp(data, hx + dx - ox, g + 5, hz - oz, roofId, true);
     // Kitchen garden: 3 rows of VEG_CROP south of house
     for (let dz = 4; dz <= 6; dz++) {
       for (let dx = -2; dx <= 2; dx++) {
@@ -879,6 +927,11 @@ export class World {
         this._stamp(data, lx, g + 1, lz, AIR, true);
       }
     }
+    // S4: 自販機 at the parking edge, beside the building's SE corner
+    // (stamped after the parking AIR-clear so it survives).
+    const vlx = hx + 4 - ox, vlz = hz + 4 - oz;
+    this._stamp(data, vlx, g + 1, vlz, VENDING, true);
+    this._stamp(data, vlx, g + 2, vlz, VENDING, true);
   }
 
   // ── バス停: roadside bus shelter ────────────────────────────────────────────
@@ -895,12 +948,19 @@ export class World {
       // Roof beam
       this._stamp(data, lx, g + 4, lz, SPRUCE_PLANKS, true);
     }
-    // Bench inside (bx+0, g+1)
-    this._stamp(data, bx - ox, g + 1, bz - oz, STONE_BRICKS, true);
+    // Bench inside (bx+0, g+1) — S4: wooden bench
+    this._stamp(data, bx - ox, g + 1, bz - oz, BIRCH_PLANKS, true);
     // Pole (west of shelter): tall sign post
     const plx = bx - 1 - ox, plz = bz - oz;
     for (let t = 1; t <= 5; t++) this._stamp(data, plx, g + t, plz, SPRUCE_LOG, true);
     this._stamp(data, plx, g + 5, plz, WHITE_WOOL, true); // sign cap
+    // S4: 時刻表 — NOTICE_BOARD timetable on the pole at eye level
+    this._stamp(data, plx, g + 2, plz, NOTICE_BOARD, true);
+    // S4: 自販機 — glowing vending machine just east of the shelter
+    const vlx = bx + 2 - ox;
+    this._stamp(data, vlx, g, bz - oz, SMOOTH_STONE, true);   // pad
+    this._stamp(data, vlx, g + 1, bz - oz, VENDING, true);
+    this._stamp(data, vlx, g + 2, bz - oz, VENDING, true);
   }
 
   // ── 南方八幡神社: Shinto shrine on a wooded eastern rise ──────────────────
@@ -954,19 +1014,34 @@ export class World {
                                        (Math.abs(dz) === 2 && Math.abs(dx) <= 1));
             this._stamp(data, lx, g + wy, lz, isWin ? GLASS : SPRUCE_PLANKS, true);
           }
-          // Tiered roof layer 1 (wide)
-          this._stamp(data, lx, g + 4, lz, STONE_BRICKS, true);
+          // Tiered roof layer 1 (wide) — S4: 瓦葺き
+          this._stamp(data, lx, g + 4, lz, KAWARA, true);
         }
       }
-      // Tiered roof layer 2 (inner, narrower)
+      // Tiered roof layer 2 (inner, narrower) — S4: 瓦葺き
       for (let dz = -1; dz <= 0; dz++) {
         for (let dx = -1; dx <= 1; dx++) {
-          this._stamp(data, sx + dx - ox, g + 5, sz + dz - oz, STONE_BRICKS, true);
+          this._stamp(data, sx + dx - ox, g + 5, sz + dz - oz, KAWARA, true);
         }
       }
-      // Ridge cap
-      this._stamp(data, sx - ox, g + 6, sz - 1 - oz, STONE_BRICKS, true);
-      this._stamp(data, sx - ox, g + 6, sz - oz, STONE_BRICKS, true);
+      // Ridge cap — S4: 瓦葺き
+      this._stamp(data, sx - ox, g + 6, sz - 1 - oz, KAWARA, true);
+      this._stamp(data, sx - ox, g + 6, sz - oz, KAWARA, true);
+    }
+
+    // ── S4: 手水舎 — CALCITE water basin east of the approach path ───────────
+    // Two-cell basin (CALCITE) topped with WATER, at (sx+3..4, sz+4).
+    for (const dx of [3, 4]) {
+      const lx = sx + dx - ox, lz = sz + 4 - oz;
+      this._stamp(data, lx, g + 1, lz, CALCITE, true);  // basin body
+      this._stamp(data, lx, g + 2, lz, WATER, true);     // water surface
+    }
+
+    // ── S4: 狛犬 — paired stone guardians flanking the approach (sx±2, sz+6) ─
+    for (const dx of [-2, 2]) {
+      const lx = sx + dx - ox, lz = sz + 6 - oz;
+      this._stamp(data, lx, g + 1, lz, SMOOTH_STONE, true);
+      this._stamp(data, lx, g + 2, lz, SMOOTH_STONE, true);
     }
 
     // ── Cedar trees flanking the 参道 ────────────────────────────────────────
