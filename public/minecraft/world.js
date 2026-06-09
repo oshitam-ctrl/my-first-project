@@ -22,6 +22,47 @@ const LB = {
   OPEN_SIGN: 65, // 営業中 OPEN sign
   SHOP_SIGN: 63, // 店名サイン shop-name sign
   AFRAME: 64,    // A型黒板 sidewalk chalkboard
+  BOOKSHELF: 49, // 本棚 — community plaza library shelf
+  // ── S1 schoolhouse / brand foundation blocks ──────────────────────────────
+  SHOE_CUBBY: 66,    // 下駄箱 (entrance shoe cubbies)
+  GREEN_BOARD: 67,   // 緑黒板 + チョーク受け
+  SCHOOL_FLOOR: 68,  // 明るい教室木床
+  PLASTER: 69,       // 白壁 (暖白 #F5EDE4)
+  SASH_WINDOW: 70,   // 窓枠付きガラス (transparent)
+  GYM_FLOOR: 71,     // 体育館床 + コートライン
+  SCHOOL_CLOCK: 72,  // 校舎時計
+  SCHOOL_EMBLEM: 73, // 校章
+  NOTICE_BOARD: 74,  // 掲示板
+  SINK_UNIT: 75,     // 廊下手洗い場
+  VAULT_BOX: 76,     // 跳び箱
+  SAKURA_LEAVES: 77, // 桜 (cutout foliage)
+  CEDAR_LOG: 78,     // 杉の幹
+  CEDAR_LEAVES: 79,  // 杉葉 (cutout foliage)
+  VENDING: 80,       // 自販機 (light:8)
+  RICE: 81,          // 稲 (non-solid crop)
+  TIN_ROOF: 82,      // トタン屋根
+  KAWARA: 83,        // 瓦
+  PAIN_DE_MIE: 84,   // 食パン display
+  TARTINE: 85,       // タルティーヌ display
+  SOUP_POT: 86,      // スープ鍋
+  CURRY_POT: 87,     // カレー鍋
+  QUICHE: 88,        // キッシュ display
+  COOKIE_TRAY: 89,   // 焼き菓子トレー
+  SLAT_SHELF: 90,    // 木スラット陳列棚
+  BASKET_BREAD: 91,  // パンかご
+  PRICE_CARD: 92,    // 値札カード
+  COFFEE_KIT: 93,    // コーヒー器具
+  MENU_STAND: 94,    // メニュースタンド
+  STAINLESS: 95,     // 給食室調理台
+  SCHOOL_DESK: 96,   // 学校机 (町産木材)
+  SCHOOL_CHAIR: 97,  // 学校椅子
+  FLAG: 98,          // 国旗
+  GUARD_RAIL: 99,    // ガードレール
+  BRAND_GREEN: 100,  // ブランド深緑 #5C6B4A
+  WHEAT_BEIGE: 101,  // 麦色 #E8D5B7
+  COMPOST: 102,      // ぐるぐるコンポスト
+  YEAST_SHELF: 103,  // 酵母瓶棚
+  ISSHOU_PAN: 104,   // 一升パン (風呂敷包み)
 };
 // Fixed world placement of the Petit Hermès landmark (centred in front of spawn).
 // Chosen so the entrance is at world x=8 and the facade plane at world z=-24
@@ -251,9 +292,9 @@ function oreRoll(wx, y, wz, seed) {
 //   TRANSPARENT_GROUP  – alpha-blended pass (glass only now; water split out)
 //   WATER_BLOCK        – dedicated water group with animated scrolling texture
 //   LEAF_GROUP         – alpha-cutout foliage pass (DoubleSide, alphaTest)
-const TRANSPARENT_GROUP = new Set([12 /*glass*/]);
+const TRANSPARENT_GROUP = new Set([12 /*glass*/, 70 /*sash_window*/]);
 const WATER_BLOCK = WATER; // id 7
-const LEAF_GROUP = new Set([LEAVES, 24 /*birch_leaves*/, 26 /*spruce_leaves*/]);
+const LEAF_GROUP = new Set([LEAVES, 24 /*birch_leaves*/, 26 /*spruce_leaves*/, 77 /*sakura_leaves*/, 79 /*cedar_leaves*/]);
 
 const dirs = [
   { d: [0, 1, 0], shade: 1.0, face: 0 },

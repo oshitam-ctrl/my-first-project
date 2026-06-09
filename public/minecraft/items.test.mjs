@@ -58,8 +58,8 @@ assert.strictEqual(isFood('apple'), true, 'apple is food');
 
 // Counts
 assert.strictEqual(toolCount, 16, 'exactly 16 tools (16 base)');
-assert.strictEqual(blockCount, 62, 'exactly 62 block items (56 + baguette/campagne/pastry display + open/shop/a-frame signs)');
-assert.strictEqual(foodCount, 23, 'exactly 23 food items');
+assert.strictEqual(blockCount, 101, 'exactly 101 block items (62 + 39 S1 schoolhouse/brand blocks, ids 66..104)');
+assert.strictEqual(foodCount, 33, 'exactly 33 food items (23 + 6 cafe menu + 4 petit campagne 食べ比べ)');
 
 // Petit Hermès signature items
 assert.strictEqual(ITEMS.campagne.food.hunger, 9, 'campagne hunger 9');
@@ -162,7 +162,51 @@ assert.strictEqual(blockToItem(63), 'shop_sign', 'blockToItem(63) round-trips');
 assert.ok(ITEMS.aframe && ITEMS.aframe.block === 64, 'aframe → 64');
 assert.strictEqual(blockToItem(64), 'aframe', 'blockToItem(64) round-trips');
 
+// ── S1: schoolhouse / brand foundation block items (ids 66..104) ──
+const S1_BLOCKS = {
+  shoe_cubby: 66, green_board: 67, school_floor: 68, plaster: 69,
+  sash_window: 70, gym_floor: 71, school_clock: 72, school_emblem: 73,
+  notice_board: 74, sink_unit: 75, vault_box: 76, sakura_leaves: 77,
+  cedar_log: 78, cedar_leaves: 79, vending: 80, rice: 81, tin_roof: 82,
+  kawara: 83, pain_de_mie_disp: 84, tartine_disp: 85, soup_pot: 86,
+  curry_pot: 87, quiche_disp: 88, cookie_tray: 89, slat_shelf: 90,
+  basket_bread: 91, price_card: 92, coffee_kit: 93, menu_stand: 94,
+  stainless: 95, school_desk: 96, school_chair: 97, flag: 98,
+  guard_rail: 99, brand_green: 100, wheat_beige: 101, compost: 102,
+  yeast_shelf: 103, isshou_pan: 104,
+};
+assert.strictEqual(Object.keys(S1_BLOCKS).length, 39, 'S1 adds exactly 39 block items');
+for (const [iid, bid] of Object.entries(S1_BLOCKS)) {
+  assert.ok(ITEMS[iid], `${iid} item exists`);
+  assert.strictEqual(ITEMS[iid].block, bid, `${iid} maps to block id ${bid}`);
+  assert.ok(isBlockItem(iid), `${iid} reports as block item`);
+  assert.strictEqual(blockToItem(bid), iid, `blockToItem(${bid}) round-trips to ${iid}`);
+  assert.ok(ITEMS[iid].name.length > 0, `${iid} has a Japanese name`);
+  assert.ok(ITEMS[iid].desc.length > 0, `${iid} has a desc`);
+}
+
+// ── S1: South in North cafe menu + プチカンパーニュ食べ比べ foods ──
+const S1_FOODS = {
+  spice_curry: 8, quiche: 7, tartine: 6, veg_soup: 5,
+  baked_sweets: 4, seasonal_drink: 3,
+  petit_campagne_plain: 6, petit_campagne_raisin: 6,
+  petit_campagne_choco: 6, petit_campagne_walnut: 6,
+};
+assert.strictEqual(Object.keys(S1_FOODS).length, 10, 'S1 adds exactly 10 food items');
+for (const [fid, hunger] of Object.entries(S1_FOODS)) {
+  assert.ok(ITEMS[fid], `${fid} item exists`);
+  assert.ok(isFood(fid), `${fid} is food`);
+  assert.strictEqual(ITEMS[fid].food.hunger, hunger, `${fid} hunger ${hunger}`);
+  assert.ok(ITEMS[fid].desc.length > 0, `${fid} has a desc`);
+}
+// on-brand copy: 食べ比べは一期一会
+for (const fid of ['petit_campagne_plain', 'petit_campagne_raisin', 'petit_campagne_choco', 'petit_campagne_walnut']) {
+  assert.ok(ITEMS[fid].desc.includes('一期一会'), `${fid} desc mentions 一期一会`);
+  assert.ok(ITEMS[fid].desc.includes('食べ比べ') || ITEMS[fid].desc.includes('酵母'), `${fid} desc mentions 食べ比べ/酵母`);
+}
+
 console.log(`OK: ${ids.length} items (${blockCount} blocks, ${toolCount} tools, ${foodCount} food)`);
 console.log('OK: desc field assertions passed');
 console.log('OK: bread_block assertions passed');
 console.log('OK: register/scale/jar block-item assertions passed');
+console.log('OK: S1 schoolhouse blocks (66..104) + cafe foods assertions passed');
