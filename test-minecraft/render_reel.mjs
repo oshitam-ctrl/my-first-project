@@ -9,7 +9,7 @@ import { readFile } from 'node:fs/promises';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const FPS = 30, GAP = 0.14, W = 720, H = 1280;
+const FPS = 30, GAP = 0.14, W = 540, H = 960; // low-res render (ffmpeg upscales)
 const OUT = '/tmp/frames2';
 fs.mkdirSync(OUT, { recursive: true });
 const T = JSON.parse(fs.readFileSync('/tmp/voice2/timings.json', 'utf8'));
@@ -54,6 +54,7 @@ const browser = await chromium.launch({ args:['--enable-unsafe-swiftshader','--u
 const ctx = await browser.newContext({ viewport:{width:W,height:H}, deviceScaleFactor:1 });
 const page = await ctx.newPage();
 const errs=[]; page.on('pageerror',e=>errs.push(e.message));
+await page.addInitScript(()=>{ try{ localStorage.setItem('mc_settings', JSON.stringify({dist:5})); }catch(e){} });
 await page.goto(`http://localhost:${port}/minecraft`,{waitUntil:'load'});
 await page.waitForTimeout(1200);
 await page.evaluate(()=>{
@@ -85,28 +86,33 @@ async function doAction(a){
 
 let g = 0, rendered = 0, skipped = 0;
 const t0 = Date.now();
+const START_LINE = parseInt(process.env.START_LINE||'0',10);
 for (const line of T) {
   const sc = SC[line.scene];
   if (!sc) { console.log('NO SCENE for', line.scene); continue; }
+  if (line.i < START_LINE) {  // another worker owns earlier lines; just advance g
+    g += Math.round(((line.end + GAP) - line.start) * FPS);
+    continue;
+  }
   const span = (line.end + GAP) - line.start;
   const n = Math.round(span * FPS);
   // does this scene need rendering at all?
   let need = false;
-  for (let f=0; f<n; f++) if (!fs.existsSync(`${OUT}/f_${String(g+f).padStart(6,'0')}.png`)) { need = true; break; }
+  for (let f=0; f<n; f++) if (!fs.existsSync(`${OUT}/f_${String(g+f).padStart(6,'0')}.jpg`)) { need = true; break; }
   if (need) {
     await page.evaluate(a=>{ window.__time&&window.__time(a.t); window.__view&&window.__view(...a.cam); }, {t:sc.time, cam:sc.from});
     await page.waitForTimeout(1100);                       // chunk settle at scene start
     if (sc.action) { await doAction(sc.action); await page.waitForTimeout(350); }
   }
   for (let f=0; f<n; f++) {
-    const fn = `${OUT}/f_${String(g+f).padStart(6,'0')}.png`;
+    const fn = `${OUT}/f_${String(g+f).padStart(6,'0')}.jpg`;
     if (fs.existsSync(fn)) { skipped++; continue; }
     const k = ease(f/(n-1||1));
     const cam = sc.from.map((v,i)=>v+(sc.to[i]-v)*k);
     await page.evaluate(a=>{ window.__time&&window.__time(a.t); window.__view&&window.__view(...a.cam); }, {t:sc.time, cam});
-    await page.waitForTimeout(70);
-    try { await page.screenshot({ path: fn, timeout: 20000 }); }
-    catch(e){ console.log('retry frame', g+f); await page.waitForTimeout(500); await page.screenshot({ path: fn, timeout: 20000 }); }
+    await page.waitForTimeout(40);
+    try { await page.screenshot({ path: fn, type:'jpeg', quality: 88, timeout: 20000 }); }
+    catch(e){ console.log('retry frame', g+f); await page.waitForTimeout(500); await page.screenshot({ path: fn, type:'jpeg', quality: 88, timeout: 20000 }); }
     rendered++;
   }
   if (sc.endAction) await doAction(sc.endAction);

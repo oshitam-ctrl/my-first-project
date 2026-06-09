@@ -4,7 +4,7 @@ set -e
 FF=/usr/local/lib/python3.11/dist-packages/imageio_ffmpeg/binaries/ffmpeg-linux-x86_64-v7.0.2
 
 # 1) frames → smooth 30fps gameplay video (1080x1920)
-$FF -hide_banner -y -framerate 30 -i /tmp/frames2/f_%06d.png \
+$FF -hide_banner -y -framerate 30 -i /tmp/frames2/f_%06d.jpg \
   -vf "scale=1080:1920,setsar=1,format=yuv420p" \
   -c:v libx264 -preset medium -crf 19 -pix_fmt yuv420p /tmp/reel2_game.mp4 2>/dev/null
 echo "game: $($FF -hide_banner -i /tmp/reel2_game.mp4 2>&1 | grep -o 'Duration: [0-9:.]*')"
