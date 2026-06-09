@@ -498,8 +498,22 @@ export function createMobs(opts) {
     return null;
   }
 
+  // Natural-spawn population for the soft cap. Scripted NPCs (named townsfolk
+  // with npcLine, anchored/tethered shop or queue guests) are EXCLUDED so a
+  // busy storefront (opening-day queue, seated yard diners…) never starves the
+  // ambient animal/villager spawns — and ambient spawns never block scripted
+  // casts either (spawnAt ignores the cap anyway).
+  function naturalCount() {
+    let n = 0;
+    for (const m of mobs) {
+      if (m.npcLine || m.anchor || m.shopGuest) continue; // scripted NPC
+      n++;
+    }
+    return n;
+  }
+
   function spawnOne() {
-    if (mobs.length >= SOFT_CAP) return;
+    if (naturalCount() >= SOFT_CAP) return;
     const night = isNight();
     const ids = night ? HOSTILE_IDS : PASSIVE_IDS;
     if (ids.length === 0) return;
@@ -1103,10 +1117,17 @@ export function createMobs(opts) {
     return mobs.length;
   }
 
+  // Cleanly despawn a scripted mob (no drop, no death effects) — e.g. the
+  // opening-day queue leaving after a while.
+  function remove(mob) {
+    if (mob) removeMob(mob, null);
+  }
+
   const api = {
     update,
     attack,
     spawnAt,
+    remove,
     setEnabled,
     clear,
     count,

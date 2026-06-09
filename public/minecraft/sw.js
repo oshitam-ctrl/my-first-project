@@ -1,7 +1,7 @@
 /* Voxel Craft service worker — installable + offline app shell.
  * Plain Service Worker APIs only (no importScripts, no external code). */
 
-const CACHE_VERSION = 'voxelcraft-v2';
+const CACHE_VERSION = 'voxelcraft-v3';
 
 /* App shell. Paths are RELATIVE and resolved against the SW scope
  * (the SW lives at /minecraft/sw.js, so scope is /minecraft/). */
@@ -15,6 +15,8 @@ const APP_SHELL = [
   './audio.js',
   './share.js',
   './touch.js',
+  './cafe.js',
+  './sanpo.js',
   './vendor/three.module.js',
   './manifest.webmanifest',
   './icon-192.png',
