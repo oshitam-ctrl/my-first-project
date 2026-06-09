@@ -82,9 +82,57 @@ const T = {
   campagne_side:  71, // campagne — floured domed crust
   pastry_top:     72, // croissant — nested crescent lamination, glossy
   pastry_side:    73, // croissant — laminated layered bands
-  sign_open:      74, // 営業中 — teal field, bold "OPEN" + lamp dot
-  sign_name:      75, // shop sign — cream field, teal "PH" monogram + wheat
+  sign_open:      74, // 営業中 — brand deep-green field, bold "OPEN" + lamp dot
+  sign_name:      75, // shop sign — stamp-motif logo (perforated edge + PH emblem)
   sign_aframe:    76, // A-frame chalkboard — slate + chalk lines + loaf glyph
+  // ── S1 schoolhouse / brand foundation tiles ───────────────────────────────
+  cubby_front:    77, // 下駄箱 — 3×3 open shoe cells in a wood frame
+  greenboard:     78, // 緑黒板 — deep green board + chalk tray + chalk lines
+  school_floor:   79, // 教室の明るい木床
+  plaster:        80, // 白壁 (暖白 #F5EDE4)
+  sash_window:    81, // 窓枠付きガラス — white cross sash on glass
+  gym_floor:      82, // 体育館床 + オレンジコートライン
+  clock_face:     83, // 校舎時計 — white dial + hands
+  emblem:         84, // 校章 — navy field + gold 5-petal rosette
+  notice:         85, // 掲示板 — cork + pinned paper
+  sink_top:       86, // 手洗い場 — stainless top, 2 basins + faucets
+  sink_side:      87, // 手洗い場 — tiled front + steel apron
+  vault_top:      88, // 跳び箱 — leather pad top with stitch border
+  vault_side:     89, // 跳び箱 — stacked wooden tiers
+  sakura:         90, // 桜の葉 (cutout, pink)
+  cedar_log:      91, // 杉の幹 (top = T.log_top)
+  cedar_leaves:   92, // 杉葉 (cutout, dark blue-green)
+  vend_front:     93, // 自販機 — lit product window + dispense slot
+  vend_side:      94, // 自販機 — blue body side
+  rice:           95, // 稲 — thin green stalks over paddy mud
+  tin_roof:       96, // トタン屋根 — vertical corrugation + rust streaks
+  kawara:         97, // 瓦 — overlapping blue-grey arc rows
+  mie_top:        98, // 食パン — soft crumb top + golden crust rim
+  mie_side:       99, // 食パン — pale crumb side + crust bands
+  tartine_top:   100, // タルティーヌ — slice + red/green toppings (side = bread_side)
+  soup_top:      101, // スープ鍋 — pot rim + orange soup + veg dots
+  pot_side:      102, // 鍋 — charcoal body + steel rim (shared soup/curry)
+  curry_top:     103, // カレー鍋 — pot rim + brown curry swirl
+  quiche_top:    104, // キッシュ — golden disk + crimped edge + cut lines
+  cookie_top:    105, // 焼き菓子 — tray of cookies/biscotti
+  slat:          106, // 木スラット陳列棚 — 3 boards + shadow grooves
+  basket_top:    107, // かご — weave + bread ovals + flour
+  basket_side:   108, // かご — woven side
+  price_card:    109, // 値札カード — cream card + ¥ + text lines
+  coffee:        110, // コーヒー器具 — dripper + carafe + steam
+  menu_stand:    111, // メニュースタンド — dark frame + cream menu
+  stainless:     112, // 給食室調理台 — brushed steel
+  desk_top:      113, // 学校机 — light wood + frame line
+  desk_side:     114, // 学校机 — apron + 2 legs
+  chair:         115, // 学校椅子 — seat + backrest slats + legs
+  flag:          116, // 国旗 — white field + red sun disc
+  guardrail:     117, // ガードレール — 2 white corrugated beams
+  brand_green:   118, // ブランド深緑 #5C6B4A ウール織
+  wheat_beige:   119, // 麦色 #E8D5B7
+  compost_top:   120, // ぐるぐるコンポスト — wood frame + soil + scraps + swirl
+  compost_side:  121, // コンポスト — wood slats over dark soil
+  yeast_jars:    122, // 酵母瓶棚 — colourful bubbling jars on a shelf
+  isshou:        123, // 一升パン — furoshiki wrap: wheat cloth + knot + checker
 };
 
 // Block definitions. `faces` = [top, bottom, side] tile indices.
@@ -162,6 +210,48 @@ export const BLOCKS = {
   52: { name: 'Birch Planks', faces: [T.birch_planks, T.birch_planks, T.birch_planks], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
   53: { name: 'Wheat Crop', faces: [T.wheat_crop, T.wheat_crop, T.wheat_crop], solid: false, opaque: false, hardness: 0.2, tool: null, tier: null, drop: 'wheat' },
   54: { name: 'Vegetable Crop', faces: [T.veg_crop, T.veg_crop, T.veg_crop], solid: false, opaque: false, hardness: 0.2, tool: null, tier: null, drop: 'surplus_veg' },
+
+  // ── S1: 旧南方小学校 schoolhouse blocks ────────────────────────────────────
+  66: { name: 'Shoe Cubby', faces: [T.plank, T.plank, T.cubby_front], solid: true, opaque: true, hardness: 0.5, tool: 'axe', tier: null },
+  67: { name: 'Green Board', faces: [T.greenboard, T.greenboard, T.greenboard], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  68: { name: 'School Floor', faces: [T.school_floor, T.school_floor, T.school_floor], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
+  69: { name: 'Plaster', faces: [T.plaster, T.plaster, T.plaster], solid: true, opaque: true, hardness: 1.5, tool: 'pickaxe', tier: null },
+  70: { name: 'Sash Window', faces: [T.sash_window, T.sash_window, T.sash_window], solid: true, opaque: false, hardness: 0.3, tool: null, tier: null, drop: null },
+  71: { name: 'Gym Floor', faces: [T.gym_floor, T.gym_floor, T.gym_floor], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
+  72: { name: 'School Clock', faces: [T.clock_face, T.clock_face, T.clock_face], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  73: { name: 'School Emblem', faces: [T.emblem, T.emblem, T.emblem], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  74: { name: 'Notice Board', faces: [T.notice, T.notice, T.notice], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  75: { name: 'Sink Unit', faces: [T.sink_top, T.sink_side, T.sink_side], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  76: { name: 'Vault Box', faces: [T.vault_top, T.vault_side, T.vault_side], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  77: { name: 'Sakura Leaves', faces: [T.sakura, T.sakura, T.sakura], solid: true, opaque: false, hardness: 0.2, tool: null, tier: null, drop: null },
+  78: { name: 'Cedar Log', faces: [T.log_top, T.log_top, T.cedar_log], solid: true, opaque: true, hardness: 2.0, tool: 'axe', tier: null },
+  79: { name: 'Cedar Leaves', faces: [T.cedar_leaves, T.cedar_leaves, T.cedar_leaves], solid: true, opaque: false, hardness: 0.2, tool: null, tier: null, drop: null },
+  80: { name: 'Vending Machine', faces: [T.vend_side, T.vend_side, T.vend_front], solid: true, opaque: true, hardness: 0.6, tool: null, tier: null, light: 8 },
+  81: { name: 'Rice', faces: [T.rice, T.rice, T.rice], solid: false, opaque: false, hardness: 0.2, tool: null, tier: null, drop: null },
+  82: { name: 'Tin Roof', faces: [T.tin_roof, T.tin_roof, T.tin_roof], solid: true, opaque: true, hardness: 1.0, tool: 'pickaxe', tier: null },
+  83: { name: 'Kawara', faces: [T.kawara, T.kawara, T.kawara], solid: true, opaque: true, hardness: 1.5, tool: 'pickaxe', tier: null },
+  // South in North / bakery product + fixture blocks (Bread(56)-style props)
+  84: { name: 'Pain de Mie', faces: [T.mie_top, T.mie_top, T.mie_side], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  85: { name: 'Tartine', faces: [T.tartine_top, T.tartine_top, T.bread_side], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  86: { name: 'Soup Pot', faces: [T.soup_top, T.pot_side, T.pot_side], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  87: { name: 'Curry Pot', faces: [T.curry_top, T.pot_side, T.pot_side], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  88: { name: 'Quiche', faces: [T.quiche_top, T.quiche_top, T.pastry_side], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  89: { name: 'Cookie Tray', faces: [T.cookie_top, T.bread_side, T.bread_side], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  90: { name: 'Slat Shelf', faces: [T.slat, T.slat, T.slat], solid: true, opaque: true, hardness: 0.5, tool: 'axe', tier: null },
+  91: { name: 'Bread Basket', faces: [T.basket_top, T.basket_side, T.basket_side], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  92: { name: 'Price Card', faces: [T.price_card, T.price_card, T.price_card], solid: true, opaque: true, hardness: 0.4, tool: null, tier: null },
+  93: { name: 'Coffee Kit', faces: [T.coffee, T.coffee, T.coffee], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  94: { name: 'Menu Stand', faces: [T.menu_stand, T.menu_stand, T.menu_stand], solid: true, opaque: true, hardness: 0.4, tool: null, tier: null },
+  95: { name: 'Stainless', faces: [T.stainless, T.stainless, T.stainless], solid: true, opaque: true, hardness: 1.5, tool: 'pickaxe', tier: null },
+  96: { name: 'School Desk', faces: [T.desk_top, T.desk_side, T.desk_side], solid: true, opaque: true, hardness: 0.5, tool: 'axe', tier: null },
+  97: { name: 'School Chair', faces: [T.chair, T.chair, T.chair], solid: true, opaque: true, hardness: 0.5, tool: 'axe', tier: null },
+  98: { name: 'Flag', faces: [T.flag, T.flag, T.flag], solid: true, opaque: true, hardness: 0.4, tool: null, tier: null },
+  99: { name: 'Guard Rail', faces: [T.guardrail, T.guardrail, T.guardrail], solid: true, opaque: false, hardness: 0.8, tool: 'pickaxe', tier: null },
+  100: { name: 'Brand Green', faces: [T.brand_green, T.brand_green, T.brand_green], solid: true, opaque: true, hardness: 0.8, tool: null, tier: null },
+  101: { name: 'Wheat Beige', faces: [T.wheat_beige, T.wheat_beige, T.wheat_beige], solid: true, opaque: true, hardness: 0.8, tool: null, tier: null },
+  102: { name: 'Compost', faces: [T.compost_top, T.compost_side, T.compost_side], solid: true, opaque: true, hardness: 0.5, tool: 'shovel', tier: null },
+  103: { name: 'Yeast Shelf', faces: [T.yeast_jars, T.yeast_jars, T.yeast_jars], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
+  104: { name: 'Isshou Pan', faces: [T.isshou, T.isshou, T.isshou], solid: true, opaque: true, hardness: 0.5, tool: null, tier: null },
 };
 
 export function isOpaque(id) {
@@ -829,29 +919,43 @@ const painters = {
     c.fillRect(2, 2, TILE - 4, 1);
   },
 
-  // sign_open: 営業中 — teal field, cream plate, bold "OPEN" + amber lamp dot.
+  // sign_open: 営業中 — brand deep-green field #5C6B4A, beige plate,
+  // bold "OPEN" + amber lamp dot. (ティール廃止 → ブランド深緑)
   [T.sign_open]: (c) => {
-    noisePx(c, [47, 120, 112], 8);              // teal field
-    c.fillStyle = 'rgba(243, 234, 217, 0.96)';  // cream plate
+    noisePx(c, [92, 107, 74], 8);               // brand deep-green field #5C6B4A
+    c.fillStyle = 'rgba(245, 237, 228, 0.96)';  // warm beige plate #F5EDE4
     c.fillRect(1, 3, 14, 9);
-    c.fillStyle = '#234b46';                     // dark teal text
+    c.fillStyle = '#3a4a2f';                     // dark forest-green text
     c.font = 'bold 6px system-ui, sans-serif';
     c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText('OPEN', 8, 8);
     c.fillStyle = '#ffb24d';                      // amber "open" lamp
     c.beginPath(); c.arc(13, 2, 1.6, 0, Math.PI * 2); c.fill();
   },
-  // sign_name: shop sign — cream field, teal "PH" monogram + gold wheat sprig.
+  // sign_name: 切手モチーフロゴ — warm beige #F5EDE4 stamp field, perforated
+  // stamp-edge dots all around, deep-green #5C6B4A round emblem + "PH".
   [T.sign_name]: (c) => {
-    noisePx(c, [235, 228, 210], 8);             // cream field
-    c.strokeStyle = '#2f7870'; c.lineWidth = 1.5; c.strokeRect(1, 1, 14, 14); // teal border
-    c.fillStyle = '#2b6f6a';                      // teal monogram
-    c.font = 'bold 8px Georgia, serif';
+    noisePx(c, [245, 237, 228], 6);             // beige stamp field #F5EDE4
+    // darker margin ring so the punched perforations read at 16px
+    c.fillStyle = 'rgba(160, 148, 124, 0.55)';
+    c.fillRect(0, 0, TILE, 1); c.fillRect(0, TILE - 1, TILE, 1);
+    c.fillRect(0, 0, 1, TILE); c.fillRect(TILE - 1, 0, 1, TILE);
+    // perforated edge: bright punched dots along the border
+    c.fillStyle = '#ffffff';
+    for (let i = 1; i < TILE - 1; i += 3) {
+      c.fillRect(i, 0, 1, 1); c.fillRect(i, TILE - 1, 1, 1);
+      c.fillRect(0, i, 1, 1); c.fillRect(TILE - 1, i, 1, 1);
+    }
+    // thin inner frame line in brand green
+    c.strokeStyle = '#5c6b4a'; c.lineWidth = 1;
+    c.strokeRect(2.5, 2.5, 11, 11);
+    // deep-green round emblem + cream "PH" monogram
+    c.fillStyle = '#5c6b4a';
+    c.beginPath(); c.arc(8, 8, 4.5, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#f5ede4';
+    c.font = 'bold 5px Georgia, serif';
     c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillText('PH', 7, 8);
-    c.strokeStyle = '#c79a3c'; c.lineWidth = 1;   // gold wheat sprig
-    c.beginPath(); c.moveTo(13, 12); c.lineTo(12, 5); c.stroke();
-    for (const wy of [6, 8, 10]) { c.beginPath(); c.moveTo(12, wy); c.lineTo(14, wy - 1); c.stroke(); }
+    c.fillText('PH', 8, 8.5);
   },
   // sign_aframe: sidewalk chalkboard — slate field, chalk lines + a loaf glyph.
   [T.sign_aframe]: (c) => {
@@ -861,6 +965,597 @@ const painters = {
     c.fillStyle = '#d9a23e';                      // little gold loaf glyph
     c.beginPath(); c.ellipse(8, 13, 4, 2, 0, 0, Math.PI * 2); c.fill();
     c.strokeStyle = 'rgba(120, 80, 30, 0.8)'; c.beginPath(); c.moveTo(6, 13); c.lineTo(10, 13); c.stroke();
+  },
+
+  // ── S1 schoolhouse tiles ─────────────────────────────────────────────────
+  // cubby_front: 下駄箱 — wood frame, 3×3 dark open cells, white shoes inside.
+  [T.cubby_front]: (c) => {
+    noisePx(c, [150, 116, 72], 12);              // wood frame
+    for (let row = 0; row < 3; row++) for (let col = 0; col < 3; col++) {
+      const x = 1 + col * 5, y = 1 + row * 5;
+      c.fillStyle = 'rgba(38, 26, 14, 0.95)';    // open cell shadow
+      c.fillRect(x, y, 4, 4);
+      if ((row * 3 + col) % 4 !== 3) {           // most cells hold a shoe pair
+        c.fillStyle = 'rgba(238, 238, 232, 0.95)';
+        c.fillRect(x + 1, y + 2, 2, 1);
+      }
+    }
+  },
+  // greenboard: 緑黒板 — deep green field, chalk writing, wood chalk tray.
+  [T.greenboard]: (c) => {
+    noisePx(c, [24, 78, 58], 10);                // deep green board
+    c.strokeStyle = 'rgba(238, 238, 228, 0.75)'; // chalk lines
+    c.lineWidth = 1;
+    c.beginPath(); c.moveTo(2, 4); c.lineTo(11, 4); c.stroke();
+    c.beginPath(); c.moveTo(3, 7); c.lineTo(13, 7); c.stroke();
+    c.beginPath(); c.moveTo(2, 10); c.lineTo(9, 10); c.stroke();
+    c.fillStyle = 'rgb(150, 116, 72)';           // wooden chalk tray
+    c.fillRect(0, 13, TILE, 3);
+    c.fillStyle = '#f0f0ea'; c.fillRect(3, 13, 3, 1);  // white chalk stick
+    c.fillStyle = '#e8c050'; c.fillRect(9, 13, 3, 1);  // yellow chalk stick
+  },
+  // school_floor: 明るい教室木床 — warm bright planks, thin seams.
+  [T.school_floor]: (c) => {
+    noisePx(c, [198, 168, 118], 14);
+    c.strokeStyle = 'rgba(146, 116, 72, 0.8)';
+    for (let y = 0; y < TILE; y += 4) {
+      c.beginPath(); c.moveTo(0, y + 0.5); c.lineTo(TILE, y + 0.5); c.stroke();
+    }
+    c.strokeStyle = 'rgba(146, 116, 72, 0.55)';  // staggered butt joints
+    for (const [jx, jy] of [[5, 0], [11, 4], [3, 8], [9, 12]]) {
+      c.beginPath(); c.moveTo(jx + 0.5, jy); c.lineTo(jx + 0.5, jy + 4); c.stroke();
+    }
+  },
+  // plaster: 白壁 — warm white #F5EDE4 with the faintest trowel texture.
+  [T.plaster]: (c) => {
+    noisePx(c, [240, 236, 226], 7);
+    c.strokeStyle = 'rgba(214, 206, 190, 0.4)';
+    c.beginPath(); c.moveTo(0, 5.5); c.lineTo(TILE, 5.5); c.stroke();
+    c.beginPath(); c.moveTo(0, 11.5); c.lineTo(TILE, 11.5); c.stroke();
+  },
+  // sash_window: 窓枠付きガラス — glass tint + bold white cross sash frame.
+  [T.sash_window]: (c) => {
+    c.clearRect(0, 0, TILE, TILE);
+    c.fillStyle = 'rgba(185, 220, 235, 0.30)';   // glass
+    c.fillRect(0, 0, TILE, TILE);
+    c.fillStyle = 'rgba(246, 244, 236, 0.95)';   // white sash frame + muntins
+    c.fillRect(0, 0, TILE, 2); c.fillRect(0, TILE - 2, TILE, 2);
+    c.fillRect(0, 0, 2, TILE); c.fillRect(TILE - 2, 0, 2, TILE);
+    c.fillRect(7, 0, 2, TILE); c.fillRect(0, 7, TILE, 2);
+    c.fillStyle = 'rgba(255, 255, 255, 0.45)';   // glass glint
+    c.fillRect(3, 3, 2, 3);
+  },
+  // gym_floor: 体育館床 — birch-toned boards + bold orange court line.
+  [T.gym_floor]: (c) => {
+    noisePx(c, [208, 178, 122], 12);
+    c.strokeStyle = 'rgba(162, 132, 86, 0.7)';
+    for (let y = 0; y < TILE; y += 4) {
+      c.beginPath(); c.moveTo(0, y + 0.5); c.lineTo(TILE, y + 0.5); c.stroke();
+    }
+    c.fillStyle = 'rgba(216, 110, 30, 0.95)';    // court line
+    c.fillRect(0, 6, TILE, 2);
+  },
+  // clock_face: 校舎時計 — dark wood surround, white dial, black hands.
+  [T.clock_face]: (c) => {
+    noisePx(c, [88, 70, 48], 10);                // wood surround
+    c.fillStyle = '#f2f0e8';                      // white dial
+    c.beginPath(); c.arc(8, 8, 6, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = '#3a3a3a'; c.lineWidth = 1;
+    c.beginPath(); c.arc(8, 8, 6, 0, Math.PI * 2); c.stroke();
+    c.fillStyle = '#3a3a3a';                      // 12/3/6/9 tick marks
+    c.fillRect(7, 3, 2, 1); c.fillRect(7, 12, 2, 1);
+    c.fillRect(3, 7, 1, 2); c.fillRect(12, 7, 1, 2);
+    c.strokeStyle = '#1e1e1e';                    // hands (11:30 — opening!)
+    c.beginPath(); c.moveTo(8, 8); c.lineTo(8, 4); c.stroke();   // minute
+    c.beginPath(); c.moveTo(8, 8); c.lineTo(5, 6); c.stroke();   // hour
+    c.fillRect(7, 7, 2, 2);                       // hub
+  },
+  // emblem: 校章 — navy field, gold ring, gold 5-petal rosette.
+  [T.emblem]: (c) => {
+    noisePx(c, [40, 50, 92], 8);                 // navy field
+    c.strokeStyle = '#d8b44a'; c.lineWidth = 1.5;
+    c.beginPath(); c.arc(8, 8, 6.2, 0, Math.PI * 2); c.stroke();
+    c.fillStyle = '#e8c860';                      // five gold petals
+    for (let i = 0; i < 5; i++) {
+      const a = -Math.PI / 2 + (i * Math.PI * 2) / 5;
+      c.beginPath(); c.arc(8 + Math.cos(a) * 3, 8 + Math.sin(a) * 3, 2, 0, Math.PI * 2); c.fill();
+    }
+    c.fillStyle = '#b08828';                      // rosette centre
+    c.beginPath(); c.arc(8, 8, 1.6, 0, Math.PI * 2); c.fill();
+  },
+  // notice: 掲示板 — cork field, wood frame, pinned white papers.
+  [T.notice]: (c) => {
+    noisePx(c, [188, 148, 96], 18);              // cork
+    c.strokeStyle = 'rgba(110, 78, 42, 0.9)'; c.lineWidth = 1;
+    c.strokeRect(0.5, 0.5, 15, 15);              // wood frame
+    c.fillStyle = 'rgba(248, 246, 238, 0.95)';   // papers
+    c.fillRect(2, 3, 5, 6); c.fillRect(9, 2, 5, 7); c.fillRect(5, 10, 6, 4);
+    c.strokeStyle = 'rgba(150, 150, 150, 0.7)';  // text scribble lines
+    c.beginPath(); c.moveTo(3, 5); c.lineTo(6, 5); c.stroke();
+    c.beginPath(); c.moveTo(10, 4); c.lineTo(13, 4); c.stroke();
+    c.beginPath(); c.moveTo(10, 6); c.lineTo(13, 6); c.stroke();
+    c.beginPath(); c.moveTo(6, 12); c.lineTo(10, 12); c.stroke();
+    c.fillStyle = '#c83030';                     // red pins
+    c.fillRect(4, 3, 1, 1); c.fillRect(11, 2, 1, 1); c.fillRect(7, 10, 1, 1);
+  },
+  // sink_top: 手洗い場上面 — stainless, two dark basins, faucet stubs.
+  [T.sink_top]: (c) => {
+    noisePx(c, [198, 202, 206], 8);              // stainless
+    c.fillStyle = 'rgba(238, 240, 242, 0.8)';    // bright front rim
+    c.fillRect(0, TILE - 1, TILE, 1);
+    c.fillStyle = '#2a2e32';                      // basins
+    c.beginPath(); c.arc(4.5, 9, 2.6, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(11.5, 9, 2.6, 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgb(150, 154, 160)';          // faucets
+    c.fillRect(3, 2, 3, 2); c.fillRect(10, 2, 3, 2);
+    c.fillRect(4, 4, 1, 2); c.fillRect(11, 4, 1, 2);
+  },
+  // sink_side: 手洗い場側面 — steel apron over white tiles + grout grid.
+  [T.sink_side]: (c) => {
+    noisePx(c, [218, 218, 212], 8);              // white tile
+    c.fillStyle = 'rgb(172, 176, 182)';          // stainless apron
+    c.fillRect(0, 0, TILE, 4);
+    c.fillStyle = 'rgba(238, 240, 242, 0.7)';
+    c.fillRect(0, 0, TILE, 1);
+    c.strokeStyle = 'rgba(170, 170, 164, 0.8)';  // grout lines
+    for (let y = 7; y < TILE; y += 4) { c.beginPath(); c.moveTo(0, y + 0.5); c.lineTo(TILE, y + 0.5); c.stroke(); }
+    for (let x = 3; x < TILE; x += 5) { c.beginPath(); c.moveTo(x + 0.5, 4); c.lineTo(x + 0.5, TILE); c.stroke(); }
+  },
+  // vault_top: 跳び箱上面 — tan leather pad with a stitched border.
+  [T.vault_top]: (c) => {
+    noisePx(c, [196, 158, 104], 12);             // leather
+    c.strokeStyle = 'rgba(120, 88, 48, 0.9)'; c.lineWidth = 1;
+    c.strokeRect(1.5, 1.5, 13, 13);              // stitch border
+    c.fillStyle = 'rgba(120, 88, 48, 0.7)';      // stitch dashes
+    for (let i = 3; i < 13; i += 3) { c.fillRect(i, 1, 1, 1); c.fillRect(i, 14, 1, 1); c.fillRect(1, i, 1, 1); c.fillRect(14, i, 1, 1); }
+    c.fillStyle = 'rgba(232, 206, 160, 0.5)';    // worn centre highlight
+    c.fillRect(5, 5, 6, 6);
+  },
+  // vault_side: 跳び箱側面 — alternating stacked wooden tiers.
+  [T.vault_side]: (c) => {
+    noisePx(c, [186, 150, 100], 12);
+    for (let i = 0; i < 4; i++) {
+      c.fillStyle = i % 2 ? 'rgba(150, 112, 64, 0.55)' : 'rgba(214, 180, 128, 0.45)';
+      c.fillRect(0, i * 4, TILE, 4);
+      c.fillStyle = 'rgba(80, 56, 28, 0.85)';    // tier seam
+      c.fillRect(0, i * 4, TILE, 1);
+    }
+    c.fillStyle = '#f0ece0';                      // tier-number patch
+    c.fillRect(6, 6, 4, 3);
+    c.fillStyle = '#5a4020'; c.fillRect(7, 7, 2, 1);
+  },
+  // sakura: 桜の葉 — pink blossom foliage with alpha-cutout holes.
+  [T.sakura]: (c) => {
+    c.clearRect(0, 0, TILE, TILE);
+    noisePx(c, [235, 170, 195], 26);
+    c.fillStyle = 'rgba(250, 215, 228, 0.85)';   // bright petal highlights
+    for (let i = 0; i < 8; i++) c.fillRect((Math.random() * 14) | 0, (Math.random() * 14) | 0, 2, 2);
+    c.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < 22; i++) {
+      const px = (Math.random() * TILE) | 0;
+      const py = (Math.random() * TILE) | 0;
+      c.fillStyle = 'rgba(0,0,0,1)';
+      c.fillRect(px, py, 1 + ((i * 3) % 2), 1 + ((i * 5) % 2));
+    }
+    c.globalCompositeOperation = 'source-over';
+  },
+  // cedar_log: 杉の幹 — reddish-brown bark with vertical striations.
+  [T.cedar_log]: (c) => {
+    noisePx(c, [112, 74, 48], 14);
+    c.strokeStyle = 'rgba(66, 42, 24, 0.75)';
+    for (let x = 1; x < TILE; x += 3) {
+      c.beginPath(); c.moveTo(x + 0.5, 0); c.lineTo(x + 0.5, TILE); c.stroke();
+    }
+    c.strokeStyle = 'rgba(160, 112, 72, 0.5)';   // peeling-bark highlights
+    c.beginPath(); c.moveTo(5.5, 2); c.lineTo(5.5, 9); c.stroke();
+    c.beginPath(); c.moveTo(11.5, 6); c.lineTo(11.5, 14); c.stroke();
+  },
+  // cedar_leaves: 杉葉 — dark blue-green dense foliage, alpha-cutout.
+  [T.cedar_leaves]: (c) => {
+    c.clearRect(0, 0, TILE, TILE);
+    noisePx(c, [38, 72, 58], 24);
+    c.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < 18; i++) {
+      const px = (Math.random() * TILE) | 0;
+      const py = (Math.random() * TILE) | 0;
+      c.fillStyle = 'rgba(0,0,0,1)';
+      c.fillRect(px, py, 1 + ((i * 5) % 2), 1 + ((i * 3) % 2));
+    }
+    c.globalCompositeOperation = 'source-over';
+  },
+  // vend_front: 自販機 — blue body, lit product window with 6 cans, slot.
+  [T.vend_front]: (c) => {
+    noisePx(c, [38, 88, 168], 10);               // blue cabinet
+    c.fillStyle = '#e8f0f4';                      // lit product window
+    c.fillRect(2, 2, 12, 8);
+    const cans = ['#d23a2e', '#e8a020', '#3a9a4a', '#e8d040', '#9a3aa0', '#28b0c8'];
+    for (let i = 0; i < 6; i++) {                 // two rows of three cans
+      c.fillStyle = cans[i];
+      c.fillRect(3 + (i % 3) * 4, 3 + ((i / 3) | 0) * 4, 2, 3);
+    }
+    c.fillStyle = '#15233a';                      // dispense slot
+    c.fillRect(3, 12, 6, 3);
+    c.fillStyle = '#c8d0d8';                      // coin panel
+    c.fillRect(11, 11, 2, 4);
+    c.fillStyle = '#303840'; c.fillRect(11, 12, 2, 1);
+  },
+  // vend_side: 自販機側面 — plain blue body with edge shading.
+  [T.vend_side]: (c) => {
+    noisePx(c, [38, 88, 168], 10);
+    c.fillStyle = 'rgba(16, 40, 90, 0.6)';
+    c.fillRect(0, 0, 1, TILE); c.fillRect(TILE - 1, 0, 1, TILE);
+    c.fillRect(0, TILE - 2, TILE, 2);
+    c.fillStyle = 'rgba(255, 255, 255, 0.18)';   // body highlight
+    c.fillRect(2, 1, 2, 13);
+  },
+  // rice: 稲 — green stalk strokes with grain tips over paddy mud.
+  [T.rice]: (c) => {
+    noisePx(c, [96, 102, 76], 16);               // paddy mud/water base
+    c.strokeStyle = 'rgba(120, 178, 70, 0.95)';  // green stalks
+    for (let x = 2; x < TILE; x += 3) {
+      c.beginPath(); c.moveTo(x + 0.5, 3); c.lineTo(x + 0.5, TILE); c.stroke();
+    }
+    c.fillStyle = 'rgb(196, 200, 110)';          // drooping grain heads
+    for (let x = 2; x < TILE; x += 3) c.fillRect(x - 1, 1, 3, 2);
+  },
+  // tin_roof: トタン屋根 — vertical corrugation + rust streaks.
+  [T.tin_roof]: (c) => {
+    noisePx(c, [150, 158, 162], 10);
+    for (let x = 0; x < TILE; x += 4) {
+      c.fillStyle = 'rgba(230, 234, 238, 0.55)'; // ridge highlight
+      c.fillRect(x, 0, 1, TILE);
+      c.fillStyle = 'rgba(86, 92, 98, 0.7)';     // valley shadow
+      c.fillRect(x + 2, 0, 1, TILE);
+    }
+    c.fillStyle = 'rgba(160, 92, 40, 0.6)';      // rust streaks
+    c.fillRect(6, 5, 1, 9); c.fillRect(13, 2, 1, 7); c.fillRect(2, 9, 1, 6);
+  },
+  // kawara: 瓦 — overlapping blue-grey roof-tile arc rows.
+  [T.kawara]: (c) => {
+    noisePx(c, [92, 106, 122], 12);
+    c.strokeStyle = 'rgba(38, 50, 66, 0.9)'; c.lineWidth = 1;
+    for (let row = 0; row < 4; row++) {
+      const y = 4 + row * 4;
+      const off = row % 2 ? 4 : 0;
+      for (let x = -4 + off; x <= TILE; x += 8) {
+        c.beginPath(); c.arc(x + 4, y, 4, Math.PI, Math.PI * 2); c.stroke();
+      }
+    }
+    c.fillStyle = 'rgba(176, 192, 208, 0.4)';    // glaze glints
+    for (let i = 0; i < 8; i++) c.fillRect((Math.random() * 15) | 0, (Math.random() * 15) | 0, 1, 1);
+  },
+  // mie_top: 食パン — soft white crumb square with a golden crust rim.
+  [T.mie_top]: (c) => {
+    noisePx(c, [240, 228, 200], 10);             // soft crumb
+    c.fillStyle = 'rgba(200, 148, 66, 0.92)';    // golden crust rim
+    c.fillRect(0, 0, TILE, 2); c.fillRect(0, TILE - 2, TILE, 2);
+    c.fillRect(0, 0, 2, TILE); c.fillRect(TILE - 2, 0, 2, TILE);
+    c.fillStyle = 'rgba(214, 188, 140, 0.5)';    // faint crumb pores
+    for (const [hx, hy] of [[4, 5], [9, 4], [12, 7], [5, 10], [10, 11], [7, 7]]) c.fillRect(hx, hy, 1, 1);
+  },
+  // mie_side: 食パン側面 — pale crumb with crust bands top and bottom.
+  [T.mie_side]: (c) => {
+    noisePx(c, [238, 226, 196], 10);
+    c.fillStyle = 'rgba(190, 134, 54, 0.9)';     // baked top crust
+    c.fillRect(0, 0, TILE, 3);
+    c.fillRect(0, TILE - 2, TILE, 2);            // base crust
+    c.fillStyle = 'rgba(250, 242, 222, 0.6)';    // airy crumb band
+    c.fillRect(1, 4, TILE - 2, 3);
+    c.fillStyle = 'rgba(208, 182, 134, 0.5)';    // crumb pores
+    for (const [hx, hy] of [[3, 6], [8, 5], [12, 8], [5, 10], [10, 12], [13, 11]]) c.fillRect(hx, hy, 2, 1);
+  },
+  // tartine_top: タルティーヌ — open-face slice with red/green/cream toppings.
+  [T.tartine_top]: (c) => {
+    noisePx(c, [150, 110, 64], 12);              // wooden serving board
+    c.fillStyle = '#e8d5a8';                      // bread slice
+    c.beginPath(); c.ellipse(8, 8, 6.2, 4.6, 0.3, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = 'rgba(160, 106, 44, 0.9)'; c.lineWidth = 1;
+    c.beginPath(); c.ellipse(8, 8, 6.2, 4.6, 0.3, 0, Math.PI * 2); c.stroke();
+    c.fillStyle = '#d23a4a';                      // strawberry / tomato bits
+    c.fillRect(5, 6, 2, 2); c.fillRect(10, 9, 2, 2);
+    c.fillStyle = '#4a8a3a';                      // rocket / herb leaves
+    c.fillRect(8, 5, 2, 1); c.fillRect(6, 10, 2, 1);
+    c.fillStyle = '#f7f2e2';                      // cream cheese dabs
+    c.fillRect(9, 7, 2, 1); c.fillRect(5, 8, 1, 1);
+  },
+  // soup_top: スープ鍋 — dark pot rim, orange soup, floating veg.
+  [T.soup_top]: (c) => {
+    noisePx(c, [58, 60, 66], 10);                // pot body
+    c.strokeStyle = 'rgba(170, 176, 184, 0.9)'; c.lineWidth = 1;
+    c.beginPath(); c.arc(8, 8, 6.8, 0, Math.PI * 2); c.stroke(); // steel rim
+    c.fillStyle = '#e08830';                      // soup surface
+    c.beginPath(); c.arc(8, 8, 5.5, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#d24a2e'; c.fillRect(5, 6, 2, 2);   // tomato
+    c.fillStyle = '#e8c040'; c.fillRect(9, 9, 2, 2);   // corn/potato
+    c.fillStyle = '#4a8a3a'; c.fillRect(9, 5, 2, 1);   // greens
+    c.strokeStyle = 'rgba(248, 200, 130, 0.7)';        // steam swirl
+    c.beginPath(); c.arc(7, 8, 2.5, 0.6, 2.8); c.stroke();
+  },
+  // pot_side: 鍋側面 — charcoal body, steel rim band, rivet handles.
+  [T.pot_side]: (c) => {
+    noisePx(c, [58, 60, 66], 10);
+    c.fillStyle = 'rgb(176, 182, 190)';          // steel rim band
+    c.fillRect(0, 0, TILE, 2);
+    c.fillStyle = 'rgba(255, 255, 255, 0.12)';   // body sheen
+    c.fillRect(3, 3, 2, 11);
+    c.fillStyle = 'rgb(140, 146, 154)';          // handle rivets
+    c.fillRect(1, 5, 2, 3); c.fillRect(13, 5, 2, 3);
+  },
+  // curry_top: カレー鍋 — pot rim, rich brown curry with a swirl + veg.
+  [T.curry_top]: (c) => {
+    noisePx(c, [58, 60, 66], 10);                // pot body
+    c.strokeStyle = 'rgba(170, 176, 184, 0.9)'; c.lineWidth = 1;
+    c.beginPath(); c.arc(8, 8, 6.8, 0, Math.PI * 2); c.stroke(); // steel rim
+    c.fillStyle = '#9a5a24';                      // curry surface
+    c.beginPath(); c.arc(8, 8, 5.5, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = 'rgba(120, 64, 20, 0.9)';     // simmering swirl
+    c.beginPath(); c.arc(8, 8, 3, 0.4, 4.6); c.stroke();
+    c.fillStyle = '#e8a020'; c.fillRect(6, 6, 2, 2);   // carrot
+    c.fillStyle = '#e8d8b0'; c.fillRect(9, 9, 2, 2);   // potato
+    c.fillStyle = '#4a8a3a'; c.fillRect(10, 6, 2, 1);  // herbs
+  },
+  // quiche_top: キッシュ — golden disk, crimped edge, cut lines, filling.
+  [T.quiche_top]: (c) => {
+    noisePx(c, [120, 90, 60], 10);               // board
+    c.fillStyle = '#e0a84a';                      // golden custard
+    c.beginPath(); c.arc(8, 8, 6.5, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = 'rgba(150, 96, 32, 0.95)'; c.lineWidth = 1;
+    c.beginPath(); c.arc(8, 8, 6.5, 0, Math.PI * 2); c.stroke();
+    c.fillStyle = 'rgba(150, 96, 32, 0.85)';     // crimped pastry edge
+    for (let i = 0; i < 10; i++) {
+      const a = (i * Math.PI * 2) / 10;
+      c.fillRect((8 + Math.cos(a) * 6) | 0, (8 + Math.sin(a) * 6) | 0, 1, 1);
+    }
+    c.strokeStyle = 'rgba(140, 90, 30, 0.8)';    // cut lines
+    c.beginPath(); c.moveTo(8, 2); c.lineTo(8, 14); c.stroke();
+    c.beginPath(); c.moveTo(2, 8); c.lineTo(14, 8); c.stroke();
+    c.fillStyle = '#4a8a3a'; c.fillRect(5, 5, 2, 1);   // spinach
+    c.fillStyle = '#c84040'; c.fillRect(10, 10, 1, 1); // bacon/tomato
+  },
+  // cookie_top: 焼き菓子 — dark tray with cookies and biscotti.
+  [T.cookie_top]: (c) => {
+    noisePx(c, [92, 70, 48], 10);                // tray
+    c.strokeStyle = 'rgba(54, 38, 22, 0.9)';
+    c.strokeRect(0.5, 0.5, 15, 15);
+    c.fillStyle = '#caa050';                      // round cookies
+    c.beginPath(); c.arc(4.5, 4.5, 2.4, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(11, 5, 2.4, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(5, 11, 2.4, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#5a3418';                      // choco chips
+    c.fillRect(4, 4, 1, 1); c.fillRect(11, 4, 1, 1); c.fillRect(5, 11, 1, 1);
+    c.fillStyle = '#d8b878';                      // biscotti stick
+    c.fillRect(9, 9, 5, 3);
+    c.fillStyle = 'rgba(120, 80, 40, 0.8)';
+    c.fillRect(10, 10, 1, 1); c.fillRect(12, 10, 1, 1);
+  },
+  // slat: 木スラット陳列棚 — three boards with deep shadow grooves.
+  [T.slat]: (c) => {
+    noisePx(c, [174, 136, 88], 12);
+    c.fillStyle = 'rgba(48, 32, 16, 0.9)';       // shadow grooves
+    c.fillRect(0, 4, TILE, 2); c.fillRect(0, 10, TILE, 2);
+    c.strokeStyle = 'rgba(120, 90, 54, 0.6)';    // wood grain
+    for (const gy of [2, 8, 14]) { c.beginPath(); c.moveTo(1, gy + 0.5); c.lineTo(15, gy + 0.5); c.stroke(); }
+    c.fillStyle = 'rgba(228, 196, 148, 0.5)';    // top-edge light
+    c.fillRect(0, 0, TILE, 1); c.fillRect(0, 6, TILE, 1); c.fillRect(0, 12, TILE, 1);
+  },
+  // basket_top: かご — woven crosshatch + three bread ovals + flour dust.
+  [T.basket_top]: (c) => {
+    noisePx(c, [160, 118, 62], 14);              // wicker base
+    c.strokeStyle = 'rgba(106, 72, 32, 0.7)';    // weave crosshatch
+    for (let i = -TILE; i < TILE * 2; i += 4) {
+      c.beginPath(); c.moveTo(i, 0); c.lineTo(i + TILE, TILE); c.stroke();
+      c.beginPath(); c.moveTo(i + TILE, 0); c.lineTo(i, TILE); c.stroke();
+    }
+    c.fillStyle = '#d99a4e';                      // bread rolls
+    c.beginPath(); c.ellipse(5, 5, 3, 2.2, 0.4, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(11, 6, 3, 2.2, -0.3, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(7, 11, 3, 2.2, 0.2, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = 'rgba(150, 92, 30, 0.8)';    // crust scores
+    c.beginPath(); c.moveTo(3, 5); c.lineTo(7, 5); c.stroke();
+    c.beginPath(); c.moveTo(9, 6); c.lineTo(13, 6); c.stroke();
+    c.fillStyle = 'rgba(248, 238, 215, 0.7)';    // flour dust
+    for (let i = 0; i < 8; i++) c.fillRect((Math.random() * 15) | 0, (Math.random() * 15) | 0, 1, 1);
+  },
+  // basket_side: かご側面 — horizontal wicker bands.
+  [T.basket_side]: (c) => {
+    noisePx(c, [160, 118, 62], 14);
+    c.strokeStyle = 'rgba(106, 72, 32, 0.8)';
+    for (let y = 1; y < TILE; y += 3) {
+      c.beginPath(); c.moveTo(0, y + 0.5); c.lineTo(TILE, y + 0.5); c.stroke();
+    }
+    c.fillStyle = 'rgba(206, 162, 98, 0.6)';     // alternating weave bumps
+    for (let y = 0; y < TILE; y += 3) {
+      for (let x = (y / 3) % 2 ? 0 : 3; x < TILE; x += 6) c.fillRect(x, y, 3, 1);
+    }
+  },
+  // price_card: 値札カード — cream card on wood, text lines + red ¥.
+  [T.price_card]: (c) => {
+    noisePx(c, [120, 90, 56], 10);               // wood backdrop
+    c.fillStyle = '#f5edd8';                      // cream card
+    c.fillRect(2, 3, 12, 10);
+    c.strokeStyle = 'rgba(90, 70, 44, 0.6)';
+    c.strokeRect(2.5, 3.5, 11, 9);
+    c.strokeStyle = 'rgba(120, 120, 116, 0.85)'; // item-name lines
+    c.beginPath(); c.moveTo(4, 6); c.lineTo(12, 6); c.stroke();
+    c.beginPath(); c.moveTo(4, 8); c.lineTo(10, 8); c.stroke();
+    c.fillStyle = '#c03030';                      // red price
+    c.font = 'bold 5px system-ui, sans-serif';
+    c.textAlign = 'left'; c.textBaseline = 'middle';
+    c.fillText('¥600', 4, 11);
+  },
+  // coffee: コーヒー器具 — dripper cone + glass carafe with coffee + steam.
+  [T.coffee]: (c) => {
+    noisePx(c, [226, 216, 198], 10);             // counter backdrop
+    c.fillStyle = '#3a3e44';                      // dripper cone
+    c.beginPath(); c.moveTo(4, 3); c.lineTo(12, 3); c.lineTo(8, 7); c.closePath(); c.fill();
+    c.fillStyle = 'rgba(170, 195, 205, 0.65)';   // glass carafe
+    c.fillRect(4, 8, 8, 6);
+    c.fillStyle = '#6a3a18';                      // brewed coffee
+    c.fillRect(5, 11, 6, 3);
+    c.strokeStyle = 'rgba(120, 120, 116, 0.6)';  // steam wisps
+    c.beginPath(); c.moveTo(6, 2); c.lineTo(7, 0); c.stroke();
+    c.beginPath(); c.moveTo(10, 2); c.lineTo(9, 0); c.stroke();
+    c.fillStyle = '#3a3e44';                      // carafe handle
+    c.fillRect(12, 9, 2, 1); c.fillRect(13, 9, 1, 4); c.fillRect(12, 12, 2, 1);
+  },
+  // menu_stand: メニュースタンド — dark frame, cream menu, listing lines.
+  [T.menu_stand]: (c) => {
+    noisePx(c, [70, 52, 34], 10);                // dark wood frame
+    c.fillStyle = '#f3ecdc';                      // cream menu sheet
+    c.fillRect(3, 2, 10, 12);
+    c.fillStyle = '#5c6b4a';                      // brand-green header band
+    c.fillRect(3, 2, 10, 2);
+    c.strokeStyle = 'rgba(110, 110, 106, 0.85)'; // menu lines
+    for (const my of [6, 8, 10, 12]) { c.beginPath(); c.moveTo(4, my + 0.5); c.lineTo(12, my + 0.5); c.stroke(); }
+    c.fillStyle = '#c03030';                      // today's-special dot
+    c.fillRect(4, 6, 1, 1);
+  },
+  // stainless: 給食室調理台 — brushed steel with horizontal brushing.
+  [T.stainless]: (c) => {
+    noisePx(c, [188, 192, 198], 6);
+    c.strokeStyle = 'rgba(225, 229, 234, 0.6)';  // brush highlights
+    for (let y = 2; y < TILE; y += 4) { c.beginPath(); c.moveTo(0, y + 0.5); c.lineTo(TILE, y + 0.5); c.stroke(); }
+    c.strokeStyle = 'rgba(140, 144, 150, 0.6)';
+    for (let y = 4; y < TILE; y += 4) { c.beginPath(); c.moveTo(0, y + 0.5); c.lineTo(TILE, y + 0.5); c.stroke(); }
+    c.strokeStyle = 'rgba(120, 124, 130, 0.9)';  // panel edge
+    c.strokeRect(0.5, 0.5, 15, 15);
+    c.fillStyle = 'rgb(120, 124, 130)';          // corner screws
+    c.fillRect(1, 1, 1, 1); c.fillRect(14, 1, 1, 1); c.fillRect(1, 14, 1, 1); c.fillRect(14, 14, 1, 1);
+  },
+  // desk_top: 学校机 — bright local-timber top with a frame line.
+  [T.desk_top]: (c) => {
+    noisePx(c, [202, 170, 118], 12);
+    c.strokeStyle = 'rgba(120, 90, 52, 0.9)';
+    c.strokeRect(0.5, 0.5, 15, 15);              // edge frame
+    c.strokeStyle = 'rgba(160, 128, 80, 0.6)';   // wood grain
+    for (const gy of [4, 8, 12]) { c.beginPath(); c.moveTo(2, gy + 0.5); c.lineTo(14, gy + 0.5); c.stroke(); }
+    c.fillStyle = 'rgba(90, 66, 38, 0.8)';       // pencil groove
+    c.fillRect(3, 2, 10, 1);
+  },
+  // desk_side: 学校机側面 — apron + two sturdy legs over shadow.
+  [T.desk_side]: (c) => {
+    noisePx(c, [196, 164, 112], 12);
+    c.fillStyle = 'rgba(60, 44, 26, 0.45)';      // under-desk shadow
+    c.fillRect(0, 4, TILE, 12);
+    c.fillStyle = 'rgb(150, 116, 72)';           // apron board
+    c.fillRect(0, 0, TILE, 4);
+    c.strokeStyle = 'rgba(90, 66, 38, 0.9)';
+    c.beginPath(); c.moveTo(0, 3.5); c.lineTo(TILE, 3.5); c.stroke();
+    c.fillStyle = 'rgb(168, 132, 84)';           // legs
+    c.fillRect(1, 4, 2, 12); c.fillRect(13, 4, 2, 12);
+  },
+  // chair: 学校椅子 — backrest slats, seat board, two legs.
+  [T.chair]: (c) => {
+    noisePx(c, [120, 92, 58], 12);               // dim classroom backdrop
+    c.fillStyle = 'rgb(196, 158, 104)';          // backrest slats
+    c.fillRect(3, 1, 10, 2); c.fillRect(3, 4, 10, 2);
+    c.fillStyle = 'rgb(208, 172, 116)';          // seat board
+    c.fillRect(2, 7, 12, 3);
+    c.strokeStyle = 'rgba(80, 58, 32, 0.9)';
+    c.beginPath(); c.moveTo(2, 9.5); c.lineTo(14, 9.5); c.stroke();
+    c.fillStyle = 'rgb(150, 116, 72)';           // legs
+    c.fillRect(3, 10, 2, 6); c.fillRect(11, 10, 2, 6);
+  },
+  // flag: 国旗 — white field, red sun disc, grey pole strip.
+  [T.flag]: (c) => {
+    noisePx(c, [240, 240, 242], 8);              // white field
+    c.fillStyle = '#cc2030';                      // red disc
+    c.beginPath(); c.arc(8, 8, 4, 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgba(190, 190, 194, 0.9)';    // pole strip
+    c.fillRect(0, 0, 1, TILE);
+    c.fillStyle = 'rgba(210, 210, 214, 0.5)';    // gentle wave shading
+    c.fillRect(11, 1, 2, 14);
+  },
+  // guardrail: ガードレール — two bold white corrugated beams on a dark post
+  // backdrop (opaque:false culling, but painted solid for the opaque pass).
+  [T.guardrail]: (c) => {
+    noisePx(c, [88, 94, 90], 12);                // shaded post backdrop
+    c.fillStyle = 'rgb(238, 240, 240)';          // white W-beams
+    c.fillRect(0, 2, TILE, 4); c.fillRect(0, 9, TILE, 4);
+    c.fillStyle = 'rgba(170, 176, 178, 0.9)';    // corrugation shadow groove
+    c.fillRect(0, 4, TILE, 1); c.fillRect(0, 11, TILE, 1);
+    c.fillStyle = 'rgb(150, 156, 158)';          // mounting bolts
+    c.fillRect(7, 3, 2, 2); c.fillRect(7, 10, 2, 2);
+  },
+  // brand_green: ブランド深緑 #5C6B4A — wool weave.
+  [T.brand_green]: (c) => {
+    noisePx(c, [92, 107, 74], 10);
+    c.fillStyle = 'rgba(70, 84, 56, 0.5)';       // weave dots
+    for (let y = 0; y < TILE; y += 2) {
+      for (let x = y % 4 ? 0 : 2; x < TILE; x += 4) c.fillRect(x, y, 1, 1);
+    }
+  },
+  // wheat_beige: 麦色 #E8D5B7 — soft warm wool.
+  [T.wheat_beige]: (c) => {
+    noisePx(c, [232, 213, 183], 9);
+    c.fillStyle = 'rgba(206, 184, 148, 0.5)';    // weave dots
+    for (let y = 1; y < TILE; y += 2) {
+      for (let x = y % 4 === 1 ? 0 : 2; x < TILE; x += 4) c.fillRect(x, y, 1, 1);
+    }
+  },
+  // compost_top: ぐるぐるコンポスト — wood frame, dark soil, scraps, swirl.
+  [T.compost_top]: (c) => {
+    noisePx(c, [150, 116, 72], 12);              // wood frame
+    c.fillStyle = 'rgb(74, 52, 32)';             // dark composting soil
+    c.fillRect(2, 2, 12, 12);
+    c.fillStyle = 'rgba(50, 34, 20, 0.7)';       // soil clumps
+    for (let i = 0; i < 10; i++) c.fillRect(2 + ((Math.random() * 11) | 0), 2 + ((Math.random() * 11) | 0), 1, 1);
+    c.fillStyle = '#e8a020'; c.fillRect(4, 5, 2, 1);   // veg scraps
+    c.fillStyle = '#4a8a3a'; c.fillRect(10, 4, 2, 1);
+    c.fillStyle = '#d24a2e'; c.fillRect(5, 10, 1, 1);
+    c.fillStyle = '#e8d5b7'; c.fillRect(10, 11, 2, 1); // bread crumb
+    c.strokeStyle = 'rgba(228, 206, 168, 0.85)'; // ぐるぐる swirl arrow
+    c.lineWidth = 1;
+    c.beginPath(); c.arc(8, 8, 3, 0.3, 5.2); c.stroke();
+    c.fillStyle = 'rgba(228, 206, 168, 0.9)';
+    c.fillRect(10, 6, 2, 2);                     // arrowhead
+  },
+  // compost_side: コンポスト側面 — wood slats with soil showing in the gaps.
+  [T.compost_side]: (c) => {
+    noisePx(c, [150, 116, 72], 14);              // slats
+    c.fillStyle = 'rgb(64, 44, 26)';             // soil gaps between slats
+    c.fillRect(1, 4, 14, 2); c.fillRect(1, 10, 14, 2);
+    c.fillStyle = 'rgba(96, 70, 40, 0.9)';       // corner posts
+    c.fillRect(0, 0, 2, TILE); c.fillRect(TILE - 2, 0, 2, TILE);
+    c.strokeStyle = 'rgba(106, 78, 44, 0.7)';    // slat grain
+    for (const gy of [2, 8, 14]) { c.beginPath(); c.moveTo(2, gy + 0.5); c.lineTo(14, gy + 0.5); c.stroke(); }
+  },
+  // yeast_jars: 酵母瓶棚 — four bubbling fruit-yeast jars on a wooden shelf.
+  [T.yeast_jars]: (c) => {
+    noisePx(c, [110, 82, 50], 10);               // dim shelf backdrop
+    c.fillStyle = 'rgb(150, 116, 72)';           // shelf board
+    c.fillRect(0, 13, TILE, 3);
+    c.strokeStyle = 'rgba(90, 66, 38, 0.9)';
+    c.beginPath(); c.moveTo(0, 13.5); c.lineTo(TILE, 13.5); c.stroke();
+    // jars: いちご(赤) / 柿(橙) / ゆず(黄) / ハーブ(緑)
+    const jars = ['#c84040', '#e08830', '#e8c840', '#5a9a4a'];
+    for (let i = 0; i < 4; i++) {
+      const x = 1 + i * 4;
+      c.fillStyle = '#caa86a';                   // lid
+      c.fillRect(x, 4, 3, 2);
+      c.fillStyle = jars[i];                     // ferment body
+      c.fillRect(x, 6, 3, 7);
+      c.fillStyle = 'rgba(255, 255, 255, 0.85)'; // プクプク bubbles
+      c.fillRect(x + 1, 7, 1, 1); c.fillRect(x, 9 + (i % 2), 1, 1);
+      c.fillStyle = 'rgba(255, 255, 255, 0.35)'; // glass highlight
+      c.fillRect(x + 2, 6, 1, 7);
+    }
+  },
+  // isshou: 一升パン — furoshiki wrap: wheat cloth, checker, top knot.
+  [T.isshou]: (c) => {
+    noisePx(c, [226, 200, 158], 12);             // wheat-colour cloth
+    c.fillStyle = 'rgba(180, 150, 100, 0.4)';    // 市松 checker pattern
+    for (let y = 0; y < TILE; y += 4) {
+      for (let x = (y / 4) % 2 ? 0 : 4; x < TILE; x += 8) c.fillRect(x, y, 4, 4);
+    }
+    c.fillStyle = '#b08850';                      // knot ears
+    c.beginPath(); c.moveTo(3, 4); c.lineTo(6, 1); c.lineTo(7, 4); c.closePath(); c.fill();
+    c.beginPath(); c.moveTo(13, 4); c.lineTo(10, 1); c.lineTo(9, 4); c.closePath(); c.fill();
+    c.fillStyle = '#9a7440';                      // knot centre
+    c.fillRect(6, 3, 4, 3);
+    c.strokeStyle = 'rgba(120, 88, 48, 0.8)';    // gathered cloth folds
+    c.beginPath(); c.moveTo(8, 6); c.lineTo(3, 14); c.stroke();
+    c.beginPath(); c.moveTo(8, 6); c.lineTo(13, 14); c.stroke();
   },
 };
 
