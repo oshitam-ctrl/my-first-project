@@ -15,6 +15,8 @@ import { itemDef, blockToItem, isFood } from './items.js';
 import { createFermentation } from './fermentation.js';
 import { createBakery } from './bakery.js';
 import { createShop, SHOP_STOCK } from './shop.js';
+import { createCafe } from './cafe.js';
+import { createSanpo } from './sanpo.js';
 import { createGuide } from './guide.js';
 
 // ---------------------------------------------------------------------------
@@ -741,9 +743,27 @@ function updateEat(dt) {
         );
       } catch (e) {}
       flashCrosshair('#' + (eatState.colorHex).toString(16).padStart(6, '0'));
+      maybeYardLunch(eatState.itemId);
     }
     cancelEat();
   }
+}
+
+// --- 校庭ランチ: South in North lets you carry a desk out to the schoolyard ---
+// Eating a cafe dish while sitting at one of the yard desk sets (S2 places
+// three of them) earns a little celebration + a sanpo bonus credit.
+const CAFE_LUNCH_IDS = ['spice_curry', 'quiche', 'tartine', 'veg_soup'];
+const YARD_SEATS = [[-6, -14], [18, -4], [-16, -20]]; // world (x,z) of the yard desk sets
+function maybeYardLunch(itemId) {
+  if (!CAFE_LUNCH_IDS.includes(itemId)) return; // bakery foods etc. don't count
+  const near = YARD_SEATS.some(([sx, sz]) => Math.hypot(player.pos.x - sx, player.pos.z - sz) <= 3.5);
+  if (!near) return;
+  // hearts burst over the picnic spot (once per eat — fires only on finishEat)
+  try {
+    for (let i = 0; i < 12; i++) particles.burst(player.pos.x, player.pos.y + 1.5, player.pos.z, 0xff6fa5, 1, 1.8);
+  } catch (e) {}
+  toast('青空の下、校庭ランチ！🍛');
+  window.__sanpoCredit?.('yard_lunch');
 }
 
 // Debug hook: allow tests to trigger eating (survival scenario)
@@ -1393,6 +1413,7 @@ const NPC_ROSTER = [
 ];
 if (settings.mobs !== false) {
   baker = mobs.spawnAt('baker', 14, 31, -37); // behind the deep counter (local 50,2,13); customers reach it from the counter front (z=15)
+  if (baker) baker.npcName = '大下さん'; // 店主・大下さん（北海道出身、水・土のワンオペ営業）
   // Barista just BEHIND the cafe counter (local x17,y2,z18 → world -19,31,-32) — 対面
   barista = mobs.spawnAt('customer', -19, 31, -32);
   if (barista) {
@@ -1416,6 +1437,56 @@ if (settings.mobs !== false) {
     const m = mobs.spawnAt(type, x, 31, z);
     if (m) { m.npcName = name; m.npcLine = line; m.shopGuest = true; m.anchor = { x, z }; customers.push(m); }
   }
+  // ── 校庭ランチ中のお客さん — seated at the yard desk sets (S2), South in
+  // North style: they carried desks out and are eating curry under the sky.
+  const YARD_DINERS = [
+    ['カレー好きの青年', '校庭で食べるスパイスカレー、最高なんだよ🍛 机と椅子、持ち出していいんだって'],
+    ['ピクニックの奥さん', '旧給食室のカレーとキッシュを青空の下で。校庭ランチ、ぜいたくねぇ🍛'],
+    ['カレーっ子みお', '校庭でカレー食べてるの！お外だと、もーっとおいしいんだよ🍛'],
+  ];
+  YARD_SEATS.forEach(([x, z], i) => {
+    const m = mobs.spawnAt('customer', x, 31, z);
+    if (m) {
+      m.npcName = YARD_DINERS[i][0];
+      m.npcLine = YARD_DINERS[i][1];
+      m.shopGuest = true;       // tethered: stays at the desk set
+      m.anchor = { x, z };
+      customers.push(m);
+    }
+  });
+}
+
+// ── 行列イベント: when 今日のしごと completes, word spreads — five customers
+// queue up outside (world x=8, z=-22..-18, one per cell) for ~60 seconds.
+const QUEUE_GUESTS = [
+  ['並ぶ常連のフミエさん', 'この校舎に新しいお店ができるなんて、何十年ぶりかしらねぇ'],
+  ['開店待ちのカズコさん', '開店初日から並んだのよ。ずっと楽しみにしてたんだから🥖'],
+  ['食べ比べたいユウタ', 'プチカンパーニュ、プレーン・レーズン・チョコ・クルミ…食べ比べが楽しみ！'],
+  ['里帰りのナオさん', '廃校になって寂しかったけど、また人が集まる場所になったねぇ'],
+  ['うわさを聞いた旅人', '「今日のパンが、明日の野菜に」って聞いてね。並んででも食べたくて'],
+];
+function spawnOpeningQueue() {
+  if (settings.mobs === false) return;
+  const queue = [];
+  for (let i = 0; i < QUEUE_GUESTS.length; i++) {
+    const z = -22 + i; // -22..-18
+    const m = mobs.spawnAt('customer', 8, 31, z);
+    if (!m) continue;
+    m.npcName = QUEUE_GUESTS[i][0];
+    m.npcLine = QUEUE_GUESTS[i][1];
+    m.shopGuest = true;          // anchor tether keeps the line tidy
+    m.anchor = { x: 8, z };
+    customers.push(m);
+    queue.push(m);
+  }
+  // The queue files into the shop after a while — despawn cleanly (~60s).
+  setTimeout(() => {
+    for (const m of queue) {
+      mobs.remove(m);
+      const i = customers.indexOf(m);
+      if (i >= 0) customers.splice(i, 1);
+    }
+  }, 60000);
 }
 // nearest named yard NPC to the player (for proximity speech bubbles)
 function nearestNpc(maxD) {
@@ -1445,6 +1516,8 @@ const quest = createQuest({
       for (const c of customers) for (let i = 0; i < 6; i++) particles.burst(c.pos.x, c.pos.y + 1.6, c.pos.z, 0xff9ec4, 1, 1.6);
     }
     sfx.craft && sfx.craft();
+    // opening-day queue: word spreads and customers line up outside (~60s)
+    try { spawnOpeningQueue(); } catch (e) {}
     setTimeout(() => toast('🔗 右上の共有ボタンで、この「焼けた！」をシェアしよう🥖'), 2800);
   },
 });
@@ -1509,12 +1582,15 @@ function updateQuest() {
       'この酵母ね、畑で捨てられるはずだった果物からおこしたんよ。もったいないでしょう？',
       '昔ここ、子どもたちの教室だったんよ。今はパンの香りでいっぱい。',
       '「もったいない」を「おいしい」に——それがうちのパン作りです🌾',
+      '今日のパンが、明日の野菜に。それがうちの合言葉なんよ🌾',
+      '営業は水曜と土曜だけなんよ。売り切れたらその日はおしまい！',
+      '酵母はいちごやトマト、ゆずからもおこすんよ。瓶がプクプクして、かわいいの🫙',
     ];
     const greetIdx = Math.floor(performance.now() / 8000) % BAKER_GREET.length;
     speechEl.textContent = questDone
-      ? `👩‍🍳 ありがとう！${deliveredTo ? `${deliveredTo}も喜んでた。` : ''}”もったいない”を”おいしい”に。本日も開店です🥖`
-      : (bread > 0 ? '👩‍🍳 わぁ、焼けたのね！こっちに届けてくれる？🥖'
-        : `👩‍🍳 ${BAKER_GREET[greetIdx]}`);
+      ? `👩‍🍳 大下さん：ありがとう！${deliveredTo ? `${deliveredTo}も喜んでた。` : ''}今日のパンはみんな、旅立っていきました（売り切れ）🥖 また水曜か土曜にね`
+      : (bread > 0 ? '👩‍🍳 大下さん：わぁ、焼けたのね！こっちに届けてくれる？🥖'
+        : `👩‍🍳 大下さん：${BAKER_GREET[greetIdx]}`);
   } else {
     const npc = playing ? nearestNpc(3.0) : null;
     if (npc) { speechEl.style.display = 'block'; speechEl.textContent = `🧑 ${npc.npcName}：${npc.npcLine}`; }
@@ -1597,6 +1673,63 @@ const shop = createShop({
   if (tb) tb.insertBefore(b, tb.firstChild);
 }
 window.__shop = { open: () => shop.open(), buy: (id) => shop.__buy(id), isOpen: () => shop.isOpen() };
+
+// --- ☕ South in North (old-classroom cafe, same 1F): order with produce ---
+const CAFE_COUNTER = { x: -20, z: -31 }; // world centre of the cafe counter
+function nearCafeCounter() { return playing && Math.hypot(player.pos.x - CAFE_COUNTER.x, player.pos.z - CAFE_COUNTER.z) < 5.5; }
+const cafe = createCafe({
+  inv, sfx, toast, itemDef, particles,
+  onOrder: (id) => { if (settings.shake) shakeMag = 0.12; particles.burst(player.pos.x, player.pos.y + 1.2, player.pos.z, 0xd9a96a, 8, 1.8); },
+});
+// ☕ top-bar button opens the cafe when you're standing at its counter.
+{
+  const b = document.createElement('button');
+  b.textContent = '☕'; b.title = 'South in North で注文';
+  b.addEventListener('click', (e) => {
+    e.stopPropagation(); sfx.resume();
+    if (!playing) return;
+    if (nearCafeCounter()) cafe.open(); else toast('☕ カフェのカウンターに近づいてね');
+  });
+  const tb = document.getElementById('topbar');
+  if (tb) tb.insertBefore(b, tb.firstChild);
+}
+window.__cafe = { open: () => cafe.open(), order: (id) => cafe.__order(id), isOpen: () => cafe.isOpen() };
+
+// --- 🚶 南方さんぽ: stroll checklist around the old school grounds ---------
+const sanpo = createSanpo({
+  onComplete: () => {
+    toast('🚶 南方さんぽコンプリート！ロスパン袋をもらった🎁');
+    inv.collect('rescue_bag', 1);
+    sfx.craft && sfx.craft();
+    if (settings.shake) shakeMag = 0.14;
+  },
+});
+// scripted bonus credits (e.g. 校庭ランチ) flow in via this global hook
+window.__sanpoCredit = (id) => { try { return sanpo.credit(id); } catch (e) { return false; } };
+
+// --- One-time flavor spots: compost loop, photo spots, SNS easter egg -------
+const FLAVOR_SPOTS = [
+  // ぐるぐるコンポスト (S2 places the block at local (28,33) → world (-8,-17))
+  { x: -8,  z: -17, r: 3, msg: '♻️ ぐるぐるコンポスト：パン→生ごみ→堆肥→野菜→酵母→パン' },
+  // photo spots (once each)
+  { x: 8,   z: -16, r: 3, msg: '📸 ここ、写真スポット — 木造校舎の正面。時計と校章まで一枚に！' },
+  { x: 14,  z: -33, r: 2, msg: '📸 ここ、写真スポット — 焼きたてが並ぶパン棚のヒーロー壁🥖' },
+  { x: 64,  z: -27, r: 3, msg: '📸 ここ、写真スポット — 鳥居と杉木立。お参りしてから一枚どうぞ⛩️' },
+  // SNS easter egg
+  { x: -23, z: -46, r: 2, msg: '#サウスインノース 撮影中📱' },
+];
+const flavorSeen = FLAVOR_SPOTS.map(() => false);
+function updateFlavorSpots() {
+  for (let i = 0; i < FLAVOR_SPOTS.length; i++) {
+    if (flavorSeen[i]) continue;
+    const s = FLAVOR_SPOTS[i];
+    if (Math.hypot(player.pos.x - s.x, player.pos.z - s.z) <= s.r) {
+      flavorSeen[i] = true;
+      toast(s.msg);
+      break; // at most one new toast per frame
+    }
+  }
+}
 
 // debug/verification hooks for the bakery loop (harmless in prod)
 window.__bakery = {
@@ -1881,6 +2014,7 @@ function loop() {
   if (playing && !inv.isOpen()) updateEat(dt);
   particles.update(dt);
   if (playing) mobs.update(dt);
+  if (playing) { sanpo.update(player.pos); updateFlavorSpots(); }
 
   renderer.render(scene, camera);
   // Update first-person held-item viewmodel (after render to avoid one-frame lag)

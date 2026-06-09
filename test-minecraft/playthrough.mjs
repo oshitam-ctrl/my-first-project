@@ -80,6 +80,23 @@ try {
   out.steps.push(['playthrough threw', false, String(e.message).split('\n')[0]]);
 }
 
+// ── S5 cafe check (NON-FATAL): order a spice curry at ☕ South in North ───────
+// Logged for visibility but never fails the run (the cafe is a side feature).
+let cafeNote = 'skipped';
+try {
+  const cafe = await page.evaluate(() => {
+    if (!window.__cafe || !window.__bakery) return { ok: false, note: 'window.__cafe missing' };
+    window.__bakery.give('surplus_veg', 2);
+    const ordered = window.__cafe.order('spice_curry');
+    const n = window.__bakery.count('spice_curry');
+    return { ok: n >= 1, note: `order=${ordered}, spice_curry=${n}` };
+  });
+  cafeNote = `${cafe.ok ? 'OK ✓' : 'NG ✗'} — ${cafe.note}`;
+} catch (e) {
+  cafeNote = 'skipped — ' + String(e.message).split('\n')[0];
+}
+console.log('\ncafe check (non-fatal): ' + cafeNote);
+
 let failed = 0;
 console.log('\n=== 今日のしごと 通しプレイ ===');
 for (const s of out.steps) { if (!s[1]) failed++; console.log(`  ${s[1] ? '✓' : '✗'} ${s[0]}${s[2] ? ' — ' + s[2] : ''}`); }
