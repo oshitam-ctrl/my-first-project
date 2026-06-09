@@ -1,7 +1,7 @@
 /* Voxel Craft service worker — installable + offline app shell.
  * Plain Service Worker APIs only (no importScripts, no external code). */
 
-const CACHE_VERSION = 'voxelcraft-v3';
+const CACHE_VERSION = 'voxelcraft-v4'; /* S6: brand start screen / OGP / share copy */
 
 /* App shell. Paths are RELATIVE and resolved against the SW scope
  * (the SW lives at /minecraft/sw.js, so scope is /minecraft/). */

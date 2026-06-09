@@ -8,21 +8,21 @@
        the directory so every asset and module resolves correctly. -->
   <base href="/minecraft/" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#8fc8ff" />
+  <meta name="theme-color" content="#5C6B4A" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Voxel Craft — ブラウザで動くマイクラ風ボクセルゲーム</title>
-  <meta name="description" content="広島・北広島町の廃校「旧南方小学校」で生まれた天然酵母パン屋「プチヘルメース」の世界をマイクラ風に体験。規格外野菜から酵母を起こし、カンパーニュを焼こう。" />
+  <title>プチヘルメース — 旧南方小学校のパン屋さん（非公式ファンゲーム）</title>
+  <meta name="description" content="廃校のパン屋を、まるごと擬似体験。畑で収穫→酵母を育てて→焼いて→開店。今日のパンが、明日の野菜に。" />
 
   <!-- Social preview (Open Graph + Twitter). Served as a static file, so crawlers see these. -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="プチヘルメース — 廃校で焼く天然酵母パン屋のボクセル世界" />
-  <meta property="og:description" content="広島・北広島町の旧南方小学校が舞台。規格外野菜から酵母を起こし、カンパーニュを焼くマイクラ風ブラウザゲーム。" />
+  <meta property="og:title" content="プチヘルメース — 旧南方小学校のパン屋さん（非公式ファンゲーム）" />
+  <meta property="og:description" content="廃校のパン屋を、まるごと擬似体験。畑で収穫→酵母を育てて→焼いて→開店。今日のパンが、明日の野菜に。" />
   <meta property="og:image" content="icon-512.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="プチヘルメース — 廃校で焼く天然酵母のパン #北広島町" />
-  <meta name="twitter:description" content="広島・北広島町、廃校で焼く天然酵母のパン 🍞 #プチヘルメース" />
+  <meta name="twitter:title" content="プチヘルメース — 旧南方小学校のパン屋さん（非公式ファンゲーム）" />
+  <meta name="twitter:description" content="廃校のパン屋を、まるごと擬似体験。畑で収穫→酵母を育てて→焼いて→開店。今日のパンが、明日の野菜に。 #プチヘルメース" />
   <meta name="twitter:image" content="icon-512.png" />
 
   <!-- PWA -->
@@ -48,19 +48,21 @@
       transition: opacity .12s ease-out;
       background: radial-gradient(ellipse at center, rgba(170,0,0,0) 45%, rgba(170,0,0,.6) 100%); }
 
-    /* About / story panel (Petit Hermès worldview) */
-    #about-link { margin-top: 14px; font-size: 13px; color: #ffd9a8; text-decoration: underline;
+    /* About / story panel (Petit Hermès worldview) — brand: beige × deep green */
+    #about-link { margin-top: 14px; font-size: 13px; color: #5C6B4A; text-decoration: underline;
       cursor: pointer; display: inline-block; }
     #about { position: fixed; inset: 0; z-index: 25; display: none; align-items: center;
-      justify-content: center; background: rgba(0,0,0,.62); padding: 16px; }
-    #about .about-card { background: #2b6f6a; color: #f3efe6; max-width: 540px; width: 100%;
+      justify-content: center; background: rgba(58,74,47,.55); padding: 16px; }
+    #about .about-card { background: #F5EDE4; color: #3A4A2F; max-width: 540px; width: 100%;
       max-height: 86vh; overflow-y: auto; border-radius: 14px; padding: 22px 22px 18px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.5); line-height: 1.7; font-size: 14px; }
-    #about h2 { margin: 0 0 10px; font-size: 22px; }
+      border: 1px solid #E8D5B7;
+      box-shadow: 0 20px 60px rgba(0,0,0,.45); line-height: 1.7; font-size: 14px; }
+    #about h2 { margin: 0 0 10px; font-size: 22px; color: #5C6B4A; }
     #about p { margin: 0 0 10px; }
-    #about .about-note { font-size: 12px; opacity: .85; border-top: 1px solid rgba(255,255,255,.25); padding-top: 10px; margin-top: 12px; }
+    #about .about-note { font-size: 12px; opacity: .9; border-top: 1px solid #E8D5B7; padding-top: 10px; margin-top: 12px; }
+    #about .about-credit { font-size: 11px; opacity: .75; margin: 8px 0 0; }
     #about button { margin-top: 8px; padding: 10px 18px; border: 0; border-radius: 8px;
-      background: #f3efe6; color: #2b6f6a; font-weight: 700; cursor: pointer; }
+      background: #5C6B4A; color: #F5EDE4; font-weight: 700; cursor: pointer; }
 
     /* Crosshair */
     #crosshair { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -152,27 +154,49 @@
       }
     }
 
-    /* Start / pause overlay */
+    /* Start / pause overlay — brand: beige #F5EDE4 × deep green #5C6B4A × wheat #E8D5B7 */
     #overlay { position: fixed; inset: 0; z-index: 10; display: flex;
       flex-direction: column; align-items: center; justify-content: center;
-      background: radial-gradient(circle at 50% 35%, rgba(20,40,80,.55), rgba(5,10,25,.85));
-      color: #fff; text-align: center; cursor: pointer;
+      background: radial-gradient(circle at 50% 30%, #FBF6EE, #F5EDE4 55%, #EEDFC9);
+      color: #3A4A2F; text-align: center; cursor: pointer; overflow-y: auto;
       padding: calc(env(safe-area-inset-top, 0px) + 20px) calc(env(safe-area-inset-right, 0px) + 20px)
                calc(env(safe-area-inset-bottom, 0px) + 20px) calc(env(safe-area-inset-left, 0px) + 20px); }
-    #overlay h1 { font-size: 40px; letter-spacing: 2px; margin-bottom: 6px;
-      text-shadow: 0 3px 10px rgba(0,0,0,.6); }
-    #overlay .tag { font-size: 14px; opacity: .85; margin-bottom: 22px; }
+    /* Stamp-motif badge: a little postage stamp drawn in pure CSS (no images) —
+       beige paper, perforated (dashed) edge, deep-green emblem with the loaf. */
+    .stamp-badge { width: 86px; height: 86px; margin-bottom: 12px; border-radius: 10px;
+      background: #FBF6EE; border: 2px dashed #5C6B4A;
+      box-shadow: 0 0 0 5px #FBF6EE, 0 0 0 6px #E8D5B7, 0 6px 16px rgba(92,107,74,.25);
+      display: flex; align-items: center; justify-content: center; }
+    .stamp-badge .emblem { width: 62px; height: 62px; border-radius: 50%;
+      background: #5C6B4A; display: flex; align-items: center; justify-content: center;
+      font-size: 32px; line-height: 1; }
+    #overlay h1 { font-size: 38px; letter-spacing: 4px; margin-bottom: 4px; color: #5C6B4A; }
+    #overlay .subtitle { font-size: 14px; font-weight: 600; color: #5C6B4A; margin-bottom: 4px; }
+    #overlay .tag { font-size: 13px; color: #3A4A2F; opacity: .75; margin-bottom: 18px;
+      letter-spacing: 1px; }
     #overlay .play { font-size: 18px; font-weight: 700; padding: 12px 30px; border-radius: 10px;
-      background: #5aa845; box-shadow: 0 6px 0 #3c7a2c, 0 10px 18px rgba(0,0,0,.4);
-      margin-bottom: 26px; }
+      background: #5C6B4A; color: #F5EDE4; box-shadow: 0 5px 0 #3A4A2F, 0 10px 18px rgba(58,74,47,.3);
+      margin-bottom: 22px; }
     .controls { display: grid; grid-template-columns: auto auto; gap: 6px 18px;
-      font-size: 13px; opacity: .9; text-align: left; }
-    .controls b { display: inline-block; min-width: 92px; color: #ffe08a;
+      font-size: 13px; text-align: left; background: #E8D5B7; border-radius: 12px;
+      padding: 12px 16px; color: #3A4A2F; }
+    .controls b { display: inline-block; min-width: 92px; color: #5C6B4A;
       font-family: ui-monospace, monospace; }
     .ctrl-touch { display: none; }
-    .hint { margin-top: 20px; font-size: 12px; opacity: .6; max-width: 460px; }
+    .hint { margin-top: 16px; font-size: 12px; color: #3A4A2F; opacity: .8; max-width: 460px;
+      background: rgba(232,213,183,.45); border-radius: 10px; padding: 10px 14px; text-align: left; }
+    .fan-note { margin-top: 14px; font-size: 11px; color: #3A4A2F; opacity: .6;
+      line-height: 1.6; max-width: 460px; }
     body.touch .ctrl-desktop { display: none; }
     body.touch .ctrl-touch { display: grid; }
+    /* Short viewports: compact + top-aligned so nothing clips when centered
+       content is taller than the screen (overflow-y above keeps it scrollable). */
+    @media (max-height: 700px) {
+      .stamp-badge { width: 62px; height: 62px; margin-bottom: 8px; }
+      .stamp-badge .emblem { width: 44px; height: 44px; font-size: 22px; }
+      #overlay h1 { font-size: 28px; }
+      #overlay { justify-content: flex-start; }
+    }
 
     /* Rotate-to-landscape hint — a small, NON-blocking banner. It must never
        intercept taps (that would block the start screen), so pointer-events:none
@@ -219,8 +243,10 @@
   <div id="toast"></div>
 
   <div id="overlay">
-    <h1>🥖 プチヘルメース</h1>
-    <div class="tag">広島・北広島町、廃校で焼く天然酵母のパン ― マイクラ風ボクセル世界 #プチヘルメース</div>
+    <div class="stamp-badge"><div class="emblem">🥖</div></div>
+    <h1>プチヘルメース</h1>
+    <div class="subtitle">旧南方小学校のパン屋さん — 擬似体験ゲーム</div>
+    <div class="tag">毎日食べたい幸せ酵母</div>
     <div class="play">▶ タップ / クリックでパン屋へ</div>
     <div class="controls ctrl-desktop">
       <span><b>W A S D</b> 移動</span><span><b>マウス</b> 視点</span>
@@ -239,18 +265,20 @@
       ① 外の<b>畑</b>で <b>小麦</b> と <b>規格外野菜</b> を集める（長押しで収穫）／川の近くも探索<br>
       ② <b>🥖工房</b>ボタンを開く → <b>空き瓶＋規格外野菜</b>を「瓶に仕込む」→ ぷくぷく<b>発酵を待つ</b>と『発酵液（天然酵母）』に（かきまぜると早まる）<br>
       ③ 同じ<b>🥖工房</b>で<b>ワンタップ</b>！『天然酵母カンパーニュ』『バゲット』など本物のパンが焼ける（＋ローズマリー/摘果りんごで味変）<br>
-      ④ 鶏・牛・豚・羊を倒すと<b>お肉</b>。クリエイティブなので🎒の<b>検索</b>から全アイテムも出せます。自動保存・🔗で共有。</div>
+      ④ 焼けたら<b>店主の大下さん</b>に届けて開店。☕カフェ・南方さんぽも。自動保存・🔗で共有。</div>
     <div id="about-link">📖 プチヘルメースについて</div>
+    <div class="fan-note">本作は実在の店舗を応援する非公式ファンメイド作品です（広島県北広島町・旧南方小学校）<br>実在の方の音声は使用していません。ロゴ・名称の権利は各権利者に帰属します</div>
   </div>
 
   <div id="about">
     <div class="about-card">
       <h2>🥖 プチヘルメース</h2>
-      <p><b>「毎日食べたい、幸せ酵母を。」</b></p>
-      <p>2013年に閉校した南方小学校。10年の時を経て、住民の手で「地域の交流拠点」としてよみがえりました。プチヘルメースは、畑で行き場をなくした<b>規格外の野菜や果物</b>から酵母をおこし、<b>「もったいない」を「おいしい」に</b>変える天然酵母のパン屋さん。</p>
-      <p>同じ校舎には姉妹店のカフェ<b>「South in North」</b>も。元教室でコーヒーやカレーを、広い校庭でのんびりと。</p>
-      <p>広島県北広島町の<b>旧・南方小学校</b>を、住民の「旧南方小学校再生プロジェクト」が地域拠点として再生。<b>2025年1月</b>に開店した天然酵母のハードパン屋です。看板は<b>カンパーニュ</b>。</p>
-      <p class="about-note">このゲームは、その世界観をマイクラ風に疑似体験する非公式のファン作品です（広島・北広島町）。<br>畑で収穫 → 瓶で発酵 → 小麦粉と混ぜて焼く、の流れでパン作りを楽しめます。</p>
+      <p><b>「毎日食べたい幸せ酵母」 — 今日のパンが、明日の野菜に。</b></p>
+      <p>広島県北広島町、2013年に閉校した<b>旧南方小学校</b>。住民の「旧南方小学校再生プロジェクト」の手で地域の拠点としてよみがえった木造校舎の一角に、<b>大下さんが2025年1月に開いた</b>小さな天然酵母ハードパンの店があります。看板は<b>カンパーニュ</b>。酵母は<b>いちご・トマト・ゆず</b>など、畑で行き場をなくした規格外の農産物からゆっくり起こします。営業は<b>水・土曜の11:30〜15:30</b>、売り切れたらおしまいの、静かなお店です。</p>
+      <p>パンの耳や生ごみは<b>ぐるぐるコンポスト</b>で堆肥になり、また畑の野菜へ。「今日のパンが、明日の野菜に。」という小さな循環が、この校舎では本当にまわっています。</p>
+      <p>同じ1階には旧教室のカフェ<b>「South in North」</b>。調理は旧給食室で、机と椅子を校庭に持ち出して食べてもいい、のんびりした場所です。校舎には広島工業大学と町産木材でつくられた<b>コミュニティー広場</b>もあります。</p>
+      <p class="about-note">このゲームは、その世界観をボクセルの里山で擬似体験する<b>非公式のファンメイド作品</b>です。畑で収穫 → 瓶で発酵 → 焼いて → 開店、の流れをどうぞ。</p>
+      <p class="about-credit">取材協力（公開情報をもとに制作）: プチヘルメース / South in North / 旧南方小学校再生プロジェクト</p>
       <button id="about-close">とじる</button>
     </div>
   </div>

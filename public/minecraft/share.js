@@ -160,7 +160,7 @@ export function codeToSeed(code) {
 // and HTTPS — we just attempt and catch.)
 export async function shareSeed(seed, title = 'プチヘルメース', text) {
   const url = buildShareURL(seed);
-  if (!text) text = `「プチヘルメース」をマイクラ風の世界で疑似体験🥖 畑の余り野菜と発酵でパン作り！ #プチヘルメース`;
+  if (!text) text = `旧南方小学校のパン屋『プチヘルメース』を擬似体験🥖 今日のパンが、明日の野菜に。`;
 
   // 1) Native share sheet, when available.
   if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {

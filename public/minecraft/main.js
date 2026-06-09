@@ -24,8 +24,12 @@ import { createGuide } from './guide.js';
 // ---------------------------------------------------------------------------
 const DEFAULTS = { sens: 1.0, dist: 8, sound: true, shake: true, creative: true, mobs: true, music: true };
 function loadSettings() {
-  try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem('mc_settings') || '{}') }; }
-  catch (e) { return { ...DEFAULTS }; }
+  const base = { ...DEFAULTS };
+  // Mobile default: shorter render distance for performance. Only a DEFAULT —
+  // anything the player saved (including a larger dist) always wins below.
+  try { if (isTouchDevice()) base.dist = 6; } catch (e) {}
+  try { return { ...base, ...JSON.parse(localStorage.getItem('mc_settings') || '{}') }; }
+  catch (e) { return base; }
 }
 function saveSettings() {
   try { localStorage.setItem('mc_settings', JSON.stringify(settings)); } catch (e) {}
