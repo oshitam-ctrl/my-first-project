@@ -170,10 +170,12 @@ const cx = Math.floor(w / 2); // 44 — facade centre (matches landmark.js)
 assert.ok(get(cx, 6, 26) === B.SHOP_SIGN, `shop-name sign at (${cx},6,26)`);
 assert.ok(get(cx + 2, 3, 27) === B.OPEN_SIGN, `OPEN sign at (${cx + 2},3,27)`);
 assert.ok(get(cx - 3, 2, 28) === B.AFRAME, `A-frame at (${cx - 3},2,28)`);
+// S2: the 昇降口下駄箱 banks at z=25 (x40..41 / x47..48) replaced the outer
+// display-ledge loaves; the two inner loaves (x42 / x46) remain visible.
 let windowBreads = 0;
 for (let x = cx - 4; x <= cx + 4; x++)
   if ([B.BAGUETTE, B.CAMPAGNE, B.PASTRY].includes(get(x, 3, 25))) windowBreads++;
-assert.ok(windowBreads >= 4, `window display should show varied breads behind the facade glass, got ${windowBreads}`);
+assert.ok(windowBreads >= 2, `window display should still show breads beside the genkan cubbies, got ${windowBreads}`);
 
 // ── Classroom interior floor >= 8×8 of OAK_PLANKS (Classroom 1: x12..21, z3..19) ─
 let floorCount = 0;
@@ -686,6 +688,158 @@ for (const mx of [7, 8]) {
   }
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// S2 — 校舎の本物感 + 校庭/体育館 (schoolhouse authenticity, yard, gymnasium)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── 昇降口: 下駄箱 banks present, genkan walkway stays clear ─────────────────
+const shoeCubbyCount = tally.get(B.SHOE_CUBBY) || 0;
+assert.ok(shoeCubbyCount >= 12, `昇降口 should have >=12 SHOE_CUBBY blocks, got ${shoeCubbyCount}`);
+for (const gz of [22, 23, 24]) {
+  for (const gx of [43, 44, 45]) {
+    const gid = get(gx, 2, gz);
+    assert.ok(gid === B.AIR || gid === -1, `genkan walkway (${gx},2,${gz}) must be AIR, got ${gid}`);
+  }
+}
+// たたき (stone entry floor) under the walkway
+assert.strictEqual(get(44, 1, 24), B.SMOOTH_STONE, `genkan たたき (44,1,24) must be SMOOTH_STONE, got ${get(44,1,24)}`);
+
+// ── Facade identity: 校舎時計 + 校章 above the entrance, 国旗 on the pole ────
+assert.strictEqual(get(44, 13, 26), B.SCHOOL_CLOCK, `SCHOOL_CLOCK expected at (44,13,26), got ${get(44,13,26)}`);
+assert.strictEqual(get(44, 14, 26), B.SCHOOL_EMBLEM, `SCHOOL_EMBLEM expected at (44,14,26), got ${get(44,14,26)}`);
+assert.strictEqual(get(36, 11, 33), B.FLAG, `FLAG expected at flag-pole top (36,11,33), got ${get(36,11,33)}`);
+assert.strictEqual(get(36, 5, 33), B.SMOOTH_STONE, `flag pole (36,5,33) must be SMOOTH_STONE, got ${get(36,5,33)}`);
+// 二宮金次郎 statue + 自販機
+assert.strictEqual(get(38, 3, 29), B.CALCITE, `二宮金次郎 head (38,3,29) must be CALCITE, got ${get(38,3,29)}`);
+assert.strictEqual(get(49, 2, 28), B.VENDING, `VENDING machine expected at (49,2,28), got ${get(49,2,28)}`);
+
+// ── 廊下 authenticity: PLASTER wall, SCHOOL_FLOOR, sinks, notice boards ──────
+// PLASTER re-skin on the z=20 corridor wall (sampled clear of doorways/markers)
+for (const px of [18, 30, 42, 55, 67]) {
+  assert.strictEqual(get(px, 3, 20), B.PLASTER, `corridor wall (${px},3,20) must be PLASTER, got ${get(px,3,20)}`);
+}
+// Doorways re-opened after the repaint (one per bay, sampled)
+for (const doorX of [16, 27, 38, 50, 62, 73]) {
+  const did = get(doorX, 2, 20);
+  assert.ok(did === B.AIR || did === -1, `corridor doorway (${doorX},2,20) must stay AIR after PLASTER repaint, got ${did}`);
+}
+// SCHOOL_FLOOR down the corridor
+assert.strictEqual(get(20, 1, 23), B.SCHOOL_FLOOR, `corridor floor (20,1,23) must be SCHOOL_FLOOR, got ${get(20,1,23)}`);
+assert.strictEqual(get(70, 1, 23), B.SCHOOL_FLOOR, `corridor floor (70,1,23) must be SCHOOL_FLOOR, got ${get(70,1,23)}`);
+// 手洗い場: >=6 SINK_UNIT blocks
+const sinkCount = tally.get(B.SINK_UNIT) || 0;
+assert.ok(sinkCount >= 6, `corridor should have >=6 SINK_UNIT blocks, got ${sinkCount}`);
+// Sinks must NOT block any doorway egress (z=21 in front of doorway columns clear)
+for (const doorX of [26, 27, 61, 62]) {
+  const sid = get(doorX, 2, 21);
+  assert.ok(sid === B.AIR || sid === -1, `doorway egress (${doorX},2,21) must be clear of sinks, got ${sid}`);
+}
+// NOTICE_BOARD pairs on the corridor wall + genkan notice
+const noticeCount = tally.get(B.NOTICE_BOARD) || 0;
+assert.ok(noticeCount >= 10, `expected >=10 NOTICE_BOARD blocks (corridor pairs + plaza gallery), got ${noticeCount}`);
+// Trophy case near the east stair displays the 校章
+assert.strictEqual(get(77, 3, 21), B.SCHOOL_EMBLEM, `trophy case (77,3,21) must show SCHOOL_EMBLEM, got ${get(77,3,21)}`);
+
+// ── GREEN_BOARD upgrade: classrooms + 理科室 use the real 緑黒板 ─────────────
+let gfGreenBoard = 0, sciGreenBoard = 0, f2GreenBoard = 0;
+for (let x = 58; x <= 67; x++) for (let y = 3; y <= 6; y++) if (get(x, y, 2) === B.GREEN_BOARD) gfGreenBoard++;
+for (let x = 23; x <= 32; x++) for (let y = 3; y <= 6; y++) if (get(x, y, 2) === B.GREEN_BOARD) sciGreenBoard++;
+for (let x = 12; x <= 21; x++) for (let y = g1 + 1; y <= g2 - 1; y++) if (get(x, y, 2) === B.GREEN_BOARD) f2GreenBoard++;
+assert.ok(gfGreenBoard >= 8, `GF classroom 4 blackboard must be GREEN_BOARD (>=8 cells), got ${gfGreenBoard}`);
+assert.ok(sciGreenBoard >= 8, `理科室 blackboard must be GREEN_BOARD (>=8 cells), got ${sciGreenBoard}`);
+assert.ok(f2GreenBoard >= 8, `2F classroom 1 blackboard must be GREEN_BOARD (>=8 cells), got ${f2GreenBoard}`);
+// The cafe menu board stays BLACK_WOOL until S3 (asserted above as bbFound)
+
+// ── SASH_WINDOW upgrade: 2F bands + end walls; GF facade keeps GLASS ─────────
+assert.ok((tally.get(B.SASH_WINDOW) || 0) >= 40, `expected >=40 SASH_WINDOW panes, got ${tally.get(B.SASH_WINDOW) || 0}`);
+assert.strictEqual(get(12, 11, 26), B.SASH_WINDOW, `2F facade window (12,11,26) must be SASH_WINDOW, got ${get(12,11,26)}`);
+assert.strictEqual(get(4, 4, 10), B.SASH_WINDOW, `west end-wall window (4,4,10) must be SASH_WINDOW, got ${get(4,4,10)}`);
+assert.strictEqual(get(12, 4, 26), B.GLASS, `GF facade window (12,4,26) must stay GLASS, got ${get(12,4,26)}`);
+
+// ── コミュニティー広場 (GF x34..43): floor, welcome board, desks, books ───────
+assert.strictEqual(get(38, 1, 10), B.SCHOOL_FLOOR, `plaza floor (38,1,10) must be SCHOOL_FLOOR, got ${get(38,1,10)}`);
+let plazaWelcome = 0;
+for (let x = 35; x <= 42; x++) for (let y = 3; y <= 6; y++) if (get(x, y, 2) === B.GREEN_BOARD) plazaWelcome++;
+assert.ok(plazaWelcome >= 8, `plaza welcome wall should be GREEN_BOARD (>=8 cells), got ${plazaWelcome}`);
+let plazaDesks = 0, plazaChairs = 0;
+for (let x = 34; x <= 43; x++)
+  for (let z = 3; z <= 19; z++) {
+    if (get(x, 2, z) === B.SCHOOL_DESK) plazaDesks++;
+    if (get(x, 2, z) === B.SCHOOL_CHAIR) plazaChairs++;
+  }
+assert.ok(plazaDesks >= 8, `plaza should have >=8 SCHOOL_DESK blocks (広工大×町産木材), got ${plazaDesks}`);
+assert.ok(plazaChairs >= 8, `plaza should have >=8 SCHOOL_CHAIR blocks, got ${plazaChairs}`);
+assert.ok(get(35, 3, 3) === B.BOOKSHELF, `plaza reading corner (35,3,3) must be BOOKSHELF, got ${get(35,3,3)}`);
+let plazaGallery = 0;
+for (let z = 6; z <= 14; z++) for (let y = 3; y <= 4; y++) if (get(43, y, z) === B.NOTICE_BOARD) plazaGallery++;
+assert.ok(plazaGallery >= 4, `plaza east wall should have a NOTICE_BOARD gallery (>=4), got ${plazaGallery}`);
+// total SCHOOL_DESK across plaza + yard picnic sets
+const schoolDeskTotal = tally.get(B.SCHOOL_DESK) || 0;
+assert.ok(schoolDeskTotal >= 8, `expected >=8 SCHOOL_DESK blocks overall, got ${schoolDeskTotal}`);
+
+// ── 体育館 (x64..84, z36..56) ────────────────────────────────────────────────
+let gymFloorCount = 0;
+for (let x = 65; x <= 83; x++)
+  for (let z = 37; z <= 55; z++)
+    if (get(x, 1, z) === B.GYM_FLOOR) gymFloorCount++;
+assert.ok(gymFloorCount >= 280, `体育館 floor should have >=280 GYM_FLOOR cells, got ${gymFloorCount}`);
+// Entrance (73..75, y2..4, z36) must be walk-in AIR
+for (let ex = 73; ex <= 75; ex++)
+  for (let ey = 2; ey <= 4; ey++) {
+    const eid = get(ex, ey, 36);
+    assert.ok(eid === B.AIR || eid === -1, `体育館入口 (${ex},${ey},36) must be AIR, got ${eid}`);
+  }
+// PLASTER walls + stepped roof ridge + stage + 跳び箱 + hoop
+assert.strictEqual(get(64, 3, 46), B.SANDSTONE, `gym west mid-pillar (64,3,46) must be SANDSTONE, got ${get(64,3,46)}`);
+assert.strictEqual(get(64, 3, 44), B.PLASTER, `gym west wall (64,3,44) must be PLASTER, got ${get(64,3,44)}`);
+assert.strictEqual(get(74, 10, 46), B.SMOOTH_STONE, `gym roof ridge (74,10,46) must be SMOOTH_STONE, got ${get(74,10,46)}`);
+assert.strictEqual(get(70, 2, 44), B.VAULT_BOX, `跳び箱 (70,2,44) must be VAULT_BOX, got ${get(70,2,44)}`);
+assert.strictEqual(get(72, 1, 44), B.WHITE_WOOL, `着地マット (72,1,44) must be WHITE_WOOL, got ${get(72,1,44)}`);
+assert.strictEqual(get(74, 3, 54), B.AIR, `gym stage front airspace (74,3,54) must be AIR, got ${get(74,3,54)}`);
+assert.strictEqual(get(74, 2, 54), B.SPRUCE_PLANKS, `gym stage (74,2,54) must be SPRUCE_PLANKS, got ${get(74,2,54)}`);
+assert.strictEqual(get(66, 4, 46), B.HAY, `basketball ring (66,4,46) must be HAY, got ${get(66,4,46)}`);
+// 防球ネット relocated to x=86 (gym footprint must be net-free)
+let netAt86 = 0, netInGym = 0;
+for (let nz = 28; nz <= 52; nz++) {
+  for (let ny = 3; ny <= 5; ny++) {
+    if (get(86, ny, nz) === B.GREEN_WOOL) netAt86++;
+    if (get(72, ny, nz) === B.GREEN_WOOL) netInGym++;
+  }
+}
+assert.ok(netAt86 >= 50, `防球ネット should stand at x=86, got ${netAt86} GREEN_WOOL cells`);
+assert.strictEqual(netInGym, 0, `old 防球ネット at x=72 must be gone (gym site), got ${netInGym}`);
+// 渡り廊下 gravel path between school and gym
+assert.strictEqual(get(62, 0, 37), B.GRAVEL, `渡り廊下 gravel (62,0,37) expected, got ${get(62,0,37)}`);
+
+// ── 校庭: 桜並木 + playground + picnic sets + compost + herbs + cones ─────────
+const sakuraCount = tally.get(B.SAKURA_LEAVES) || 0;
+assert.ok(sakuraCount >= 100, `桜並木 should have >=100 SAKURA_LEAVES, got ${sakuraCount}`);
+assert.strictEqual(get(16, 1, 54), B.OAK_LOG, `桜 trunk (16,1,54) must be OAK_LOG, got ${get(16,1,54)}`);
+// 鉄棒 3-height bars
+assert.strictEqual(get(11, 2, 38), B.SMOOTH_STONE, `鉄棒 low bar (11,2,38), got ${get(11,2,38)}`);
+assert.strictEqual(get(13, 3, 38), B.SMOOTH_STONE, `鉄棒 mid bar (13,3,38), got ${get(13,3,38)}`);
+assert.strictEqual(get(15, 4, 38), B.SMOOTH_STONE, `鉄棒 high bar (15,4,38), got ${get(15,4,38)}`);
+// うんてい beam + すべり台 slide
+assert.strictEqual(get(21, 4, 44), B.BIRCH_PLANKS, `うんてい beam (21,4,44), got ${get(21,4,44)}`);
+assert.strictEqual(get(13, 2, 48), B.BIRCH_PLANKS, `すべり台 slide (13,2,48), got ${get(13,2,48)}`);
+// 校庭ランチ picnic desk sets (SCHOOL_DESK + parasol)
+for (const [yx, yz] of [[30, 36], [54, 46], [20, 30]]) {
+  assert.strictEqual(get(yx, 1, yz), B.SCHOOL_DESK, `yard picnic desk (${yx},1,${yz}) must be SCHOOL_DESK, got ${get(yx,1,yz)}`);
+  assert.strictEqual(get(yx, 4, yz), B.WHITE_WOOL, `parasol canopy (${yx},4,${yz}) must be WHITE_WOOL, got ${get(yx,4,yz)}`);
+}
+// ぐるぐるコンポスト + herb bed + exterior bench + parking cones
+assert.strictEqual(get(28, 1, 33), B.COMPOST, `ぐるぐるコンポスト (28,1,33) expected, got ${get(28,1,33)}`);
+assert.strictEqual(get(48, 1, 32), B.DIRT, `herb bed (48,1,32) must be DIRT, got ${get(48,1,32)}`);
+let herbCount = 0;
+for (let hx = 46; hx <= 52; hx++)
+  for (const hz of [32, 33])
+    if (get(hx, 2, hz) === B.GREEN_WOOL || get(hx, 2, hz) === B.OAK_LEAVES) herbCount++;
+assert.ok(herbCount >= 10, `herb bed should carry >=10 herb blocks, got ${herbCount}`);
+assert.strictEqual(get(39, 1, 28), B.SPRUCE_PLANKS, `exterior bench (39,1,28) must be SPRUCE_PLANKS, got ${get(39,1,28)}`);
+for (const cxn of [58, 60, 62]) {
+  assert.strictEqual(get(cxn, 1, 30), B.CALCITE, `parking cone (${cxn},1,30) must be CALCITE, got ${get(cxn,1,30)}`);
+}
+
 // ── Counting reports ─────────────────────────────────────────────────────────
 let northWallSolid = 0;
 for (const nx of northWallCheckXs)
@@ -708,3 +862,6 @@ console.log(`  FIX A: GF divider(22,4,10)=${get(22,4,10)===B.SANDSTONE?'SOLID':'
 console.log(`  FIX B: 2F desks=${f2DeskCount}, chairs=${f2ChairCount}, lockers=${f2LockerCount}, ceiling lanterns=${f2LanternCount}, corridor doors open=${f2CorridorDoorwaysOk}`);
 console.log(`  FIX C: bakery GLASS=${bakeryGlassCount}, counter LANTERNs=${bakeryCounterLanternCount}, BLUE_WOOL teal=${bakeryTealCount}`);
 console.log(`  BREAD redesign: BREAD blocks in sales+corridor=${bakeryBreadCount}, HAY in sales zone=${salesHayCount}`);
+console.log(`  S2 校舎: 下駄箱=${shoeCubbyCount}, 手洗=${sinkCount}, 掲示=${noticeCount}, sash=${tally.get(B.SASH_WINDOW) || 0}, 緑黒板 gf/sci/2f=${gfGreenBoard}/${sciGreenBoard}/${f2GreenBoard}`);
+console.log(`  S2 広場: 机=${plazaDesks}, 椅子=${plazaChairs}, ようこそ板=${plazaWelcome}, ギャラリー=${plazaGallery}`);
+console.log(`  S2 体育館/校庭: 床=${gymFloorCount}, ネット@86=${netAt86}, 桜=${sakuraCount}, ハーブ=${herbCount}, 机計=${schoolDeskTotal}`);

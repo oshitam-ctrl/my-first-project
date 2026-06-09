@@ -118,24 +118,28 @@ export function buildPetitHermes(stamp, B) {
   // 3) WINDOW BANDS — long horizontal GLASS bands on front + back + ends.
   //    Pattern: 2 glass, 1 mullion, repeat. Applied after shell, before rooms.
   // ==========================================================================
-  const windowBand = (yLo, yHi, zWall, xLo, xHi) => {
+  const windowBand = (yLo, yHi, zWall, xLo, xHi, paneId) => {
     for (let x = xLo; x <= xHi; x++) {
-      if (((x - xLo) % 3) !== 2) fillBox(x, yLo, zWall, x, yHi, zWall, B.GLASS);
+      if (((x - xLo) % 3) !== 2) fillBox(x, yLo, zWall, x, yHi, zWall, paneId);
     }
   };
+  // S2: real schoolhouse SASH_WINDOW (white-mullion panes) on the 2F bands and
+  // the end walls; the GROUND-FLOOR facade + back keep plain GLASS so the shop
+  // window display stays bright and readable from the yard.
+  const SASH = (B.SASH_WINDOW != null ? B.SASH_WINDOW : B.GLASS);
   // Floor-1 front (z=26) and back (z=2): y3..6 (mid-band, keep y2+y7 solid)
-  windowBand(3, 6, bz1, bx0 + 2, bx1 - 2); // front
-  windowBand(3, 6, bz0, bx0 + 2, bx1 - 2); // back
-  // Floor-2 front and back: y10..13
-  windowBand(deck + 2, f2Hi - 1, bz1, bx0 + 2, bx1 - 2); // front
-  windowBand(deck + 2, f2Hi - 1, bz0, bx0 + 2, bx1 - 2); // back
-  // End walls (west x=4, east x=83) — both floors
+  windowBand(3, 6, bz1, bx0 + 2, bx1 - 2, B.GLASS); // front
+  windowBand(3, 6, bz0, bx0 + 2, bx1 - 2, B.GLASS); // back
+  // Floor-2 front and back: y10..13 — sash windows (renovated old school look)
+  windowBand(deck + 2, f2Hi - 1, bz1, bx0 + 2, bx1 - 2, SASH); // front
+  windowBand(deck + 2, f2Hi - 1, bz0, bx0 + 2, bx1 - 2, SASH); // back
+  // End walls (west x=4, east x=83) — both floors, sash windows
   for (let z = bz0 + 2; z <= bz1 - 2; z++) {
     if (((z - (bz0 + 2)) % 3) !== 2) {
-      fillBox(bx0, 3, z, bx0, 6, z, B.GLASS);
-      fillBox(bx1, 3, z, bx1, 6, z, B.GLASS);
-      fillBox(bx0, deck + 2, z, bx0, f2Hi - 1, z, B.GLASS);
-      fillBox(bx1, deck + 2, z, bx1, f2Hi - 1, z, B.GLASS);
+      fillBox(bx0, 3, z, bx0, 6, z, SASH);
+      fillBox(bx1, 3, z, bx1, 6, z, SASH);
+      fillBox(bx0, deck + 2, z, bx0, f2Hi - 1, z, SASH);
+      fillBox(bx1, deck + 2, z, bx1, f2Hi - 1, z, SASH);
     }
   }
 
@@ -231,6 +235,11 @@ export function buildPetitHermes(stamp, B) {
   // Step 6-c: Corridor back wall at z=20, full width x5..82, y2..f1Hi.
   fillBox(5, 2, 20, 82, f1Hi, 20, B.SANDSTONE); // corridor back wall, full width
 
+  // Step 6-c2 (S2): PLASTER re-skin — the renovated corridor wall is warm white
+  // 漆喰 (#F5EDE4), not raw sandstone. Painted over the full wall BEFORE the
+  // doorways are carved in step 6-d, so every doorway stays open.
+  if (B.PLASTER != null) fillBox(5, 2, 20, 82, f1Hi, 20, B.PLASTER);
+
   // Step 6-d: Doorways per bay through the corridor back wall (z=20): 2-wide × 4-tall (y2..5)
   // West stair bay — single opening
   fillBox(6, 2, 20, 9, 5, 20, B.AIR); // west stair bay doorway
@@ -252,8 +261,8 @@ export function buildPetitHermes(stamp, B) {
     const bbW = Math.min(rw - 2, 9); // blackboard width
     const bbX0 = rx0 + 1;
     const bbX1 = Math.min(rx1 - 1, bbX0 + bbW - 1);
-    // Blackboard on back wall z=2, y3..6
-    fillBox(bbX0, 3, 2, bbX1, 6, 2, B.BLACK_WOOL);
+    // Blackboard on back wall z=2, y3..6 — real 緑黒板 (green board + chalk rail)
+    fillBox(bbX0, 3, 2, bbX1, 6, 2, (B.GREEN_BOARD != null ? B.GREEN_BOARD : B.BLACK_WOOL));
     // Teacher desk (CRAFTING_TABLE) + chair (SPRUCE_PLANKS) at z=3..4
     const tDx = Math.floor((rx0 + rx1) / 2) - 1;
     stamp(tDx,     2, 3, B.CRAFTING_TABLE);
@@ -344,8 +353,8 @@ export function buildPetitHermes(stamp, B) {
   //     round stools (BIRCH_PLANKS) + periodic-table blackboard on z=2.
   // ==========================================================================
   const scX0 = 23, scX1 = 32; // science room bay x extents
-  // Blackboard (periodic table / 理科) on back wall z=2, y3..6
-  fillBox(scX0 + 1, 3, 2, scX1 - 1, 6, 2, B.BLACK_WOOL);
+  // Blackboard (periodic table / 理科) on back wall z=2, y3..6 — 緑黒板
+  fillBox(scX0 + 1, 3, 2, scX1 - 1, 6, 2, (B.GREEN_BOARD != null ? B.GREEN_BOARD : B.BLACK_WOOL));
   // Teacher demo bench (CRAFTING_TABLE pair) at z=3
   const scMid = Math.floor((scX0 + scX1) / 2);
   stamp(scMid - 1, 2, 3, B.CRAFTING_TABLE);
@@ -388,10 +397,41 @@ export function buildPetitHermes(stamp, B) {
     stamp(scX0 + 3, f1Hi - 1, 14, B.LANTERN);
   }
 
-  // Generic GF classrooms (3 and 4 remain standard)
-  classroom_gf(34, 43);  // Classroom 3 (GF)
+  // Generic GF classrooms (Classroom 4 remains standard)
   // Classroom 2 (23-32) replaced by 理科室 above
+  // Classroom 3 (34-43) replaced by コミュニティー広場 below (S2)
   classroom_gf(58, 67);  // Classroom 4 (GF)
+
+  // ==========================================================================
+  // 7c2) コミュニティー広場 (community plaza) — GF x34..43, beside the 昇降口.
+  //      The real story: 広島工業大学の学生×北広島町産木材で作られた机と椅子が
+  //      並ぶ、地域の人が集まる元教室。Bright SCHOOL_FLOOR, a GREEN_BOARD
+  //      welcome wall, school-desk clusters, a long bench, a NOTICE_BOARD
+  //      photo gallery and a reading-corner bookshelf.
+  // ==========================================================================
+  {
+    const pzX0 = 34, pzX1 = 43;
+    // Bright school-wood floor across the whole room
+    fillBox(pzX0, 1, 3, pzX1, 1, 19, B.SCHOOL_FLOOR);
+    // Welcome wall: GREEN_BOARD on z=2 (「ようこそ 旧南方小学校へ」)
+    fillBox(pzX0 + 1, 3, 2, pzX1 - 1, 6, 2, (B.GREEN_BOARD != null ? B.GREEN_BOARD : B.BLACK_WOOL));
+    // 町産木材 school-desk clusters (2 desks + 2 chairs each) ×4
+    for (const [dcx, dcz] of [[36, 7], [40, 7], [36, 12], [40, 12]]) {
+      stamp(dcx,     2, dcz,     B.SCHOOL_DESK);
+      stamp(dcx + 1, 2, dcz,     B.SCHOOL_DESK);
+      stamp(dcx,     2, dcz + 1, B.SCHOOL_CHAIR);
+      stamp(dcx + 1, 2, dcz + 1, B.SCHOOL_CHAIR);
+    }
+    // Long community bench facing the corridor
+    fillBox(36, 2, 16, 41, 2, 16, B.SPRUCE_PLANKS);
+    // NOTICE_BOARD photo/history gallery on the east wall (x=43, beside divider x44)
+    for (let nz = 6; nz <= 14; nz += 3) {
+      stamp(pzX1, 3, nz, B.NOTICE_BOARD);
+      stamp(pzX1, 4, nz, B.NOTICE_BOARD);
+    }
+    // Reading-corner bookshelf in the back-west corner
+    fillBox(35, 2, 3, 35, 4, 4, B.BOOKSHELF);
+  }
 
   // ==========================================================================
   // 7d) 図書室 (library) — GF x69..78 (replaces generic Classroom 5).
@@ -753,8 +793,8 @@ export function buildPetitHermes(stamp, B) {
     const bbX1 = Math.min(rx1 - 1, bbX0 + bbW - 1);
     const tDx = Math.floor((rx0 + rx1) / 2) - 1;
 
-    // BLACKBOARD on back wall z=2, y=g1+1..g2-1 (y10..13)
-    fillBox(bbX0, g1 + 1, 2, bbX1, g2 - 1, 2, B.BLACK_WOOL);
+    // BLACKBOARD on back wall z=2, y=g1+1..g2-1 (y10..13) — 緑黒板
+    fillBox(bbX0, g1 + 1, 2, bbX1, g2 - 1, 2, (B.GREEN_BOARD != null ? B.GREEN_BOARD : B.BLACK_WOOL));
 
     // WALL POSTER left of blackboard (GREEN_WOOL panel, 2 wide × 2 tall, at y=g1+1..g2-2)
     // Only if there's room west of the blackboard
@@ -897,6 +937,66 @@ export function buildPetitHermes(stamp, B) {
   }
 
   // ==========================================================================
+  // 11d) S2 — 昇降口 (genkan) + 廊下 authenticity + facade identity.
+  //      Placed AFTER all wall/doorway carving so nothing here is erased.
+  // ==========================================================================
+  // ── 廊下: bright SCHOOL_FLOOR down the full ground-floor corridor ──────────
+  fillBox(5, 1, 21, 82, 1, 25, B.SCHOOL_FLOOR);
+
+  // ── 昇降口 genkan: stone たたき just inside the entrance (x43..45 walkway
+  //    stays clear — corridor walkable test at x=44 depends on it) ────────────
+  fillBox(41, 1, 23, 47, 1, 25, B.SMOOTH_STONE); // たたき (replaces the mat)
+  // 下駄箱 banks flanking the walkway on the room-side corridor wall (z=22)
+  fillBox(40, 2, 22, 42, 3, 22, B.SHOE_CUBBY);
+  fillBox(46, 2, 22, 48, 3, 22, B.SHOE_CUBBY);
+  fillBox(40, 4, 22, 42, 4, 22, B.SPRUCE_PLANKS); // wood caps
+  fillBox(46, 4, 22, 48, 4, 22, B.SPRUCE_PLANKS);
+  // 下駄箱 banks against the facade glass (z=25), tight to the pillars
+  fillBox(40, 2, 25, 41, 3, 25, B.SHOE_CUBBY);
+  fillBox(47, 2, 25, 48, 3, 25, B.SHOE_CUBBY);
+  // 掲示 (PTA notices) floating beside the walkway
+  stamp(45, 4, 22, B.NOTICE_BOARD);
+
+  // ── 廊下手洗い場: SINK_UNIT rows against the z=20 wall.
+  //    Spec positions (25..28 / 60..63) sit in front of the 理科室 (x26..27)
+  //    and Classroom-4 (x61..62) doorways — shifted to keep every door clear.
+  fillBox(28, 2, 21, 31, 2, 21, B.SINK_UNIT);
+  fillBox(64, 2, 21, 67, 2, 21, B.SINK_UNIT);
+
+  // ── NOTICE_BOARD pairs on the plastered corridor wall (z=20, y3..4),
+  //    clear of all doorway columns and the bakery pilasters x47..52 ─────────
+  for (const nbx of [13, 24, 35, 59, 70]) {
+    fillBox(nbx, 3, 20, nbx + 1, 4, 20, B.NOTICE_BOARD);
+  }
+
+  // ── トロフィーケース near the east stair (x76..78, z21): wood base, glass
+  //    case with the 校章 displayed inside, wood cap ─────────────────────────
+  fillBox(76, 2, 21, 78, 2, 21, B.SPRUCE_PLANKS);
+  stamp(76, 3, 21, B.GLASS);
+  stamp(77, 3, 21, B.SCHOOL_EMBLEM);
+  stamp(78, 3, 21, B.GLASS);
+  fillBox(76, 4, 21, 78, 4, 21, B.GLASS);
+  fillBox(76, 5, 21, 78, 5, 21, B.SPRUCE_PLANKS);
+
+  // ── FACADE IDENTITY: 校章 + 校舎時計 above the entrance (z=26 mullion col) ──
+  stamp(cx, 13, dz, B.SCHOOL_CLOCK);  // (44,13,26)
+  stamp(cx, 14, dz, B.SCHOOL_EMBLEM); // (44,14,26)
+  // 国旗掲揚ポール west of the entrance steps
+  fillBox(36, 1, 33, 36, 10, 33, B.SMOOTH_STONE); // pole
+  stamp(36, 11, 33, B.FLAG); stamp(37, 11, 33, B.FLAG); // flying 日の丸
+  // 二宮金次郎像 beside the entrance (礎石 + 体 + 頭 + 本 + 背負った薪)
+  stamp(38, 1, 29, B.STONE_BRICKS);  // 礎石
+  stamp(38, 2, 29, B.SMOOTH_STONE);  // 体
+  stamp(38, 3, 29, B.CALCITE);       // 頭
+  stamp(39, 2, 29, B.BIRCH_PLANKS);  // 読んでいる本
+  stamp(37, 2, 29, B.HAY);           // 背負った薪
+  // 自販機 east of the entrance (glows at night)
+  stamp(49, 1, 28, B.SMOOTH_STONE);  // plinth
+  fillBox(49, 2, 28, 49, 3, 28, B.VENDING);
+  // 外ベンチ in front of the facade (常連さんの待ち場所)
+  fillBox(39, 1, 28, 40, 1, 28, B.SPRUCE_PLANKS);
+
+  // ==========================================================================
   // 12) FRONT YARD (local z>26) — deterministic props.
   //     Gravel apron, 2 trees, swing set, stacked tire ring, 防球ネット.
   // ==========================================================================
@@ -912,8 +1012,9 @@ export function buildPetitHermes(stamp, B) {
   fillBox(t1x - 1, 8, t1z - 1, t1x + 1, 8, t1z + 1, B.OAK_LEAVES);
   stamp(t1x, 9, t1z, B.OAK_LEAVES); stamp(t1x, 6, t1z, B.OAK_LOG); stamp(t1x, 7, t1z, B.OAK_LOG);
 
-  // OAK tree 2: east of entrance
-  const t2x = 62, t2z = 38;
+  // OAK tree 2: east of entrance (S2: moved from (62,38) to (56,34) so the
+  // 体育館 footprint x64..84/z36..56 stays clear)
+  const t2x = 56, t2z = 34;
   fillBox(t2x, 1, t2z, t2x, 5, t2z, B.OAK_LOG);
   fillBox(t2x - 2, 4, t2z - 2, t2x + 2, 6, t2z + 2, B.OAK_LEAVES);
   fillBox(t2x - 1, 7, t2z - 1, t2x + 1, 7, t2z + 1, B.OAK_LEAVES);
@@ -939,15 +1040,16 @@ export function buildPetitHermes(stamp, B) {
   };
   tireRing(32, 30, 1); tireRing(32, 30, 2); tireRing(32, 30, 3);
 
-  // 防球ネット (anti-ball net): tall GREEN_WOOL net panels along east side of yard
-  // Poles at x=72 and x=76, z=28..52, GREEN_WOOL net panels
+  // 防球ネット (anti-ball net): tall GREEN_WOOL net panels along the EAST yard
+  // boundary. S2: relocated from x=72 to x=86 so the 体育館 (x64..84) fits.
+  const netX = 86;
   for (let nz = 28; nz <= 52; nz += 6) {
-    stamp(72, 1, nz, B.OAK_LOG); stamp(72, 2, nz, B.OAK_LOG);
-    stamp(72, 3, nz, B.OAK_LOG); stamp(72, 4, nz, B.OAK_LOG);
-    stamp(72, 5, nz, B.OAK_LOG);
+    stamp(netX, 1, nz, B.OAK_LOG); stamp(netX, 2, nz, B.OAK_LOG);
+    stamp(netX, 3, nz, B.OAK_LOG); stamp(netX, 4, nz, B.OAK_LOG);
+    stamp(netX, 5, nz, B.OAK_LOG);
   }
   for (let nz = 28; nz <= 52; nz++) {
-    fillBox(72, 3, nz, 72, 5, nz, B.GREEN_WOOL); // net panels at top
+    fillBox(netX, 3, nz, netX, 5, nz, B.GREEN_WOOL); // net panels at top
   }
 
   // ==========================================================================
@@ -989,4 +1091,125 @@ export function buildPetitHermes(stamp, B) {
       for (let lx = bx0 + 6; lx <= bx1 - 6; lx += 10) stamp(lx, ly, corrZ, B.LANTERN);
     }
   }
+
+  // ==========================================================================
+  // 15) S2 — 体育館 (gymnasium), local x64..84 z36..56.
+  //     The 防球ネット was relocated to x=86 and the yard oak to (56,34)
+  //     (section 12) so this footprint is clear. Stepped-arch roof profile:
+  //     y7 eaves → y8 (x66..82) → y9 (x69..79) → y10 ridge (x72..76).
+  // ==========================================================================
+  {
+    const gx0 = 64, gx1 = 84, gz0 = 36, gz1 = 56;
+    // Foundation slab + interior clear (insurance against yard scatter)
+    fillBox(gx0, 0, gz0, gx1, 0, gz1, B.SMOOTH_STONE);
+    fillBox(gx0 + 1, 1, gz0 + 1, gx1 - 1, 6, gz1 - 1, B.AIR);
+    // Court floor with painted lines
+    fillBox(gx0 + 1, 1, gz0 + 1, gx1 - 1, 1, gz1 - 1, B.GYM_FLOOR);
+    // PLASTER walls y1..6 (y1 plinth closes the gap beside the raised floor)
+    wallRing(gx0, gz0, gx1, 1, 6, gz1, B.PLASTER);
+    // SASH window band y4..5, every 3rd column on all four walls
+    for (let x = gx0 + 2; x <= gx1 - 2; x += 3) {
+      fillBox(x, 4, gz0, x, 5, gz0, SASH);
+      fillBox(x, 4, gz1, x, 5, gz1, SASH);
+    }
+    for (let z = gz0 + 3; z <= gz1 - 3; z += 3) {
+      fillBox(gx0, 4, z, gx0, 5, z, SASH);
+      fillBox(gx1, 4, z, gx1, 5, z, SASH);
+    }
+    // SANDSTONE structural pillars (corners + side midpoints)
+    for (const [px2, pz2] of [[gx0, gz0], [gx1, gz0], [gx0, gz1], [gx1, gz1], [gx0, 46], [gx1, 46]]) {
+      fillBox(px2, 1, pz2, px2, 6, pz2, B.SANDSTONE);
+    }
+    // Stepped arch roof (full-depth slabs per band) + PLASTER gable fills
+    fillBox(gx0, 7, gz0, gx0 + 1, 7, gz1, B.SMOOTH_STONE);  // west eave x64..65
+    fillBox(gx1 - 1, 7, gz0, gx1, 7, gz1, B.SMOOTH_STONE);  // east eave x83..84
+    fillBox(66, 8, gz0, 68, 8, gz1, B.SMOOTH_STONE);
+    fillBox(80, 8, gz0, 82, 8, gz1, B.SMOOTH_STONE);
+    fillBox(69, 9, gz0, 71, 9, gz1, B.SMOOTH_STONE);
+    fillBox(77, 9, gz0, 79, 9, gz1, B.SMOOTH_STONE);
+    fillBox(72, 10, gz0, 76, 10, gz1, B.SMOOTH_STONE);      // ridge
+    for (const gz of [gz0, gz1]) { // gable faces (妻面)
+      fillBox(66, 7, gz, 82, 7, gz, B.PLASTER);
+      fillBox(69, 8, gz, 79, 8, gz, B.PLASTER);
+      fillBox(72, 9, gz, 76, 9, gz, B.PLASTER);
+    }
+    // Entrance toward the schoolyard (north wall z=36): 3-wide walk-in + 庇
+    fillBox(73, 2, gz0, 75, 4, gz0, B.AIR);
+    fillBox(72, 5, 34, 76, 5, 35, B.SPRUCE_PLANKS); // canopy
+    fillBox(72, 1, 34, 72, 4, 34, B.SPRUCE_LOG);    // canopy posts
+    fillBox(76, 1, 34, 76, 4, 34, B.SPRUCE_LOG);
+    fillBox(73, 1, 34, 75, 1, 35, B.SMOOTH_STONE);  // entrance stoop
+    // Stage along the south wall
+    fillBox(66, 2, 53, 82, 2, 55, B.SPRUCE_PLANKS);
+    // 跳び箱 + 着地マット (mat flush with the court floor)
+    fillBox(70, 2, 44, 70, 3, 44, B.VAULT_BOX);
+    fillBox(71, 1, 44, 73, 1, 44, B.WHITE_WOOL);
+    // Basketball hoops on both end walls (WHITE_WOOL board + HAY ring)
+    fillBox(gx0 + 1, 4, 45, gx0 + 1, 5, 47, B.WHITE_WOOL);
+    stamp(gx0 + 2, 4, 46, B.HAY);
+    fillBox(gx1 - 1, 4, 45, gx1 - 1, 5, 47, B.WHITE_WOOL);
+    stamp(gx1 - 2, 4, 46, B.HAY);
+    // LANTERN row under the vault (y9 under the ridge, y7 under the y8 bands)
+    if (B.LANTERN != null) {
+      for (const lx of [68, 72, 76, 80]) {
+        stamp(lx, (lx >= 72 && lx <= 76) ? 9 : 7, 46, B.LANTERN);
+      }
+      stamp(74, 6, 38, B.LANTERN); // entrance bay light
+    }
+    // 渡り廊下: gravel path linking the school apron to the gym
+    fillBox(60, 0, 34, 64, 0, 40, B.GRAVEL);
+  }
+
+  // ==========================================================================
+  // 16) S2 — 校庭 (schoolyard): playground set, 桜並木, picnic desk sets,
+  //      ぐるぐるコンポスト, herb bed, parking cones.
+  // ==========================================================================
+  // ── 鉄棒 (3 heights, z=38): SPRUCE_LOG posts + SMOOTH_STONE bars ───────────
+  fillBox(10, 2, 38, 12, 2, 38, B.SMOOTH_STONE); // low bar
+  fillBox(12, 3, 38, 14, 3, 38, B.SMOOTH_STONE); // mid bar
+  fillBox(14, 4, 38, 16, 4, 38, B.SMOOTH_STONE); // high bar
+  fillBox(10, 1, 38, 10, 2, 38, B.SPRUCE_LOG);
+  fillBox(12, 1, 38, 12, 3, 38, B.SPRUCE_LOG);
+  fillBox(14, 1, 38, 14, 4, 38, B.SPRUCE_LOG);
+  fillBox(16, 1, 38, 16, 4, 38, B.SPRUCE_LOG);
+  // ── うんてい (monkey bars, z=44) ───────────────────────────────────────────
+  fillBox(18, 1, 44, 18, 3, 44, B.SPRUCE_LOG);
+  fillBox(24, 1, 44, 24, 3, 44, B.SPRUCE_LOG);
+  fillBox(18, 4, 44, 24, 4, 44, B.BIRCH_PLANKS); // rung beam
+  // ── すべり台 at (11,48): ladder + platform + slide + guard rails ──────────
+  fillBox(11, 1, 48, 11, 3, 48, B.SPRUCE_LOG);  // ladder column
+  stamp(12, 3, 48, B.BIRCH_PLANKS);             // platform / slide top
+  stamp(13, 2, 48, B.BIRCH_PLANKS);             // slide mid
+  stamp(14, 1, 48, B.BIRCH_PLANKS);             // slide run-out
+  if (B.GUARD_RAIL != null) {
+    stamp(12, 4, 47, B.GUARD_RAIL);
+    stamp(12, 4, 49, B.GUARD_RAIL);
+  }
+  // ── 桜並木: south edge (z=54) + west edge (x=7) ───────────────────────────
+  const sakura = (tx, tz) => {
+    const leaf = (B.SAKURA_LEAVES != null ? B.SAKURA_LEAVES : B.OAK_LEAVES);
+    fillBox(tx - 2, 3, tz - 2, tx + 2, 5, tz + 2, leaf); // r2 canopy y3..5
+    stamp(tx, 6, tz, leaf);                              // crown tip
+    fillBox(tx, 1, tz, tx, 3, tz, B.OAK_LOG);            // trunk pokes through
+  };
+  for (const tx of [8, 16, 24, 32, 40, 48, 56]) sakura(tx, 54);
+  for (const tz of [32, 40, 48]) sakura(7, tz);
+  // ── 校庭ランチ: SchoolDesk picnic sets ×3 (机+椅子2+パラソル) ─────────────
+  for (const [yx, yz] of [[30, 36], [54, 46], [20, 30]]) {
+    stamp(yx,     1, yz, B.SCHOOL_DESK);
+    stamp(yx - 1, 1, yz, B.SCHOOL_CHAIR);
+    stamp(yx + 1, 1, yz, B.SCHOOL_CHAIR);
+    fillBox(yx, 2, yz, yx, 3, yz, B.SPRUCE_LOG);              // parasol pole
+    fillBox(yx - 1, 4, yz - 1, yx + 1, 4, yz + 1, B.WHITE_WOOL); // parasol canopy
+  }
+  // ── ぐるぐるコンポスト (パン→堆肥→野菜の循環の要) near the field ─────────
+  stamp(28, 1, 33, B.COMPOST);
+  // ── ハーブ花壇 near the facade (raised DIRT bed + alternating herbs) ──────
+  fillBox(46, 1, 32, 52, 1, 33, B.DIRT);
+  for (let hx = 46; hx <= 52; hx++) {
+    stamp(hx, 2, 32, (hx % 2 === 0) ? B.GREEN_WOOL : B.OAK_LEAVES);
+    stamp(hx, 2, 33, (hx % 2 === 0) ? B.OAK_LEAVES : B.GREEN_WOOL);
+  }
+  // ── 駐車場コーン (グラウンドのコーン側が駐車場): CALCITE posts ────────────
+  for (const px3 of [58, 60, 62]) stamp(px3, 1, 30, B.CALCITE);
 }
