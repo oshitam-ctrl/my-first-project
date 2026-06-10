@@ -287,6 +287,19 @@ window.__warp = (x, z, ry = Math.PI) => {
 };
 window.__quest = chain;
 window.__bag = bag;
+// E2E用の同期インタラクト（低fpsのヘッドレスでもフレーム待ちせず操作できる）
+window.__interact = () => {
+  if (ui.isBusy()) { ui.advanceDialog(); return 'advance'; }
+  const spot = hotspots.update(player.pos);
+  if (spot) { doAction(spot); return spot.id; }
+  return null;
+};
+// 開いている会話/カードを全部閉じる（E2Eの状態リセット用）
+window.__closeUI = () => {
+  ui.closeModal();
+  let guard = 16;
+  while (guard-- > 0 && ui.advanceDialog()) {}
+};
 
 // ---------------------------------------------------------------------------
 // メインループ
