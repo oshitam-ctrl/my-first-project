@@ -223,7 +223,14 @@ export function createBakery({ inv, ferment, sfx, toast, itemDef, onBake, now = 
   function isOpen() { return root.style.display !== 'none'; }
   function toggle() { isOpen() ? close() : open(); }
   // Called from the loop so progress bars animate live while the panel is open.
-  function tick() { if (isOpen()) render(); }
+  // render() はパネル全体のDOMを組み直すので毎フレームは過剰（モバイルで発熱/カクつき）。
+  // 進捗バーの見た目には4Hzで十分。
+  let lastRender = 0;
+  function tick() {
+    if (!isOpen()) return;
+    const t = Date.now();
+    if (t - lastRender >= 250) { lastRender = t; render(); }
+  }
 
   document.body.appendChild(root);
   return { el: root, open, close, toggle, isOpen, tick, render };

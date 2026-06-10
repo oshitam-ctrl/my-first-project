@@ -19,11 +19,12 @@
   <meta property="og:type" content="website" />
   <meta property="og:title" content="プチヘルメース — 旧南方小学校のパン屋さん（非公式ファンゲーム）" />
   <meta property="og:description" content="廃校のパン屋を、まるごと擬似体験。畑で収穫→酵母を育てて→焼いて→開店。今日のパンが、明日の野菜に。" />
-  <meta property="og:image" content="icon-512.png" />
+  <meta property="og:url" content="https://my-first-project-oshitam-ctrls-projects.vercel.app/minecraft" />
+  <meta property="og:image" content="https://my-first-project-oshitam-ctrls-projects.vercel.app/minecraft/icon-512.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="プチヘルメース — 旧南方小学校のパン屋さん（非公式ファンゲーム）" />
   <meta name="twitter:description" content="廃校のパン屋を、まるごと擬似体験。畑で収穫→酵母を育てて→焼いて→開店。今日のパンが、明日の野菜に。 #プチヘルメース" />
-  <meta name="twitter:image" content="icon-512.png" />
+  <meta name="twitter:image" content="https://my-first-project-oshitam-ctrls-projects.vercel.app/minecraft/icon-512.png" />
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.webmanifest" />
@@ -211,7 +212,7 @@
   </style>
 </head>
 <body>
-  <canvas id="game"></canvas>
+  <canvas id="game" aria-label="プチヘルメース 3Dゲーム画面"></canvas>
   <div id="crosshair"></div>
   <div id="hud"></div>
   <canvas id="stats" width="220" height="44"></canvas>
@@ -219,13 +220,13 @@
   <div id="hurt"></div>
 
   <div id="topbar">
-    <button id="btn-sound" title="サウンド切替">♪</button>
-    <button id="btn-share" title="このワールドを共有">🔗</button>
-    <button id="btn-settings" title="設定">⚙</button>
-    <button id="btn-reset" title="ワールドの編集をリセット">↺</button>
+    <button id="btn-sound" title="サウンド切替" aria-label="サウンド切替">♪</button>
+    <button id="btn-share" title="このワールドを共有" aria-label="このワールドを共有">🔗</button>
+    <button id="btn-settings" title="設定" aria-label="設定">⚙</button>
+    <button id="btn-reset" title="ワールドの編集をリセット" aria-label="ワールドの編集をリセット">↺</button>
   </div>
 
-  <div id="settings">
+  <div id="settings" role="dialog" aria-modal="true" aria-label="設定">
     <h2>⚙ 設定</h2>
     <label>視点感度 <span id="sens-val"></span></label>
     <input id="set-sens" type="range" min="0.4" max="2.5" step="0.1" />
@@ -242,7 +243,7 @@
 
   <div id="toast"></div>
 
-  <div id="overlay">
+  <div id="overlay" role="dialog" aria-modal="true" aria-label="スタート画面">
     <div class="stamp-badge"><div class="emblem">🥖</div></div>
     <h1>プチヘルメース</h1>
     <div class="subtitle">旧南方小学校のパン屋さん — 擬似体験ゲーム</div>
@@ -270,7 +271,7 @@
     <div class="fan-note">本作は実在の店舗を応援する非公式ファンメイド作品です（広島県北広島町・旧南方小学校）<br>実在の方の音声は使用していません。ロゴ・名称の権利は各権利者に帰属します</div>
   </div>
 
-  <div id="about">
+  <div id="about" role="dialog" aria-modal="true" aria-label="プチヘルメースについて">
     <div class="about-card">
       <h2>🥖 プチヘルメース</h2>
       <p><b>「毎日食べたい幸せ酵母」 — 今日のパンが、明日の野菜に。</b></p>

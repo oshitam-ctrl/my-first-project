@@ -464,6 +464,12 @@ assert.strictEqual(
   get(57, 4, 10), B.SANDSTONE,
   `GF divider at (57,4,10) must be SANDSTONE (was AIR — hollow ordering bug)`
 );
+// 2F divider too: the 2F hollow (y=g1..g2) must not eat the upstairs room walls.
+// (総点検S7: GFしか検証していなかったテストギャップを補完)
+assert.strictEqual(
+  get(22, 10, 10), B.SANDSTONE,
+  `2F divider at (22,10,10) must be SANDSTONE (2F hollow must preserve dividers)`
+);
 
 // Bakery must be a properly enclosed bay: dividers at x=44 and x=57 solid mid-bay.
 // S3 re-skinned the sales-zone divider faces (z12..19) with warm-white PLASTER.

@@ -1286,7 +1286,10 @@ export class World {
     // BFS blocklight: seed from emitters within the padded volume, flood outward
     // Using a simple typed array queue for performance
     const rawBlock = new Uint8Array(size); // integer 0..MAX_BLOCK_LIGHT
-    const queue = new Int32Array(size); // packed indices
+    // セルは明るさが上がるたびに再enqueueされ得る（最大 MAX_BLOCK_LIGHT 回/セル）ので
+    // 容量=セル数では灯りが密集した部屋で溢れて伝播が欠けることがある。余裕を持たせ、
+    // それでも溢れた場合は静かに範囲外へ書くのではなく enqueue をスキップする。
+    const queue = new Int32Array(size * 4); // packed indices
     let qHead = 0, qTail = 0;
 
     // Seed all emitter blocks in the padded volume
@@ -1332,7 +1335,7 @@ export class World {
         const nli = LI(nlx, ny2, nlz);
         if (rawBlock[nli] < lv) {
           rawBlock[nli] = lv;
-          queue[qTail++] = nli;
+          if (qTail < queue.length) queue[qTail++] = nli;
         }
       }
     }
