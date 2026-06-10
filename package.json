@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node tools/run-unit-tests.mjs",
+    "test:e2e": "node test-world/playthrough.mjs",
+    "test:visual": "node test-world/shot-qa.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.1",

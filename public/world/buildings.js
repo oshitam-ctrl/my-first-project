@@ -4,15 +4,7 @@
 import { createBuilder, textPlane } from './geo.js';
 import { SCHOOL, GYM, FLOOR_Y } from './layout.js';
 
-const COL = {
-  wall: 0xf5ede4,      // 漆喰クリーム
-  timber: 0x5d4636,    // 濃茶の木枠
-  roof: 0x76808e,      // 灰青の瓦
-  glass: 0xbcdde9,     // 窓ガラス
-  sash: 0xfdfdfb,      // 白い窓枠
-  deck: 0xcaa877,      // 木の床
-  stone: 0xb8b2a6,
-};
+import { THEME as COL } from './theme.js';
 
 export function buildSchool(THREE, scene) {
   const S = SCHOOL;
@@ -24,18 +16,18 @@ export function buildSchool(THREE, scene) {
   const t = 0.3;                                            // 壁厚
 
   // 基礎・床（接地感: 広めの石積みスカート + 壁ぎわの暗いAOストリップ + 苔）
-  b.box(W + 2.2, 0.55, D + 2.2, 0x8f897c, cx, y0 - 0.45, cz);
+  b.box(W + 2.2, 0.55, D + 2.2, COL.stoneDark, cx, y0 - 0.45, cz);
   b.box(W + 1.2, 0.5, D + 1.2, COL.stone, cx, y0 - 0.32, cz);
   b.box(W, 0.24, D, COL.deck, cx, y0 - 0.06, cz);
   for (const [sw, sd, sx2, sz2] of [
     [W + 0.5, 0.16, cx, S.maxZ + 0.22], [W + 0.5, 0.16, cx, S.minZ - 0.22],
     [0.16, D + 0.5, S.minX - 0.22, cz], [0.16, D + 0.5, S.maxX + 0.22, cz],
   ]) {
-    b.box(sw, 0.22, sd, 0x6e6a5e, sx2, y0 + 0.04, sz2);
+    b.box(sw, 0.22, sd, COL.aoStrip, sx2, y0 + 0.04, sz2);
   }
   for (let i = 0; i < 14; i++) { // 北側の基礎に点々と苔
     const mx = S.minX + 2 + i * 3.1;
-    b.box(0.5 + (i % 3) * 0.2, 0.14, 0.1, 0x5a7a4a, mx, y0 + 0.1, (i % 2 ? S.minZ - 0.3 : S.maxZ + 0.3));
+    b.box(0.5 + (i % 3) * 0.2, 0.14, 0.1, COL.moss, mx, y0 + 0.1, (i % 2 ? S.minZ - 0.3 : S.maxZ + 0.3));
   }
 
   // 南壁（昇降口の開口 + 戸口まぐさ）
@@ -75,7 +67,7 @@ export function buildSchool(THREE, scene) {
   for (let i = 1; i <= 5; i++) {
     const f = i / 5.5;
     for (const sgn of [1, -1]) {
-      b.box(W + 2.4, 0.09, 0.24, 0x636c78, cx, y0 + H + S.roofH * (1 - f) + 0.24, cz + sgn * half * f, { rx: sgn * tilt });
+      b.box(W + 2.4, 0.09, 0.24, COL.roofRidge, cx, y0 + H + S.roofH * (1 - f) + 0.24, cz + sgn * half * f, { rx: sgn * tilt });
     }
   }
   // 妻壁（三角）
@@ -148,10 +140,10 @@ export function buildGym(THREE, scene) {
   const cx = (G.minX + G.maxX) / 2, cz = (G.minZ + G.maxZ) / 2;
   const y0 = FLOOR_Y, H = 6.2;
 
-  b.box(W + 2, 0.6, D + 2, 0x8f897c, cx, y0 - 0.42, cz);
+  b.box(W + 2, 0.6, D + 2, COL.stoneDark, cx, y0 - 0.42, cz);
   b.box(W + 1, 0.5, D + 1, COL.stone, cx, y0 - 0.3, cz);
   b.box(W, H, D, 0xece4d2, cx, y0 + H / 2, cz);          // 箱の躯体（中は入れない）
-  b.box(W + 0.4, 0.22, 0.16, 0x6e6a5e, cx, y0 + 0.04, G.maxZ + 0.18); // 正面のAOストリップ
+  b.box(W + 0.4, 0.22, 0.16, COL.aoStrip, cx, y0 + 0.04, G.maxZ + 0.18); // 正面のAOストリップ
   // かまぼこ屋根
   const arc = new THREE.CylinderGeometry(D / 2 + 0.6, D / 2 + 0.6, W + 1.4, 14, 1, false, 0, Math.PI);
   b.add(arc, COL.roof, cx, y0 + H, cz, { rz: Math.PI / 2 });

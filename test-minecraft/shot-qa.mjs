@@ -1,5 +1,7 @@
 // Visual QA stills of the overhauled world (S1-S5 merged).
-import { chromium } from 'playwright';
+// playwright はローカル node_modules が無くてもグローバル install から引けるようにする
+const { chromium } = await import('playwright').catch(() =>
+  import('/opt/node22/lib/node_modules/playwright/index.mjs'));
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';

@@ -2,13 +2,9 @@
 // 構成: terrain/sky/water/vegetation = 谷、buildings/interiors/props = 場所、
 // character/npc = 人、hotspots/dialog/quests = 擬似体験、audio/petals = 空気感。
 
-import * as THREE from './vendor/three.module.js';
-import { EffectComposer } from './vendor/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from './vendor/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from './vendor/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from './vendor/addons/postprocessing/OutputPass.js';
-import { ShaderPass } from './vendor/addons/postprocessing/ShaderPass.js';
-import { SSAOPass } from './vendor/addons/postprocessing/SSAOPass.js';
+import * as THREE from 'three';
+import { createPostFX } from './postfx.js';
+import { detectQuality } from './quality.js';
 import { loadRepeat, makeDirtTexture, makeRockTexture } from './textures.js';
 import {
   SPAWN, WORLD_R, SCHOOL, FLOOR_Y, colliders,
@@ -24,7 +20,7 @@ import { buildProps } from './props.js';
 import { makeHumanoid, PALETTES } from './character.js';
 import { createNPCs } from './npc.js';
 import { createControls } from './controls.js';
-import { createTouchControls, isTouchDevice } from './touch.js';
+import { createTouchControls } from './touch.js';
 import { step, segmentClearT, PLAYER_R } from './collide.js';
 import { createHotspotLogic } from './hotspots.js';
 import { createUI } from './dialog.js';
@@ -47,17 +43,16 @@ function saveSettings() {
   try { localStorage.setItem('world_settings', JSON.stringify(settings)); } catch (e) {}
 }
 const settings = loadSettings();
-const touchMode = isTouchDevice();
 
 // ---------------------------------------------------------------------------
 // レンダラ / シーン / カメラ
 // ---------------------------------------------------------------------------
-const quality = touchMode ? 'low' : 'high'; // モバイルは反射・MSAA・分割数を落とす
+const Q = detectQuality(); // モバイルは反射・MSAA・SSAO・分割数を落とす
 const canvas = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({
-  canvas, antialias: quality === 'low', powerPreference: 'high-performance',
+  canvas, antialias: !Q.post, powerPreference: 'high-performance',
 });
-const PR_CAP = Math.min(window.devicePixelRatio || 1, quality === 'high' ? 1.5 : 1.25);
+const PR_CAP = Math.min(window.devicePixelRatio || 1, Q.prCap);
 renderer.setPixelRatio(PR_CAP);
 renderer.setSize(window.innerWidth, window.innerHeight, false);
 renderer.shadowMap.enabled = true;
@@ -69,52 +64,13 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 2400);
 camera.rotation.order = 'YXZ';
 
-// ポストプロセス: Render → SSAO → 控えめBloom → Output(ACES+sRGB) → グレード。
-// グレード = ビネット + フィルムグレイン + ティール&オレンジ + 彩度-12%（映画的な統一感）
-const GradeShader = {
-  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 } },
-  vertexShader: 'varying vec2 vUv;\nvoid main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-  fragmentShader: `
-uniform sampler2D tDiffuse; uniform float uTime; varying vec2 vUv;
-void main(){
-  vec4 c = texture2D(tDiffuse, vUv);
-  float lum = dot(c.rgb, vec3(.299,.587,.114));
-  c.rgb = mix(c.rgb, c.rgb * vec3(1.05,1.0,0.93), smoothstep(0.45,1.0,lum)*0.55); // ハイライトを暖色へ
-  c.rgb = mix(c.rgb, c.rgb * vec3(0.93,1.0,1.07), (1.0-smoothstep(0.0,0.5,lum))*0.45); // シャドウを青緑へ
-  float lum2 = dot(c.rgb, vec3(.299,.587,.114));
-  c.rgb = mix(vec3(lum2), c.rgb, 0.88); // 彩度-12%（ノスタルジック）
-  float d = distance(vUv, vec2(0.5));
-  c.rgb *= 1.0 - smoothstep(0.45, 0.88, d) * 0.3; // ビネット
-  float g = fract(sin(dot(vUv + fract(uTime*0.31), vec2(12.9898,78.233))) * 43758.5453);
-  c.rgb += (g - 0.5) * 0.022; // フィルムグレイン
-  gl_FragColor = c;
-}`,
-};
-let composer = null, gradePass = null;
-if (quality === 'high') {
-  const rt = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
-    type: THREE.HalfFloatType, samples: 4,
-  });
-  composer = new EffectComposer(renderer, rt);
-  composer.setPixelRatio(PR_CAP);
-  composer.addPass(new RenderPass(scene, camera));
-  const ssao = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
-  ssao.kernelRadius = 0.55;
-  ssao.minDistance = 0.0008;
-  ssao.maxDistance = 0.05;
-  composer.addPass(ssao);
-  const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.18, 0.5, 0.85);
-  composer.addPass(bloom);
-  composer.addPass(new OutputPass());
-  gradePass = new ShaderPass(GradeShader);
-  composer.addPass(gradePass);
-}
+const post = Q.post ? createPostFX(THREE, { renderer, scene, camera, prCap: PR_CAP }) : null;
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight, false);
-  if (composer) composer.setSize(window.innerWidth, window.innerHeight);
+  if (post) post.setSize(window.innerWidth, window.innerHeight);
 });
 
 // ---------------------------------------------------------------------------
@@ -130,10 +86,10 @@ const TEX = {
 };
 const sky = createSky(THREE, scene, renderer);
 scene.add(buildTerrain(THREE, {
-  segments: quality === 'high' ? 230 : 170,
+  segments: Q.terrainSegments,
   textures: { grass: TEX.grass, grassNm: TEX.grassNm, dirt: TEX.dirt, rock: TEX.rock },
 }));
-const water = createWater(THREE, scene, { normals: TEX.waterNm, sunDir: sky.sunDir, quality });
+const water = createWater(THREE, scene, { normals: TEX.waterNm, sunDir: sky.sunDir, quality: Q.name });
 createVegetation(THREE, scene);
 buildSchool(THREE, scene);
 buildGym(THREE, scene);
@@ -158,7 +114,7 @@ scene.add(hero.group);
 
 const controls = createControls(canvas, { yaw: Math.PI, pitch: -0.24 });
 let touch = null;
-if (touchMode) {
+if (Q.touch) {
   touch = createTouchControls({
     root: document.body,
     onLook: (dx, dy) => controls.applyLook(dx, dy),
@@ -306,7 +262,7 @@ ui.promptEl.addEventListener('click', (e) => { e.stopPropagation(); controls.que
 // ---------------------------------------------------------------------------
 const overlay = document.getElementById('overlay');
 const hint = document.getElementById('hint');
-hint.textContent = touchMode
+hint.textContent = Q.touch
   ? '左スティックで移動｜右ドラッグで見回す｜タップで調べる'
   : 'WASD/矢印キーで移動｜ドラッグで見回す｜E で調べる';
 hint.style.display = 'none';
@@ -468,7 +424,7 @@ function frame() {
   const tNow = performance.now() * 0.001;
   water.update(tNow);
   updateWind(tNow);
-  if (gradePass) gradePass.uniforms.uTime.value = tNow;
+  if (post) post.setTime(tNow);
   sky.update(dt, player.pos);
   npcs.update(dt, player.pos);
   petals.update(dt, player.pos, heightAt);
@@ -477,7 +433,7 @@ function frame() {
   // --- クエスト / ホットスポット ---
   if (started && !busy && chain.update(player.pos)) refreshQuest();
   const spot = busy ? null : hotspots.update(player.pos);
-  ui.setPrompt(spot ? spot.label : null, touchMode ? '👆' : 'Ｅ');
+  ui.setPrompt(spot ? spot.label : null, Q.touch ? '👆' : 'Ｅ');
 
   // --- インタラクト ---
   if (controls.consumeInteract()) {
@@ -485,7 +441,7 @@ function frame() {
     else if (spot && started) doAction(spot);
   }
 
-  if (composer) composer.render();
+  if (post) post.render();
   else renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(frame);

@@ -1,7 +1,7 @@
 /* プチヘルメースの谷 service worker — installable + offline app shell.
  * /minecraft 版と同じ方針: 素のSW APIのみ、相対パスは scope (/world/) 基準。 */
 
-const CACHE_VERSION = 'world-v3'; /* 販売品質ポリッシュ: アンチタイリング/SSAO/グレード/キャラv2 */
+const CACHE_VERSION = 'world-v4'; /* three.js共有化 + テクスチャ軽量化 */
 
 const APP_SHELL = [
   './',
@@ -28,7 +28,10 @@ const APP_SHELL = [
   './audio.js',
   './geo.js',
   './textures.js',
-  './vendor/three.module.js',
+  './theme.js',
+  './quality.js',
+  './postfx.js',
+  '/vendor/three.module.js',
   './vendor/addons/objects/Sky.js',
   './vendor/addons/objects/Water.js',
   './vendor/addons/postprocessing/EffectComposer.js',
