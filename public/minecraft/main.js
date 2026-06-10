@@ -252,6 +252,7 @@ window.__view = (x, y, z, yaw = 0, pitch = -0.85) => {
   player.pos.set(x, y, z); player.yaw = yaw; player.pitch = pitch; player.fly = true; player.vel.set(0, 0, 0);
 };
 window.__time = (t) => { dayTime = t; }; // debug: set time of day [0,1) (0.25=morning,0.5=noon,0.0/1.0=midnight)
+window.__look = (yaw, pitch) => { player.yaw = yaw; player.pitch = pitch; }; // debug: aim camera without touching position/physics (reel撮影用)
 window.__weather = (w) => sky.setWeather(w);
 // Scripted-movement debug hook for headless escape tests.
 // Usage: window.__sim.place(x, y, z) to teleport; __sim.pressKeys({Space,KeyW,...}) for up to N frames.
@@ -1089,6 +1090,8 @@ function toggleInv(size = 2) {
 
   // ---- state ---------------------------------------------------------------
   let vmLastSlot = -1;  // track selected slot to rebuild mesh on change
+  let vmHidden = false; // debug: window.__vm(false) hides the hand (reel/QA撮影用)
+  window.__vm = (on) => { vmHidden = !on; };
   let vmGroup = null;   // THREE.Group that holds the mesh(es)
   let vmMesh = null;    // the current held-item mesh (child of vmGroup)
   let vmIconCanvas = null; // off-screen canvas for item-icon texture
@@ -1265,7 +1268,7 @@ function toggleInv(size = 2) {
     if (!vmGroup) return;
 
     // Visibility: only show in first-person play, not when any overlay is open
-    const shouldShow = playing && !inv.isOpen() &&
+    const shouldShow = !vmHidden && playing && !inv.isOpen() &&
       !(typeof bakery !== 'undefined' && bakery && typeof bakery.isOpen === 'function' && bakery.isOpen()) &&
       !document.getElementById('about')?.style?.display?.startsWith('flex') &&
       !document.getElementById('settings')?.style?.display?.startsWith('block');

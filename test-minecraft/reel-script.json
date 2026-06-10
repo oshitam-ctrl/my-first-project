@@ -1,0 +1,48 @@
+{
+  "comment": "Instagramリール台本（音声先行方式）。lines[].seg は play-reel.mjs のセグメント名。声を先に合成し、各セグメントの尺をセリフ長から逆算する（口と画面が完全同期）。クレジット表記必須: VOICEVOX:ずんだもん/四国めたん/春日部つむぎ",
+  "speakers": {
+    "zunda":   { "id": 3, "label": "ずんだもん",   "color": "&H5ADB7D&", "speed": 1.16 },
+    "metan":   { "id": 2, "label": "四国めたん",   "color": "&HC890FF&", "speed": 1.12 },
+    "tsumugi": { "id": 8, "label": "春日部つむぎ", "color": "&H5AD3FF&", "speed": 1.10 }
+  },
+  "padHead": 0.45,
+  "padTail": 0.30,
+  "gap": 0.18,
+  "titles": [
+    { "at": 0.3, "end": 2.9, "text": "廃校が、パン屋になった。", "style": "Title" }
+  ],
+  "lines": [
+    { "seg": "hook",     "speaker": "zunda",   "text": "実在のパン屋さんが、まるごとゲームになったのだ！？" },
+
+    { "seg": "walkin",   "speaker": "metan",   "text": "広島の廃校パン屋『プチヘルメース』。ブラウザで無料よ" },
+    { "seg": "walkin",   "speaker": "zunda",   "text": "昇降口に下駄箱なのだ！なつかしすぎるのだ！" },
+
+    { "seg": "corridor", "speaker": "metan",   "text": "売り場に入ると…" },
+    { "seg": "corridor", "speaker": "zunda",   "text": "うわぁぁ！パンの壁なのだ！！" },
+    { "seg": "corridor", "speaker": "tsumugi", "text": "焼きたてが、ずらり…！" },
+
+    { "seg": "harvest",  "speaker": "metan",   "text": "自分で焼くこともできるの。まずは畑から" },
+    { "seg": "harvest",  "speaker": "zunda",   "text": "規格外野菜、救出なのだ！" },
+    { "seg": "harvest",  "speaker": "tsumugi", "text": "捨てられちゃう野菜が、パンになるの？" },
+
+    { "seg": "ferment",  "speaker": "metan",   "text": "そう。瓶に仕込むと、天然酵母になるのよ" },
+    { "seg": "ferment",  "speaker": "tsumugi", "text": "ぷくぷくしてる…かわいい" },
+
+    { "seg": "bake",     "speaker": "zunda",   "text": "工房で、焼くのだーっ！" },
+    { "seg": "bake",     "speaker": "tsumugi", "text": "焼きたての香り、画面からきそう〜" },
+
+    { "seg": "deliver",  "speaker": "metan",   "text": "店主の大下さんに届けると…" },
+    { "seg": "deliver",  "speaker": "zunda",   "text": "開店なのだ！" },
+
+    { "seg": "queue",    "speaker": "tsumugi", "text": "見て、もう行列できてる！" },
+    { "seg": "queue",    "speaker": "metan",   "text": "『今日のパンが、明日の野菜に』。本物のお店の合言葉よ" },
+
+    { "seg": "cafe",     "speaker": "metan",   "text": "おとなりは旧教室のカフェ、サウスインノース" },
+    { "seg": "cafe",     "speaker": "zunda",   "text": "スパイスカレーもあるのだ！" },
+
+    { "seg": "cta",      "speaker": "zunda",   "text": "ぜんぶ無料なのだ！プロフのリンクから遊ぶのだ〜！" },
+    { "seg": "cta",      "speaker": "metan",   "text": "実在のお店も、応援してね" },
+
+    { "seg": "endcard",  "speaker": "tsumugi", "text": "保存して、あとでゆっくり遊んでね" }
+  ]
+}
