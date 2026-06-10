@@ -8,9 +8,11 @@ import {
   HOUSES, FIELDS, addBox, addCircle, YARD_Y, riverZ,
 } from './layout.js';
 
-const ST = 0xb8b2a6;     // 石
-const WOOD = 0x8a6a4a;
-const VERM = 0xc23b22;   // 鳥居の朱
+import { THEME } from './theme.js';
+
+const ST = THEME.stone;
+const WOOD = THEME.wood;
+const VERM = THEME.vermilion;
 
 export function buildProps(THREE, scene) {
   const b = createBuilder(THREE);

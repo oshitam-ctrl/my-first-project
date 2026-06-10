@@ -54,11 +54,12 @@ npm run lint   # ESLint実行
 #### /world のテスト
 
 ```bash
-cd public/world && for t in *.test.mjs; do node "$t"; done   # 地形・衝突・クエストの単体テスト
-node test-world/shot-qa.mjs        # ヘッドレス撮影QA（/tmp/world_*.png, pageerrors=0 を確認）
-node test-world/playthrough.mjs    # クエスト10ステップの自動完走E2E
-node test-world/gen-icons.mjs      # PWAアイコン再生成
+npm test                           # 全ユニットテスト（world+minecraft、CIでも実行）
+npm run test:e2e                   # クエスト10ステップの自動完走E2E
+npm run test:visual                # ヘッドレス撮影QA（/tmp/world_*.png, pageerrors=0 を確認）
 ```
+
+開発規約は `CLAUDE.md` を参照。three.js は `public/vendor/` に1本だけ共有配置。
 
 ## 🥖 プチヘルメース（マイクラ風ブラウザゲーム）
 

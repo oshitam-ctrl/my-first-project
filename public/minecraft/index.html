@@ -293,6 +293,11 @@
        (including import maps), which would prevent the game from loading. The
        module below uses direct relative imports for three.js and registers the
        service worker itself, so an external same-origin module is all we need. -->
+  <!-- three.js は /vendor に1本だけ共有配置（/world と共用）。各モジュールの
+       相対 import './vendor/three.module.js' を共有URLへ付け替える。 -->
+  <script type="importmap">
+    { "imports": { "/minecraft/vendor/three.module.js": "/vendor/three.module.js" } }
+  </script>
   <script type="module" src="./main.js"></script>
 </body>
 </html>

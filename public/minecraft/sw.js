@@ -1,7 +1,7 @@
 /* Voxel Craft service worker — installable + offline app shell.
  * Plain Service Worker APIs only (no importScripts, no external code). */
 
-const CACHE_VERSION = 'voxelcraft-v4'; /* S6: brand start screen / OGP / share copy */
+const CACHE_VERSION = 'voxelcraft-v5'; /* three.js を /vendor に共有化 */
 
 /* App shell. Paths are RELATIVE and resolved against the SW scope
  * (the SW lives at /minecraft/sw.js, so scope is /minecraft/). */
@@ -17,7 +17,7 @@ const APP_SHELL = [
   './touch.js',
   './cafe.js',
   './sanpo.js',
-  './vendor/three.module.js',
+  '/vendor/three.module.js',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',

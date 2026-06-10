@@ -6,11 +6,7 @@ import { createBuilder, textPlane } from './geo.js';
 import { SCHOOL, FLOOR_Y, addBox, addCircle } from './layout.js';
 import { JARS } from './data.js';
 
-const COL = {
-  wood: 0x8a6a4a, woodLight: 0xcaa877, counter: 0x6e5236, plaster: 0xf5ede4,
-  green: 0x5c6b4a, cream: 0xe8d5b7, dark: 0x4a4036,
-  breadA: 0xc88a4a, breadB: 0xb8763a, crust: 0x9a5f2e, steel: 0xb9c0c4,
-};
+import { THEME as COL } from './theme.js';
 
 export function buildInteriors(THREE, scene, opts = {}) {
   const b = createBuilder(THREE);

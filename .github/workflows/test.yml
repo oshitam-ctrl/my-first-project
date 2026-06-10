@@ -1,0 +1,16 @@
+# ユニットテストCI — 依存ゼロ（npm install 不要）なので数十秒で終わる。
+# E2E/ビジュアルQA（Playwright必須）はローカル実行: README の「テスト」参照。
+name: unit-tests
+on:
+  push:
+    branches: ['**']
+  pull_request:
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tools/run-unit-tests.mjs
