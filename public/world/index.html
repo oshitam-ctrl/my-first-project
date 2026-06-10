@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <!-- /world は rewrite で末尾スラッシュ無しのまま配信される。<base> が無いと
+       ./main.js が /main.js に解決されて 404 になる（/minecraft と同じ理由）。 -->
+  <base href="/world/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#5C6B4A" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>プチヘルメースの谷 — 旧南方小学校を歩いて訪ねる3D散策（非公式ファンゲーム）</title>
+  <meta name="description" content="バスを降りて、桜並木を抜けて、廃校のパン屋へ。プチヘルメースと南方の谷をまるごと3Dで擬似体験。" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="プチヘルメースの谷 — 旧南方小学校を歩いて訪ねる3D散策" />
+  <meta property="og:description" content="バスを降りて、桜並木を抜けて、廃校のパン屋へ。プチヘルメースと南方の谷をまるごと3Dで擬似体験。" />
+  <meta property="og:image" content="icon-512.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="プチヘルメースの谷 — 旧南方小学校を歩いて訪ねる3D散策" />
+  <meta name="twitter:description" content="バスを降りて、桜並木を抜けて、廃校のパン屋へ。#プチヘルメース" />
+  <meta name="twitter:image" content="icon-512.png" />
+
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100vh; height: 100dvh; overflow: hidden; background: #8fc8ff;
+      overscroll-behavior: none; touch-action: none;
+      font-family: "Hiragino Sans", "Noto Sans JP", -apple-system, "Segoe UI", Roboto, sans-serif;
+      -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+    }
+    #game { display: block; width: 100vw; height: 100vh; height: 100dvh; touch-action: none; }
+
+    /* タイトル（スタンプ風バッジ + ブランドカラー） */
+    #overlay { position: fixed; inset: 0; z-index: 26; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center; cursor: pointer;
+      background: linear-gradient(180deg, rgba(143,200,255,.92), rgba(245,237,228,.96));
+      color: #3a4a2f; padding: 20px; }
+    #overlay .badge { width: 132px; height: 132px; border-radius: 50%;
+      border: 4px solid #5C6B4A; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 2px; background: #F5EDE4; color: #5C6B4A;
+      box-shadow: 0 10px 30px rgba(0,0,0,.18); transform: rotate(-6deg); margin-bottom: 22px; }
+    #overlay .badge .b1 { font-size: 38px; line-height: 1; }
+    #overlay .badge .b2 { font-size: 13px; font-weight: 800; letter-spacing: .5px; }
+    #overlay h1 { font-size: clamp(22px, 5vw, 34px); color: #5C6B4A; letter-spacing: 1px; }
+    #overlay .sub { margin-top: 8px; font-size: 14px; opacity: .85; line-height: 1.8; }
+    #overlay .start { margin-top: 26px; padding: 14px 38px; border-radius: 999px;
+      background: #5C6B4A; color: #F5EDE4; font-weight: 800; font-size: 16px;
+      box-shadow: 0 6px 0 rgba(0,0,0,.18); }
+    #overlay .links { margin-top: 22px; font-size: 12px; opacity: .8; }
+    #overlay .links a { color: #5C6B4A; }
+    #overlay .credit { position: absolute; bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+      font-size: 11px; opacity: .6; }
+
+    /* 操作ヒント（下部のバー、スクショ風） */
+    #hint { position: fixed; left: 50%; transform: translateX(-50%);
+      bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 9;
+      background: rgba(30,26,20,.7); color: #fdf3e3; padding: 7px 16px; border-radius: 999px;
+      font-size: 12px; font-weight: 600; border: 1px solid rgba(253,243,227,.3);
+      pointer-events: none; white-space: nowrap; max-width: 94vw; overflow: hidden;
+      text-overflow: ellipsis; }
+
+    /* 左上: 場所チップとパン袋 */
+    #place { position: fixed; top: calc(10px + env(safe-area-inset-top, 0px));
+      left: calc(10px + env(safe-area-inset-left, 0px)); z-index: 9;
+      background: rgba(30,26,20,.72); color: #fdf3e3; padding: 7px 12px; border-radius: 10px;
+      font-size: 12px; font-weight: 700; border: 1px solid rgba(253,243,227,.3);
+      pointer-events: none; }
+    #bag { position: fixed; top: calc(46px + env(safe-area-inset-top, 0px));
+      left: calc(10px + env(safe-area-inset-left, 0px)); z-index: 9; display: none;
+      background: rgba(92,107,74,.85); color: #F5EDE4; padding: 6px 12px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; pointer-events: none; }
+
+    /* 右下: 設定ボタン */
+    #topbar { position: fixed; bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+      right: calc(10px + env(safe-area-inset-right, 0px)); z-index: 13; display: flex;
+      flex-direction: column; gap: 8px; }
+    #topbar button { font-size: 16px; color: #fff; background: rgba(0,0,0,.4);
+      border: 1px solid rgba(255,255,255,.3); border-radius: 10px; padding: 9px 11px;
+      cursor: pointer; line-height: 1; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="place">🥖 プチヘルメースの谷</div>
+  <div id="bag"></div>
+  <div id="hint"></div>
+
+  <div id="topbar">
+    <button id="btn-sound" title="サウンド">🔊</button>
+    <button id="btn-cam" title="カメラ切替">🎥</button>
+  </div>
+
+  <div id="overlay">
+    <div class="badge"><div class="b1">🥖</div><div class="b2">プチヘルメース</div></div>
+    <h1>プチヘルメースの谷</h1>
+    <div class="sub">旧南方小学校のパン屋さんを、歩いて訪ねる。<br />
+      バスを降りたら、桜並木の坂をのぼって。</div>
+    <div class="start">タップ / クリックで 出発</div>
+    <div class="links">🧱 <a href="/minecraft" onclick="event.stopPropagation()">ボクセル版（マイクラ風）はこちら</a></div>
+    <div class="credit">非公式ファンメイド作品（広島・北広島町 旧南方小学校のパン屋さんに勝手にリスペクト）</div>
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
