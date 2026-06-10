@@ -115,9 +115,11 @@ export function surfaceAt(x, z) {
 // ---------------------------------------------------------------------------
 export function splatAt(x, z, h) {
   let dirt = 0, rock = 0;
-  // 道・校庭・川床・棚田・畑は土
+  // 道・校庭・川床・棚田・畑は土。道は「踏み固め→枯れ際→草」の2段で馴染ませる
   const { d, w } = distToRoad(x, z);
-  dirt = Math.max(dirt, 1 - smoothstep(w * 0.5, w * 0.5 + 1.8, d));
+  const core = 1 - smoothstep(w * 0.42, w * 0.55, d);
+  const verge = (1 - smoothstep(w * 0.5, w * 0.5 + 3.2, d)) * (0.45 + 0.3 * fbm(x * 0.3, z * 0.3));
+  dirt = Math.max(dirt, Math.max(core, verge));
   const ym = rectMask(YARD.minX, YARD.maxX, YARD.minZ, YARD.maxZ, YARD.blend, x, z);
   dirt = Math.max(dirt, ym * (0.55 + 0.4 * fbm(x * 0.15, z * 0.15)));
   dirt = Math.max(dirt, 1 - smoothstep(RIVER_HALF * 0.5, RIVER_BANK, Math.abs(z - riverZ(x))));
@@ -131,9 +133,16 @@ export function splatAt(x, z, h) {
 }
 
 export function tintAt(x, z, h) {
-  // ベースはほぼ白（テクスチャ色を活かす）。場所ごとに僅かに色温度を振る
+  // ベースはほぼ白（テクスチャ色を活かす）。マクロなムラを強めに入れて単調さを殺す
   const n = fbm(x * 0.08 + 3, z * 0.08 + 5);
-  let r = 0.92 + n * 0.22, g = 0.95 + n * 0.16, b = 0.88 + n * 0.16;
+  const macro = fbm(x * 0.018 + 21, z * 0.018 + 13); // 大きなパッチ状の枯れ/湿り
+  let r = 0.84 + n * 0.26 + macro * 0.18;
+  let g = 0.88 + n * 0.2 + macro * 0.1;
+  let b = 0.8 + n * 0.18 + macro * 0.06;
+  // 道の枯れ際は黄味に倒す
+  const { d, w } = distToRoad(x, z);
+  const vg = (1 - smoothstep(w * 0.5, w * 0.5 + 3.2, d)) * smoothstep(w * 0.35, w * 0.55, d);
+  if (vg > 0) { r *= 1 + 0.1 * vg; g *= 1 + 0.02 * vg; b *= 1 - 0.18 * vg; }
   // 川床は湿って暗く
   const rm = 1 - smoothstep(RIVER_HALF * 0.5, RIVER_BANK, Math.abs(z - riverZ(x)));
   if (rm > 0) { r *= 1 - 0.45 * rm; g *= 1 - 0.42 * rm; b *= 1 - 0.35 * rm; }
@@ -195,14 +204,31 @@ export function buildTerrain(THREE, opts = {}) {
     shader.uniforms.rockMap = { value: rock };
     shader.vertexShader = 'attribute vec3 splat;\nvarying vec3 vSplat;\n' +
       shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvSplat = splat;');
+    // アンチタイリング: 各テクスチャを2スケールでサンプルし、低周波ノイズで混ぜて
+    // 繰り返しパターンを破壊する。仕上げに距離で彩度を抜いて空気遠近を出す。
     shader.fragmentShader = ('uniform sampler2D dirtMap;\nuniform sampler2D rockMap;\nvarying vec3 vSplat;\n' +
-      shader.fragmentShader).replace('#include <map_fragment>', `
+      `vec4 antiTile( sampler2D tex, vec2 uv ) {
+\tfloat m = sin( uv.x * 0.53 + sin( uv.y * 0.41 ) ) * 0.5 + 0.5;
+\tvec4 a = texture2D( tex, uv );
+\tvec4 b = texture2D( tex, uv * 0.27 + vec2( 0.37, 0.71 ) );
+\treturn mix( a, b, smoothstep( 0.3, 0.7, m ) );
+}\n` +
+      shader.fragmentShader)
+      .replace('#include <map_fragment>', `
 #ifdef USE_MAP
-\tvec4 _g = texture2D( map, vMapUv );
-\tvec4 _d = texture2D( dirtMap, vMapUv * 0.6 );
-\tvec4 _r = texture2D( rockMap, vMapUv * 0.45 );
+\tvec4 _g = antiTile( map, vMapUv );
+\tvec4 _d = antiTile( dirtMap, vMapUv * 0.6 );
+\tvec4 _r = antiTile( rockMap, vMapUv * 0.45 );
 \tdiffuseColor *= ( _g * vSplat.x + _d * vSplat.y + _r * vSplat.z );
-#endif`);
+#endif`)
+      .replace('#include <fog_fragment>', `
+\t{
+\t\tfloat _dist = length( vViewPosition );
+\t\tfloat _ds = smoothstep( 70.0, 320.0, _dist );
+\t\tfloat _lum = dot( gl_FragColor.rgb, vec3( 0.299, 0.587, 0.114 ) );
+\t\tgl_FragColor.rgb = mix( gl_FragColor.rgb, vec3( _lum ) * vec3( 0.95, 1.0, 1.08 ), _ds * 0.45 );
+\t}
+#include <fog_fragment>`);
   };
 
   const mesh = new THREE.Mesh(geo, mat);

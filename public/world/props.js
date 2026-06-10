@@ -5,7 +5,7 @@ import { createBuilder, textPlane } from './geo.js';
 import { heightAt } from './terrain.js';
 import {
   BRIDGE, SHRINE, SHRINE_STEPS, BUS_STOP, COMPOST, HERB, PLAYGROUND, PLAZA,
-  HOUSES, FIELDS, addBox, addCircle, YARD_Y,
+  HOUSES, FIELDS, addBox, addCircle, YARD_Y, riverZ,
 } from './layout.js';
 
 const ST = 0xb8b2a6;     // 石
@@ -246,6 +246,49 @@ export function buildProps(THREE, scene) {
     const flag = textPlane(THREE, { w: 0.55, h: 2.0, lines: ['パ', 'ン', 'や', 'き', 'た', 'て'], bg: '#E8D5B7', fg: '#5C6B4A', font: 0.1 });
     flag.position.set(-3.1, y + 2.1, -30.8);
     scene.add(flag);
+  }
+
+  // ------------------------------------------ 木柵（桜並木の出入り口あたり）
+  {
+    const road = [[14, 108], [12, 88], [10, 66], [6, 44], [2, 24], [0, 8]];
+    const cxAt = (z) => {
+      for (let i = 0; i < road.length - 1; i++) {
+        const [ax, az] = road[i], [bx, bz] = road[i + 1];
+        if ((z - az) * (z - bz) <= 0 && az !== bz) return ax + (bx - ax) * ((z - az) / (bz - az));
+      }
+      return 0;
+    };
+    for (const side of [-1, 1]) {
+      let prev = null;
+      for (let z = 10; z <= 34; z += 2.4) {
+        const x = cxAt(z) + side * 3.0;
+        const y = heightAt(x, z);
+        b.box(0.13, 0.95, 0.13, 0x7d6448, x, y + 0.45, z);
+        if (prev) {
+          const [px, py, pz] = prev;
+          const mx = (x + px) / 2, mz = (z + pz) / 2, my = (y + py) / 2;
+          const len = Math.hypot(x - px, z - pz);
+          const ry = Math.atan2(x - px, z - pz);
+          b.box(0.07, 0.09, len, 0x8a7050, mx, my + 0.74, mz, { ry, rx: Math.atan2(py - y, len) });
+          b.box(0.07, 0.09, len, 0x8a7050, mx, my + 0.4, mz, { ry, rx: Math.atan2(py - y, len) });
+        }
+        prev = [x, y, z];
+      }
+    }
+  }
+
+  // ------------------------------------------ 石積みの護岸（橋のたもと）
+  {
+    const { x: bx2 } = BRIDGE;
+    for (let dx = -9; dx <= 9; dx += 1.3) {
+      if (Math.abs(dx) < BRIDGE.w * 0.7) continue;
+      const x = bx2 + dx;
+      for (const side of [-1, 1]) {
+        const z = riverZ(x) + side * (4.6 + 0.9);
+        const y = heightAt(x, z);
+        b.box(0.9, 0.55 + (Math.abs(dx) % 0.5), 0.7, 0x95907f, x, y + 0.18, z, { ry: dx * 0.4 });
+      }
+    }
   }
 
   // ------------------------------------------------------------- 道しるべ

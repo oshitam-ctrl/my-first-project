@@ -10,11 +10,11 @@ export function createWater(THREE, scene, opts = {}) {
 
   if (quality === 'high') {
     river = new Water(new THREE.PlaneGeometry(322, 322), {
-      textureWidth: 512,
-      textureHeight: 512,
+      textureWidth: 1024,
+      textureHeight: 1024,
       waterNormals: normals,
       sunDirection: sunDir ? sunDir.clone() : new THREE.Vector3(0.3, 0.7, 0.2),
-      sunColor: 0xfff1dd,
+      sunColor: 0xfff7dc,
       waterColor: 0x06281e,
       distortionScale: 2.2,
       fog: true,
