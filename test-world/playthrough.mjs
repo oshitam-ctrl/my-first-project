@@ -11,7 +11,7 @@ const { chromium } = await import('playwright').catch(() =>
   import('/opt/node22/lib/node_modules/playwright/index.mjs'));
 
 const ROOT = path.resolve(import.meta.dirname, '../public');
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.jpg': 'image/jpeg' };
 const server = http.createServer(async (req, res) => {
   let p = decodeURIComponent(req.url.split('?')[0]);
   if (p === '/world' || p === '/world/') p = '/world/index.html';

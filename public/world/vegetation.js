@@ -25,10 +25,42 @@ function blocked(x, z) {
   return false;
 }
 
+// 風（草・稲・麦の頂点を揺らす共有ユニフォーム）
+const WIND = { value: 0 };
+export function updateWind(t) { WIND.value = t; }
+
+
+// くしゃっとした樹冠ブロブ（icosphere の頂点をハッシュでラジアル変位）
+function blob(THREE, r, jitter = 0.3) {
+  const g = new THREE.IcosahedronGeometry(r, 1);
+  const pos = g.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+    const h = Math.sin(x * 12.9898 + y * 78.233 + z * 37.719) * 43758.5453;
+    const k = 1 + ((h - Math.floor(h)) - 0.5) * 2 * jitter;
+    pos.setXYZ(i, x * k, y * k * 0.85, z * k);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+
 function makeInstanced(THREE, geom, count, opts = {}) {
   const mat = new THREE.MeshStandardMaterial({
-    vertexColors: true, flatShading: true, roughness: 1, metalness: 0,
+    vertexColors: true, roughness: 1, metalness: 0,
   });
+  if (opts.wind) {
+    mat.onBeforeCompile = (s) => {
+      s.uniforms.uTime = WIND;
+      s.vertexShader = ('uniform float uTime;\n' + s.vertexShader).replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+\tfloat _ph = instanceMatrix[3][0] * 1.7 + instanceMatrix[3][2] * 2.3;
+\tfloat _sw = max(transformed.y, 0.0);
+\ttransformed.x += sin(uTime * 1.9 + _ph) * _sw * 0.14;
+\ttransformed.z += cos(uTime * 1.3 + _ph) * _sw * 0.09;`,
+      );
+    };
+  }
   const im = new THREE.InstancedMesh(geom, mat, count);
   im.castShadow = opts.castShadow !== false;
   im.receiveShadow = false;
@@ -91,11 +123,11 @@ export function createVegetation(THREE, scene) {
   // --- 桜（並木＋校庭） -------------------------------------------------------
   {
     const b = createBuilder(THREE);
-    b.ico(1.5, 0xf6c6d6, 0, 3.3, 0, { s: 1 }, 0);
-    b.ico(1.2, 0xf2b4c8, -1.2, 2.8, 0.5, {}, 0);
-    b.ico(1.15, 0xf9d4e0, 1.1, 2.9, -0.4, {}, 0);
-    b.ico(1.0, 0xf2b4c8, 0.2, 2.6, 1.1, {}, 0);
-    b.ico(0.95, 0xf9d4e0, -0.3, 2.4, -1.1, {}, 0);
+    b.add(blob(THREE, 1.5, 0.34), 0xeec4cf, 0, 3.3, 0);
+    b.add(blob(THREE, 1.2, 0.34), 0xe8b6c4, -1.2, 2.8, 0.5);
+    b.add(blob(THREE, 1.15, 0.3), 0xf2cdd8, 1.1, 2.9, -0.4);
+    b.add(blob(THREE, 1.0, 0.34), 0xe8b6c4, 0.2, 2.6, 1.1);
+    b.add(blob(THREE, 0.95, 0.3), 0xf2cdd8, -0.3, 2.4, -1.1);
     const leaf = mergeParts(THREE, b.parts);
     const trunk = paint(THREE, new THREE.CylinderGeometry(0.18, 0.34, 2.8, 6), 0x5d4030);
     trunk.translate(0, 1.4, 0);
@@ -125,8 +157,8 @@ export function createVegetation(THREE, scene) {
     const trunkIM = makeInstanced(THREE, trunk, pts.length);
     const c = new THREE.Color();
     pts.forEach(([x, y, z], i) => {
-      const ry = rnd() * Math.PI * 2, sc = 1.25 + rnd() * 0.8;
-      c.setHSL(0.93, 0.5, 0.82 + rnd() * 0.06);
+      const ry = rnd() * Math.PI * 2, sc = 1.05 + rnd() * 0.55;
+      c.setHSL(0.93, 0.3, 0.8 + rnd() * 0.05);
       place(leafIM, i, x, y - 0.15, z, ry, sc, c);
       place(trunkIM, i, x, y - 0.15, z, ry, sc, null);
       addCircle(x, z, 0.4);
@@ -137,9 +169,9 @@ export function createVegetation(THREE, scene) {
   // --- 広葉樹（里の木） -------------------------------------------------------
   {
     const b = createBuilder(THREE);
-    b.ico(1.6, 0x5fae46, 0, 3.6, 0, {}, 0);
-    b.ico(1.25, 0x6fbe52, -1.2, 2.9, 0.4, {}, 0);
-    b.ico(1.2, 0x4f9a3c, 1.1, 3.0, -0.5, {}, 0);
+    b.add(blob(THREE, 1.6, 0.36), 0x4f8a3a, 0, 3.6, 0);
+    b.add(blob(THREE, 1.25, 0.36), 0x5a9a44, -1.2, 2.9, 0.4);
+    b.add(blob(THREE, 1.2, 0.32), 0x447a32, 1.1, 3.0, -0.5);
     const leaf = mergeParts(THREE, b.parts);
     const trunk = paint(THREE, new THREE.CylinderGeometry(0.2, 0.38, 3.0, 6), 0x6b4a33);
     trunk.translate(0, 1.5, 0);
@@ -157,7 +189,7 @@ export function createVegetation(THREE, scene) {
     const c = new THREE.Color();
     pts.forEach(([x, y, z], i) => {
       const ry = rnd() * Math.PI * 2, sc = 0.9 + rnd() * 1.1;
-      c.setHSL(0.3, 0.42, 0.42 + rnd() * 0.1);
+      c.setHSL(0.3, 0.32, 0.36 + rnd() * 0.1);
       place(leafIM, i, x, y - 0.15, z, ry, sc, c);
       place(trunkIM, i, x, y - 0.15, z, ry, sc, null);
       addCircle(x, z, 0.4);
@@ -177,7 +209,7 @@ export function createVegetation(THREE, scene) {
         }
       }
     }
-    const im = makeInstanced(THREE, tuft, pts.length, { castShadow: false });
+    const im = makeInstanced(THREE, tuft, pts.length, { castShadow: false, wind: true });
     const c = new THREE.Color();
     pts.forEach(([x, y, z], i) => {
       c.setHSL(0.27, 0.5, 0.45 + rnd() * 0.12);
@@ -195,7 +227,7 @@ export function createVegetation(THREE, scene) {
         pts.push([x + (rnd() - 0.5) * 0.3, heightAt(x, z), z + (rnd() - 0.5) * 0.3]);
       }
     }
-    const im = makeInstanced(THREE, tuft, pts.length, { castShadow: false });
+    const im = makeInstanced(THREE, tuft, pts.length, { castShadow: false, wind: true });
     const c = new THREE.Color();
     pts.forEach(([x, y, z], i) => {
       c.setHSL(0.12, 0.6, 0.58 + rnd() * 0.1);
@@ -226,21 +258,21 @@ export function createVegetation(THREE, scene) {
 
   // --- 草むら（道ばた） --------------------------------------------------------
   {
-    const blade = paint(THREE, new THREE.ConeGeometry(0.25, 0.7, 4), 0x69b54a);
+    const blade = paint(THREE, new THREE.ConeGeometry(0.07, 0.55, 4), 0x5a9a44);
     blade.translate(0, 0.32, 0);
     const pts = [];
     let guard = 0;
-    while (pts.length < 320 && guard++ < 4000) {
+    while (pts.length < 700 && guard++ < 9000) {
       const x = (rnd() - 0.5) * 240, z = (rnd() - 0.5) * 240;
       const { d, w } = distToRoad(x, z);
       if (d < w * 0.5 + 0.4 || d > w * 0.5 + 4) continue;
       if (surfaceAt(x, z) !== 'grass') continue;
       pts.push([x, heightAt(x, z), z]);
     }
-    const im = makeInstanced(THREE, blade, pts.length, { castShadow: false });
+    const im = makeInstanced(THREE, blade, pts.length, { castShadow: false, wind: true });
     const c = new THREE.Color();
     pts.forEach(([x, y, z], i) => {
-      c.setHSL(0.28, 0.5, 0.42 + rnd() * 0.18);
+      c.setHSL(0.28, 0.38, 0.38 + rnd() * 0.16);
       place(im, i, x, y, z, rnd() * 3, 0.7 + rnd() * 0.8, c);
     });
     scene.add(im);

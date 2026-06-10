@@ -3,6 +3,11 @@
 // character/npc = 人、hotspots/dialog/quests = 擬似体験、audio/petals = 空気感。
 
 import * as THREE from './vendor/three.module.js';
+import { EffectComposer } from './vendor/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from './vendor/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from './vendor/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from './vendor/addons/postprocessing/OutputPass.js';
+import { loadRepeat, makeDirtTexture, makeRockTexture } from './textures.js';
 import {
   SPAWN, WORLD_R, SCHOOL, FLOOR_Y, colliders,
   registerSchoolColliders, registerGymColliders, HOTSPOTS, BENCH_LUNCH,
@@ -10,7 +15,7 @@ import {
 import { heightAt, surfaceAt, buildTerrain } from './terrain.js';
 import { createSky } from './sky.js';
 import { createWater } from './water.js';
-import { createVegetation } from './vegetation.js';
+import { createVegetation, updateWind } from './vegetation.js';
 import { buildSchool, buildGym } from './buildings.js';
 import { buildInteriors } from './interiors.js';
 import { buildProps } from './props.js';
@@ -45,36 +50,65 @@ const touchMode = isTouchDevice();
 // ---------------------------------------------------------------------------
 // レンダラ / シーン / カメラ
 // ---------------------------------------------------------------------------
+const quality = touchMode ? 'low' : 'high'; // モバイルは反射・MSAA・分割数を落とす
 const canvas = document.getElementById('game');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-const PR_CAP = Math.min(window.devicePixelRatio || 1, 1.5);
+const renderer = new THREE.WebGLRenderer({
+  canvas, antialias: quality === 'low', powerPreference: 'high-performance',
+});
+const PR_CAP = Math.min(window.devicePixelRatio || 1, quality === 'high' ? 1.5 : 1.25);
 renderer.setPixelRatio(PR_CAP);
 renderer.setSize(window.innerWidth, window.innerHeight, false);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.12;
+renderer.toneMappingExposure = 0.5; // 大気散乱の空はHDRなので露出は低めが正解
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1400);
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 2400);
 camera.rotation.order = 'YXZ';
+
+// ポストプロセス: Render → 控えめBloom → OutputPass(ACES+sRGB)。highはMSAA付き
+let composer = null;
+if (quality === 'high') {
+  const rt = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
+    type: THREE.HalfFloatType, samples: 4,
+  });
+  composer = new EffectComposer(renderer, rt);
+  composer.setPixelRatio(PR_CAP);
+  composer.addPass(new RenderPass(scene, camera));
+  const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.22, 0.55, 0.88);
+  composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+}
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight, false);
+  if (composer) composer.setSize(window.innerWidth, window.innerHeight);
 });
 
 // ---------------------------------------------------------------------------
 // ワールド構築
 // ---------------------------------------------------------------------------
-const sky = createSky(THREE, scene);
-scene.add(buildTerrain(THREE));
-const water = createWater(THREE, scene);
+const TEX = {
+  grass: loadRepeat(THREE, 'vendor/textures/grass.jpg', 1, true),
+  grassNm: loadRepeat(THREE, 'vendor/textures/grass-nm.jpg', 1, false),
+  dirt: makeDirtTexture(THREE),
+  rock: makeRockTexture(THREE),
+  wood: loadRepeat(THREE, 'vendor/textures/wood.jpg', 1, true),
+  waterNm: loadRepeat(THREE, 'vendor/textures/waternormals.jpg', 1, false),
+};
+const sky = createSky(THREE, scene, renderer);
+scene.add(buildTerrain(THREE, {
+  segments: quality === 'high' ? 230 : 170,
+  textures: { grass: TEX.grass, grassNm: TEX.grassNm, dirt: TEX.dirt, rock: TEX.rock },
+}));
+const water = createWater(THREE, scene, { normals: TEX.waterNm, sunDir: sky.sunDir, quality });
 createVegetation(THREE, scene);
 buildSchool(THREE, scene);
 buildGym(THREE, scene);
-buildInteriors(THREE, scene);
+buildInteriors(THREE, scene, { wood: TEX.wood });
 buildProps(THREE, scene);
 registerSchoolColliders();
 registerGymColliders();
@@ -278,15 +312,19 @@ document.getElementById('btn-cam').addEventListener('click', () => { zoomIdx = (
 let viewOverride = null; // { x,y,z,yaw,pitch } — 自由カメラ
 window.__view = (x, y, z, yaw = 0, pitch = -0.3) => { viewOverride = { x, y, z, yaw, pitch }; };
 window.__follow = () => { viewOverride = null; };
-window.__time = (t) => sky.setTime(t);
+window.__time = (t) => { sky.setTime(t); water.setSun(sky.sunDir, sky.sun.color); };
+let snapCam = false; // ワープ直後はカメラを即時追従（低fps環境でもショットが安定）
 window.__warp = (x, z, ry = Math.PI) => {
   player.pos.set(x, heightAt(x, z), z);
   player.ry = ry;
   controls.state.yaw = ry;
   viewOverride = null;
+  snapCam = true;
 };
 window.__quest = chain;
 window.__bag = bag;
+window.__cam = camera;
+window.__player = player;
 // E2E用の同期インタラクト（低fpsのヘッドレスでもフレーム待ちせず操作できる）
 window.__interact = () => {
   if (ui.isBusy()) { ui.advanceDialog(); return 'advance'; }
@@ -382,13 +420,15 @@ function frame() {
     cx = head.x + (cx - head.x) * t;
     cy = head.y + (cy - head.y) * t;
     cz = head.z + (cz - head.z) * t;
-    camera.position.lerp(new THREE.Vector3(cx, cy, cz), Math.min(1, dt * 10));
+    if (snapCam) { camera.position.set(cx, cy, cz); snapCam = false; }
+    else camera.position.lerp(new THREE.Vector3(cx, cy, cz), Math.min(1, dt * 10));
     camera.lookAt(head.x + dx * 2, head.y + dy * 2 + 0.2, head.z + dz * 2);
   }
 
   // --- ワールド更新 ---
   const tNow = performance.now() * 0.001;
   water.update(tNow);
+  updateWind(tNow);
   sky.update(dt, player.pos);
   npcs.update(dt, player.pos);
   petals.update(dt, player.pos, heightAt);
@@ -405,7 +445,8 @@ function frame() {
     else if (spot && started) doAction(spot);
   }
 
-  renderer.render(scene, camera);
+  if (composer) composer.render();
+  else renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(frame);
 

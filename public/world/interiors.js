@@ -12,10 +12,26 @@ const COL = {
   breadA: 0xc88a4a, breadB: 0xb8763a, crust: 0x9a5f2e, steel: 0xb9c0c4,
 };
 
-export function buildInteriors(THREE, scene) {
+export function buildInteriors(THREE, scene, opts = {}) {
   const b = createBuilder(THREE);
   const y0 = FLOOR_Y;
   const B = SCHOOL.bakery, C = SCHOOL.cafe;
+
+  // 実木目の床（廊下・パン屋・カフェの見せ場。校舎全面に貼る）
+  if (opts.wood) {
+    const wood = opts.wood.clone();
+    wood.needsUpdate = true;
+    wood.wrapS = wood.wrapT = THREE.RepeatWrapping;
+    wood.repeat.set(10, 5);
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(SCHOOL.maxX - SCHOOL.minX - 0.4, SCHOOL.maxZ - SCHOOL.minZ - 0.4),
+      new THREE.MeshStandardMaterial({ map: wood, roughness: 0.55, metalness: 0 }),
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set((SCHOOL.minX + SCHOOL.maxX) / 2, y0 + 0.075, (SCHOOL.minZ + SCHOOL.maxZ) / 2);
+    floor.receiveShadow = true;
+    scene.add(floor);
+  }
 
   // ------------------------------------------------------------------ 昇降口
   // 下駄箱（昇降口の左右）

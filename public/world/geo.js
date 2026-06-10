@@ -31,13 +31,14 @@ export function createBuilder(THREE) {
   function ico(r, hex, x, y, z, opts, detail = 0) { return add(new THREE.IcosahedronGeometry(r, detail), hex, x, y, z, opts); }
   function sph(r, hex, x, y, z, opts) { return add(new THREE.SphereGeometry(r, 7, 6), hex, x, y, z, opts); }
 
-  // 連結して 1 メッシュに（flat=トゥーン風ファセット）
+  // 連結して 1 メッシュに（既定はスムーズ法線＋IBL反射のリアル寄り）
   function build(opts = {}) {
     const geo = mergeParts(THREE, parts);
     const mat = new THREE.MeshStandardMaterial({
-      vertexColors: true, flatShading: opts.flat !== false, roughness: 0.95, metalness: 0,
+      vertexColors: true, flatShading: opts.flat === true, roughness: 0.9, metalness: 0,
       transparent: !!opts.transparent, opacity: opts.opacity != null ? opts.opacity : 1,
     });
+    mat.envMapIntensity = 0.7; // IBLの照り返しは控えめ（白壁の飛び防止）
     const mesh = new THREE.Mesh(geo, mat);
     mesh.castShadow = opts.castShadow !== false;
     mesh.receiveShadow = opts.receiveShadow !== false;

@@ -111,80 +111,100 @@ export function surfaceAt(x, z) {
 }
 
 // ---------------------------------------------------------------------------
-// 頂点カラー（パステルの草・道・川床・土・岩を滑らかにブレンド）
+// スプラット重み（草/土/岩のブレンド比）と色味（テクスチャに乗算するティント）
 // ---------------------------------------------------------------------------
-const C = {
-  grassA: [0.49, 0.78, 0.31], grassB: [0.35, 0.62, 0.24],
-  path:   [0.85, 0.77, 0.60], yard:   [0.80, 0.70, 0.52],
-  bed:    [0.54, 0.48, 0.36], paddy:  [0.42, 0.60, 0.30],
-  mud:    [0.45, 0.38, 0.28], rock:   [0.55, 0.56, 0.54],
-  soil:   [0.52, 0.40, 0.28],
-};
-function mix3(a, b, t) {
-  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+export function splatAt(x, z, h) {
+  let dirt = 0, rock = 0;
+  // 道・校庭・川床・棚田・畑は土
+  const { d, w } = distToRoad(x, z);
+  dirt = Math.max(dirt, 1 - smoothstep(w * 0.5, w * 0.5 + 1.8, d));
+  const ym = rectMask(YARD.minX, YARD.maxX, YARD.minZ, YARD.maxZ, YARD.blend, x, z);
+  dirt = Math.max(dirt, ym * (0.55 + 0.4 * fbm(x * 0.15, z * 0.15)));
+  dirt = Math.max(dirt, 1 - smoothstep(RIVER_HALF * 0.5, RIVER_BANK, Math.abs(z - riverZ(x))));
+  for (const p of PADDIES) dirt = Math.max(dirt, rectMask(p.minX, p.maxX, p.minZ, p.maxZ, 2.5, x, z));
+  for (const f of FIELDS) dirt = Math.max(dirt, rectMask(f.minX, f.maxX, f.minZ, f.maxZ, 2, x, z) * 0.85);
+  // 高所は岩
+  rock = smoothstep(13, 28, h) * (0.55 + 0.45 * fbm(x * 0.06 + 11, z * 0.06));
+  dirt *= 1 - rock;
+  const grass = Math.max(0, 1 - dirt - rock);
+  return [grass, dirt, rock];
 }
 
-export function colorAt(x, z, h) {
+export function tintAt(x, z, h) {
+  // ベースはほぼ白（テクスチャ色を活かす）。場所ごとに僅かに色温度を振る
   const n = fbm(x * 0.08 + 3, z * 0.08 + 5);
-  let c = mix3(C.grassA, C.grassB, n);
-
-  // 畑（畝のストライプ）
+  let r = 0.92 + n * 0.22, g = 0.95 + n * 0.16, b = 0.88 + n * 0.16;
+  // 川床は湿って暗く
+  const rm = 1 - smoothstep(RIVER_HALF * 0.5, RIVER_BANK, Math.abs(z - riverZ(x)));
+  if (rm > 0) { r *= 1 - 0.45 * rm; g *= 1 - 0.42 * rm; b *= 1 - 0.35 * rm; }
+  // 棚田の泥は赤茶に
+  for (const p of PADDIES) {
+    const pm = rectMask(p.minX, p.maxX, p.minZ, p.maxZ, 2.5, x, z);
+    if (pm > 0) { r *= 1 - 0.18 * pm; g *= 1 - 0.3 * pm; b *= 1 - 0.38 * pm; }
+  }
+  // 畑の畝
   for (const f of FIELDS) {
     const fm = rectMask(f.minX, f.maxX, f.minZ, f.maxZ, 2, x, z);
     if (fm > 0) {
-      const row = 0.5 + 0.5 * Math.sin(z * 2.4);
-      const fc = f.id === 'wheat' ? mix3([0.86, 0.74, 0.38], C.soil, row * 0.5)
-                                  : mix3([0.36, 0.56, 0.26], C.soil, 0.35 + row * 0.4);
-      c = mix3(c, fc, fm * 0.9);
+      const row = (0.5 + 0.5 * Math.sin(z * 2.4)) * fm;
+      r *= 1 - 0.2 * row; g *= 1 - 0.26 * row; b *= 1 - 0.3 * row;
     }
   }
-  // 棚田（泥色 — 稲と水は別メッシュ）
-  for (const p of PADDIES) {
-    const pm = rectMask(p.minX, p.maxX, p.minZ, p.maxZ, 2.5, x, z);
-    if (pm > 0) c = mix3(c, C.mud, pm * 0.85);
-  }
-  // 校庭（乾いた土）
-  const ym = rectMask(YARD.minX, YARD.maxX, YARD.minZ, YARD.maxZ, YARD.blend, x, z);
-  if (ym > 0) c = mix3(c, C.yard, ym * (0.55 + 0.25 * fbm(x * 0.2, z * 0.2)));
-  // 道
-  const { d, w } = distToRoad(x, z);
-  const pm = 1 - smoothstep(w * 0.5, w * 0.5 + 1.8, d);
-  if (pm > 0) c = mix3(c, C.path, pm * 0.92);
-  // 川床
-  const rm = 1 - smoothstep(RIVER_HALF * 0.5, RIVER_BANK, Math.abs(z - riverZ(x)));
-  if (rm > 0) c = mix3(c, C.bed, rm);
-  // 高所は岩肌→緑（杉山の下生え）
-  if (h > 9) {
-    const t = smoothstep(9, 26, h);
-    c = mix3(c, mix3([0.30, 0.45, 0.27], C.rock, smoothstep(18, 30, h)), t * 0.85);
-  }
-  return c;
+  // 遠い高所はうっすら青く（空気遠近の足し）
+  const t = smoothstep(18, 34, h);
+  if (t > 0) { r *= 1 - 0.08 * t; g *= 1 - 0.02 * t; b *= 1 + 0.06 * t; }
+  return [r, g, b];
 }
 
 // ---------------------------------------------------------------------------
-// 地形メッシュ
+// 地形メッシュ — スムーズ法線 + テクスチャスプラッティング（草/土/岩）。
+// MeshStandardMaterial を onBeforeCompile で拡張し、頂点属性 splat で3枚を混ぜる。
 // ---------------------------------------------------------------------------
-export function buildTerrain(THREE) {
-  const SIZE = 322, SEG = 172;
+export function buildTerrain(THREE, opts = {}) {
+  const SIZE = 322;
+  const SEG = opts.segments || 220;
+  const { grass, grassNm, dirt, rock } = opts.textures;
   const geo = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG);
   geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position;
-  const colors = new Float32Array(pos.count * 3);
+  const uv = geo.attributes.uv;
+  const tint = new Float32Array(pos.count * 3);
+  const splat = new Float32Array(pos.count * 3);
+  const TILE = 40; // 草テクスチャの繰り返し回数
   for (let i = 0; i < pos.count; i++) {
-    let x = pos.getX(i), z = pos.getZ(i);
-    // 有機的なファセットのための XZ ジッター（決定論）
-    x += (hash2(x * 3.7, z * 3.7) - 0.5) * 1.25;
-    z += (hash2(x * 5.1 + 7, z * 5.1 + 7) - 0.5) * 1.25;
+    const x = pos.getX(i), z = pos.getZ(i);
     const h = heightAt(x, z);
-    pos.setXYZ(i, x, h, z);
-    const c = colorAt(x, z, h);
-    colors[i * 3] = c[0]; colors[i * 3 + 1] = c[1]; colors[i * 3 + 2] = c[2];
+    pos.setY(i, h);
+    uv.setXY(i, (x / SIZE + 0.5) * TILE, (z / SIZE + 0.5) * TILE);
+    const s = splatAt(x, z, h);
+    splat[i * 3] = s[0]; splat[i * 3 + 1] = s[1]; splat[i * 3 + 2] = s[2];
+    const c = tintAt(x, z, h);
+    tint[i * 3] = c[0]; tint[i * 3 + 1] = c[1]; tint[i * 3 + 2] = c[2];
   }
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(tint, 3));
+  geo.setAttribute('splat', new THREE.BufferAttribute(splat, 3));
   geo.computeVertexNormals();
+
   const mat = new THREE.MeshStandardMaterial({
-    vertexColors: true, flatShading: true, roughness: 1, metalness: 0,
+    map: grass, normalMap: grassNm, vertexColors: true,
+    roughness: 1, metalness: 0,
   });
+  mat.normalScale = new THREE.Vector2(0.7, 0.7);
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.dirtMap = { value: dirt };
+    shader.uniforms.rockMap = { value: rock };
+    shader.vertexShader = 'attribute vec3 splat;\nvarying vec3 vSplat;\n' +
+      shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvSplat = splat;');
+    shader.fragmentShader = ('uniform sampler2D dirtMap;\nuniform sampler2D rockMap;\nvarying vec3 vSplat;\n' +
+      shader.fragmentShader).replace('#include <map_fragment>', `
+#ifdef USE_MAP
+\tvec4 _g = texture2D( map, vMapUv );
+\tvec4 _d = texture2D( dirtMap, vMapUv * 0.6 );
+\tvec4 _r = texture2D( rockMap, vMapUv * 0.45 );
+\tdiffuseColor *= ( _g * vSplat.x + _d * vSplat.y + _r * vSplat.z );
+#endif`);
+  };
+
   const mesh = new THREE.Mesh(geo, mat);
   mesh.receiveShadow = true;
   return mesh;
