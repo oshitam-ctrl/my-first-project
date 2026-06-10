@@ -67,9 +67,12 @@ if (args.includes('--tts')) {
     t += sec;
   }
   if (durations.endcard) durations.endcard = Math.max(durations.endcard, ENDCARD_SEC_MIN);
+  // セグメント開始秒（seg相対タイトルの解決用）
+  const segStarts = {};
+  { let acc = 0; for (const seg of segOrder) { segStarts[seg] = Number(acc.toFixed(4)); acc += durations[seg]; } }
   await mkdir(IN, { recursive: true });
   await writeFile(path.join(IN, 'durations.json'), JSON.stringify(durations, null, 2));
-  await writeFile(path.join(IN, 'timings.json'), JSON.stringify({ total: t, lines: timed }, null, 2));
+  await writeFile(path.join(IN, 'timings.json'), JSON.stringify({ total: t, segStarts, lines: timed }, null, 2));
   console.log('durations:', JSON.stringify(durations));
   console.log(`TOTAL voice timeline: ${t.toFixed(1)}s (${lines.length} lines)`);
   process.exit(0);
@@ -82,14 +85,18 @@ const timings = JSON.parse(await readFile(path.join(IN, 'timings.json'), 'utf8')
 const durations = JSON.parse(await readFile(path.join(IN, 'durations.json'), 'utf8'));
 const FPS = manifest.fps;
 
-// 1) 撮影フレームを一本の連番へ（endcard はフレーム撮影が無いので後で合成）
+// 1) 撮影フレームを一本の連番へ（endcard はフレーム撮影が無いので後で合成）。
+//    台本変更で必要尺が縮んだセグメントは「先頭から必要分だけ」使う —
+//    再撮影なしで尺を合わせられる（カットなので滑らかさは無劣化）。
 const stage = path.join(IN, '_stage');
 await rm(stage, { recursive: true, force: true });
 await mkdir(stage, { recursive: true });
 let n = 0;
 for (const seg of manifest.segs) {
   const files = (await readdir(seg.dir)).filter(f => f.endsWith('.jpg')).sort();
-  for (const f of files) await link(path.join(seg.dir, f), path.join(stage, `s_${String(n++).padStart(6, '0')}.jpg`));
+  const need = durations[seg.name] != null ? Math.round(durations[seg.name] * FPS) : files.length;
+  if (need > files.length) throw new Error(`seg ${seg.name}: 台本が長すぎます (必要${need}f > 撮影済${files.length}f)。play-reel.mjs --seg ${seg.name} で再撮影してください`);
+  for (const f of files.slice(0, need)) await link(path.join(seg.dir, f), path.join(stage, `s_${String(n++).padStart(6, '0')}.jpg`));
 }
 const playSec = n / FPS;
 const endcardSec = Math.max(durations.endcard || 0, ENDCARD_SEC_MIN);
@@ -136,6 +143,22 @@ try { await access(ctaPng); } catch {
 // 3) ASS テロップ（話者カラー・名前つき・画面中上段 = HUDと干渉しない帯）
 const tc = s => `0:${String(Math.floor(s / 60)).padStart(2, '0')}:${(s % 60).toFixed(2).padStart(5, '0')}`;
 const esc = t => t.replace(/\{/g, '(').replace(/\}/g, ')');
+// libass環境によってはCJKの自動折返しが効かないので、句読点優先で\Nを入れる
+function wrapJp(text, width = 15) {
+  if (text.length <= width + 1) return text;
+  const out = [];
+  let rest = text;
+  while (rest.length > width + 1) {
+    const window = rest.slice(0, width + 1);
+    let cut = -1;
+    for (const ch of ['。', '、', '！', '？', '…', '」', '』']) cut = Math.max(cut, window.lastIndexOf(ch));
+    if (cut < Math.floor(width / 2)) cut = width - 1; // 句読点が無ければ幅で切る
+    out.push(rest.slice(0, cut + 1));
+    rest = rest.slice(cut + 1);
+  }
+  if (rest) out.push(rest);
+  return out.join('\\N');
+}
 let ass = `[Script Info]
 ScriptType: v4.00+
 PlayResX: 720
@@ -148,15 +171,21 @@ Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour,
 Style: Sub,Noto Sans CJK JP,44,&H00FFFFFF,&H00FFFFFF,&H00141414,&H88000000,1,0,0,0,100,100,0,0,1,4,2,8,36,36,440,1
 Style: Title,Noto Sans CJK JP,60,&H00FFFFFF,&H00FFFFFF,&H00302820,&HAA000000,1,0,0,0,100,100,0,0,1,5,3,8,30,30,290,1
 Style: Credit,Noto Sans CJK JP,21,&H00F0F0F0,&H00FFFFFF,&H00141414,&H66000000,0,0,0,0,100,100,0,0,1,2,1,8,30,30,6,1
+Style: Chip,Noto Sans CJK JP,34,&H00FFFFFF,&H00FFFFFF,&H004A3A2A,&HAA000000,1,0,0,0,100,100,0,0,1,4,2,8,30,30,330,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 Dialogue: 0,${tc(0)},${tc(playSec)},Credit,,0,0,0,,VOICEVOX:ずんだもん・四国めたん・春日部つむぎ
 `;
-for (const t of SCRIPT.titles) ass += `Dialogue: 1,${tc(t.at)},${tc(t.end)},${t.style},,0,0,0,,{\\fad(220,220)}${t.text}\n`;
+for (const t of SCRIPT.titles) {
+  // seg相対指定 ({seg, rel, dur}) は timings の segStarts で絶対時刻に解決
+  const at = t.seg ? (timings.segStarts[t.seg] + (t.rel || 0)) : t.at;
+  const end = t.seg ? at + (t.dur || 3) : t.end;
+  ass += `Dialogue: 1,${tc(at)},${tc(end)},${t.style},,0,0,0,,{\\fad(220,220)}${t.text}\n`;
+}
 for (const v of timings.lines) {
   const end = Math.min(total, v.end + 0.30);
-  ass += `Dialogue: 2,${tc(v.start)},${tc(end)},Sub,,0,0,0,,{\\fad(100,100)}{\\c${v.color}\\b1}${v.label}{\\b0}\\N{\\c&HFFFFFF&}${esc(v.text)}\n`;
+  ass += `Dialogue: 2,${tc(v.start)},${tc(end)},Sub,,0,0,0,,{\\fad(100,100)}{\\c${v.color}\\b1}${v.label}{\\b0}\\N{\\c&HFFFFFF&}${wrapJp(esc(v.text))}\n`;
 }
 const assFile = path.join(IN, 'subs.ass');
 await writeFile(assFile, ass);
