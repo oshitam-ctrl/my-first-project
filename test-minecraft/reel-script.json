@@ -1,5 +1,6 @@
 {
-  "comment": "Instagramリール台本v3（投稿文と完全リンク版）。音声先行方式 + 既存撮影フレームの先頭トリムで再利用するため、各segの新尺は旧尺(hook4.37/walkin8.54/corridor6.08/harvest8.87/ferment6.08/bake5.20/deliver3.95/queue6.87/cafe5.66/cta6.54)以下に収めること。クレジット表記必須: VOICEVOX:ずんだもん/四国めたん/春日部つむぎ",
+  "comment": "リール台本 v4 — 単一の真実。segs(カメラ/歩行/採取/setup) + lines(セリフ+行同期アクション) + titles を1ファイルに統合。音声を先に合成し、各セグメントの尺はセリフ長から逆算される。アクションは『その行の開始から offset 秒』で発火（reel-lib.mjs の ACTIONS 名）。クレジット表記はエンドカードと投稿文に記載（常時表示はしない）。",
+  "fps": 24,
   "speakers": {
     "zunda":   { "id": 3, "label": "ずんだもん",   "color": "&H5ADB7D&", "speed": 1.16 },
     "metan":   { "id": 2, "label": "四国めたん",   "color": "&HC890FF&", "speed": 1.14 },
@@ -8,35 +9,57 @@
   "padHead": 0.40,
   "padTail": 0.25,
   "gap": 0.15,
-  "titles": [
-    { "at": 0.25, "end": 3.4, "text": "このゲーム、今日AIが作りました", "style": "Title" },
-    { "seg": "walkin", "rel": 0.4, "dur": 3.4, "text": "新モデル Fable 5 ＋ Dynamic workflows", "style": "Chip" },
-    { "seg": "queue", "rel": 0.3, "dur": 3.6, "text": "人間の作業：「いいね、それで行こう」だけ", "style": "Chip" }
-  ],
-  "lines": [
-    { "seg": "hook",     "speaker": "zunda",   "text": "このゲーム、今日AIが作ったのだ！？" },
 
-    { "seg": "walkin",   "speaker": "metan",   "text": "今朝出た新モデル、ファーブルファイブに『マイクラ作って』って頼んだの" },
-    { "seg": "walkin",   "speaker": "zunda",   "text": "もうブラウザで遊べるのだ！？" },
+  "segs": [
+    { "name": "hook",     "time": 0.32,  "fly": [[8, 56, 30, 0, -0.7], [8, 36, 0, 0, -0.12], [8, 33, -7.5, 0, -0.04]] },
+    { "name": "walkin",   "time": 0.35,  "place": [8.5, 31, -10, 0], "look": [[0, -0.05], [0, -0.02], [-0.08, -0.04]], "walkSec": 2.7 },
+    { "name": "corridor", "time": 0.45,  "place": [10, 31, -28, -0.8], "look": [[-0.8, -0.05], [-0.25, 0.0], [0.05, 0.30]], "walkSec": 0.7 },
+    { "name": "harvest",  "time": 0.4,   "place": [-4, 31, 2, 0], "look": [[0, -0.42], [0.3, -0.5], [-0.3, -0.45]], "mine": true },
+    { "name": "ferment",  "time": 0.45,  "place": [16.5, 31, -31.5, 0.3], "look": [[0.35, 0.10], [0.05, 0.02]] },
+    { "name": "bake",     "time": 0.5,   "place": [14, 31, -30.5, 0.15], "look": [[0.15, -0.1]] },
+    { "name": "deliver",  "time": 0.5,   "place": [13, 31, -28.5, 0.1], "look": [[0.1, -0.08], [-0.05, -0.05]] },
+    { "name": "queue",    "time": 0.55,  "place": [8, 31, -9, 0], "look": [[-0.22, -0.05], [0.05, -0.07], [0.25, -0.05]], "setup": "questComplete", "preroll": 100 },
+    { "name": "cafe",     "time": 0.55,  "place": [-19.5, 31, -26.5, 0], "look": [[-0.25, -0.06], [0.2, -0.1]] },
+    { "name": "cta",      "time": 0.735, "fly": [[8, 33, -8, 0, -0.04], [8, 39, 9, 0, -0.24], [8, 45, 21, 0, -0.42]] },
+    { "name": "endcard" }
+  ],
+
+  "titles": [
+    { "at": 0.25, "end": 3.4, "text": "AIがAIのコードを、総点検した日", "style": "Title" },
+    { "seg": "walkin", "rel": 0.4, "dur": 3.6, "text": "旧 Opus 4.8 ─▶ 新 Fable 5", "style": "Chip" },
+    { "seg": "harvest", "rel": 0.4, "dur": 3.8, "text": "Dynamic workflows：3エージェント並列×22候補", "style": "Chip" },
+    { "seg": "queue", "rel": 0.3, "dur": 3.6, "text": "人間の作業：承認ボタンを押しただけ", "style": "Chip" }
+  ],
+
+  "lines": [
+    { "seg": "hook",     "speaker": "zunda",   "text": "このゲーム、今日AIが総点検したのだ！？" },
+
+    { "seg": "walkin",   "speaker": "metan",   "text": "もとは旧モデルのオーパスで作ったの。今朝出たファーブルファイブに『全コード点検して』って頼んだのよ" },
+    { "seg": "walkin",   "speaker": "zunda",   "text": "AIが自分でバグを直したのだ！？" },
 
     { "seg": "corridor", "speaker": "tsumugi", "text": "中身は、広島に実在するパン屋さん" },
     { "seg": "corridor", "speaker": "zunda",   "text": "うわぁ！パンの壁なのだ！！" },
 
-    { "seg": "harvest",  "speaker": "metan",   "text": "作り込みはダイナミックワークフローズ。エージェントを並列で走らせたの" },
+    { "seg": "harvest",  "speaker": "metan",   "text": "点検はダイナミックワークフローズ。エージェント3体を並列で走らせて、22箇所を洗い出したの" },
     { "seg": "harvest",  "speaker": "zunda",   "text": "畑の規格外野菜も、救出するのだ！" },
 
-    { "seg": "ferment",  "speaker": "metan",   "text": "捨てられる野菜が、天然酵母になる。本物と同じ製法よ" },
+    { "seg": "ferment",  "speaker": "metan",   "text": "捨てられる野菜が、天然酵母になる。本物と同じ製法よ",
+      "actions": [{ "do": "fermentStart", "offset": 0.0 }, { "do": "fermentMature", "offset": 2.6 }] },
     { "seg": "ferment",  "speaker": "tsumugi", "text": "ぷくぷくしてる…" },
 
-    { "seg": "bake",     "speaker": "zunda",   "text": "工房で、焼くのだーっ！" },
-    { "seg": "bake",     "speaker": "tsumugi", "text": "いいにおいしてきそう〜" },
+    { "seg": "bake",     "speaker": "zunda",   "text": "工房で、焼くのだーっ！",
+      "actions": [{ "do": "giveBakeIngredients", "offset": -0.3 }, { "do": "bakeOpen", "offset": 0.0 }, { "do": "bakeClick", "offset": 1.1 }] },
+    { "seg": "bake",     "speaker": "tsumugi", "text": "いいにおいしてきそう〜",
+      "actions": [{ "do": "panelClose", "offset": 0.9 }] },
 
-    { "seg": "deliver",  "speaker": "metan",   "text": "店主の大下さんに届けると…" },
+    { "seg": "deliver",  "speaker": "metan",   "text": "店主の大下さんに届けると…",
+      "actions": [{ "do": "deliverBread", "offset": 1.2 }] },
 
     { "seg": "queue",    "speaker": "zunda",   "text": "開店なのだ！もう行列なのだ！" },
-    { "seg": "queue",    "speaker": "metan",   "text": "ここまで人間は、承認ボタンを押しただけよ" },
+    { "seg": "queue",    "speaker": "metan",   "text": "修正もテストも自動。人間は、承認ボタンを押しただけよ" },
 
-    { "seg": "cafe",     "speaker": "tsumugi", "text": "実況の私たちの声も、ぜんぶAI。しかも無料なんです" },
+    { "seg": "cafe",     "speaker": "tsumugi", "text": "実況の声も編集も、ぜんぶAI。しかも無料なんです",
+      "actions": [{ "do": "cafeOrder", "offset": 1.0 }] },
 
     { "seg": "cta",      "speaker": "zunda",   "text": "ブラウザで無料で遊べるのだ！プロフのリンクなのだ！" },
     { "seg": "cta",      "speaker": "tsumugi", "text": "保存して、あとでゆっくりね" },
