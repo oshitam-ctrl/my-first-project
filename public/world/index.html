@@ -108,6 +108,12 @@
     <div class="credit">非公式ファンメイド作品（広島・北広島町 旧南方小学校のパン屋さんに勝手にリスペクト）</div>
   </div>
 
+  <!-- 公式アドオン(Sky/Water/ポスプロ)は 'three' を bare import するため、
+       importmap で同梱の three.module.js に解決する（相対 import と同一URLになり
+       モジュールは単一インスタンスのまま）。 -->
+  <script type="importmap">
+    { "imports": { "three": "/world/vendor/three.module.js", "three/addons/": "/world/vendor/addons/" } }
+  </script>
   <script type="module" src="./main.js"></script>
 </body>
 </html>

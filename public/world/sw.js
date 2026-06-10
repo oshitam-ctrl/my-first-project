@@ -1,7 +1,7 @@
 /* プチヘルメースの谷 service worker — installable + offline app shell.
  * /minecraft 版と同じ方針: 素のSW APIのみ、相対パスは scope (/world/) 基準。 */
 
-const CACHE_VERSION = 'world-v1';
+const CACHE_VERSION = 'world-v2'; /* リアル化: PBR+IBL+ポスプロ+実テクスチャ */
 
 const APP_SHELL = [
   './',
@@ -27,7 +27,24 @@ const APP_SHELL = [
   './petals.js',
   './audio.js',
   './geo.js',
+  './textures.js',
   './vendor/three.module.js',
+  './vendor/addons/objects/Sky.js',
+  './vendor/addons/objects/Water.js',
+  './vendor/addons/postprocessing/EffectComposer.js',
+  './vendor/addons/postprocessing/RenderPass.js',
+  './vendor/addons/postprocessing/ShaderPass.js',
+  './vendor/addons/postprocessing/MaskPass.js',
+  './vendor/addons/postprocessing/Pass.js',
+  './vendor/addons/postprocessing/UnrealBloomPass.js',
+  './vendor/addons/postprocessing/OutputPass.js',
+  './vendor/addons/shaders/CopyShader.js',
+  './vendor/addons/shaders/LuminosityHighPassShader.js',
+  './vendor/addons/shaders/OutputShader.js',
+  './vendor/textures/grass.jpg',
+  './vendor/textures/grass-nm.jpg',
+  './vendor/textures/wood.jpg',
+  './vendor/textures/waternormals.jpg',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',

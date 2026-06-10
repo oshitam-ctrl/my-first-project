@@ -13,7 +13,7 @@ export const PALETTES = {
 
 export function makeHumanoid(THREE, palette) {
   const P = { ...PALETTES.player, ...palette };
-  const mat = (hex) => new THREE.MeshStandardMaterial({ color: hex, flatShading: true, roughness: 0.9 });
+  const mat = (hex) => new THREE.MeshStandardMaterial({ color: hex, roughness: 0.82 });
   const group = new THREE.Group();
 
   // 胴体
