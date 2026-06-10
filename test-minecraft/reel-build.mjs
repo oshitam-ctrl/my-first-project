@@ -204,7 +204,7 @@ await writeFile(voiceFile, voice);
 // 6) ffmpeg 合成: [連番+字幕] + [CTAカードzoompan] を連結 → 音声mix → 1080x1920
 const gameMp4 = path.join(IN, '_game.mp4');
 run('ffmpeg', ['-y', '-framerate', String(FPS), '-i', path.join(stage, 's_%06d.jpg'),
-  '-vf', `ass=${assFile},scale=1080:1920:flags=lanczos,setsar=1,format=yuv420p`,
+  '-vf', `crop=720:1248:0:32,ass=${assFile},scale=1080:1920:flags=lanczos,setsar=1,format=yuv420p`, // crop=上32px=デバッグ統計帯
   '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', gameMp4]);
 const ctaMp4 = path.join(IN, '_cta.mp4');
 run('ffmpeg', ['-y', '-loop', '1', '-i', ctaPng,
