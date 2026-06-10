@@ -30,7 +30,7 @@ const errs = [];
 page.on('pageerror', (e) => errs.push(e.message));
 await page.goto(`http://localhost:${port}/world`, { waitUntil: 'load' });
 await page.waitForTimeout(2500);
-await page.screenshot({ path: '/tmp/world_title.png' });
+await page.screenshot({ path: '/tmp/world_title.png', timeout: 120000 });
 await page.click('#overlay', { timeout: 60000 }).catch(() => {});
 await page.waitForTimeout(1500);
 

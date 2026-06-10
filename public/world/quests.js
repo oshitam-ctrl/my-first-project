@@ -29,7 +29,8 @@ export function createQuestHUD() {
     const wrap = document.createElement('div');
     Object.assign(wrap.style, {
       position: 'fixed', inset: '0', zIndex: '30', display: 'flex',
-      alignItems: 'center', justifyContent: 'center', background: 'rgba(58,74,47,.6)',
+      alignItems: 'center', justifyContent: 'center', background: 'rgba(58,74,47,.45)',
+      backdropFilter: 'blur(7px)', WebkitBackdropFilter: 'blur(7px)',
       padding: '16px', boxSizing: 'border-box',
     });
     const card = document.createElement('div');

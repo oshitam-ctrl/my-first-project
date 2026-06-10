@@ -54,17 +54,20 @@ export function mergeParts(THREE, parts) {
   const pos = new Float32Array(total * 3);
   const nor = new Float32Array(total * 3);
   const col = new Float32Array(total * 3);
+  const uv = new Float32Array(total * 2);
   let off = 0;
   for (const g of parts) {
     pos.set(g.attributes.position.array, off * 3);
     if (g.attributes.normal) nor.set(g.attributes.normal.array, off * 3);
     col.set(g.attributes.color.array, off * 3);
+    if (g.attributes.uv) uv.set(g.attributes.uv.array, off * 2);
     off += g.attributes.position.count;
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
   geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   return geo;
 }
 

@@ -32,7 +32,7 @@ export function createSky(THREE, scene, renderer) {
   const hemi = new THREE.HemisphereLight(0xcfe5ff, 0xb8a98c, 0.35);
   scene.add(hemi);
 
-  scene.fog = new THREE.Fog(0xdce8ee, 90, 420);
+  scene.fog = new THREE.Fog(0xe8e0d6, 30, 600);
 
   // --- 雲（やわらかい白ブロブ、控えめ） -------------------------------------
   const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.82 });
@@ -58,7 +58,7 @@ export function createSky(THREE, scene, renderer) {
   const pmrem = new THREE.PMREMGenerator(renderer);
   pmrem.compileEquirectangularShader();
   let envRT = null;
-  let time = 0.40; // やわらかい午後
+  let time = 0.36; // ゴールデンアワー寄りの午後にロック（アートディレクション）
 
   function apply() {
     // elevation: 朝夕で低く、正午で高く / azimuth は南西へ回す
@@ -70,19 +70,19 @@ export function createSky(THREE, scene, renderer) {
     sunDir.setFromSphericalCoords(1, phi, theta);
     U.sunPosition.value.copy(sunDir);
 
-    const dusk = Math.max(0, 1 - elev / 18); // 低い太陽ほど赤く
-    sun.color.setHex(0xfff1dd).lerp(new THREE.Color(0xff9a55), dusk);
-    sun.intensity = 2.6 + 1.0 * (elev / 55) - dusk * 0.8;
+    const dusk = Math.max(0, 1 - elev / 26); // 低い太陽ほど赤く（効きを強める）
+    sun.color.setHex(0xffeccf).lerp(new THREE.Color(0xff8f4a), dusk);
+    sun.intensity = 2.8 + 1.0 * (elev / 55) - dusk * 0.7;
     hemi.intensity = 0.25 + 0.2 * (elev / 55);
-    U.turbidity.value = 6 + dusk * 6;
-    U.rayleigh.value = 1.6 + dusk * 1.6;
+    U.turbidity.value = 7 + dusk * 6;
+    U.rayleigh.value = 1.8 + dusk * 1.6;
 
     // 空を環境マップに焼く（IBL）。setTime のときだけなのでコストは無視できる
     if (envRT) envRT.dispose();
     envRT = pmrem.fromScene(sky, 0.04);
     scene.environment = envRT.texture; // r160: 強さは各マテリアルの envMapIntensity 側
 
-    scene.fog.color.set(0xdce8ee).lerp(new THREE.Color(0xf3c9a0), dusk * 0.8);
+    scene.fog.color.set(0xe8e0d6).lerp(new THREE.Color(0xf3c39a), Math.min(1, 0.3 + dusk));
   }
   apply();
 

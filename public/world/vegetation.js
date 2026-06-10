@@ -67,6 +67,55 @@ function makeInstanced(THREE, geom, count, opts = {}) {
   return im;
 }
 
+
+// 葉クラスタのスプライト（白ベース。頂点色×インスタンス色で着色する）
+let _leafTex = null;
+function leafTexture(THREE) {
+  if (_leafTex) return _leafTex;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 128;
+  const ctx = cv.getContext('2d');
+  let s = 99;
+  const rr = () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+  for (let i = 0; i < 140; i++) {
+    const a = rr() * Math.PI * 2, d = rr() * 50;
+    const x = 64 + Math.cos(a) * d, y = 64 + Math.sin(a) * d * 0.85;
+    const r = 4 + rr() * 9;
+    const v = 200 + Math.floor(rr() * 55);
+    ctx.fillStyle = `rgba(${v},${v},${v},${0.85 + rr() * 0.15})`;
+    ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.75, a, 0, 7); ctx.fill();
+  }
+  _leafTex = new THREE.CanvasTexture(cv);
+  _leafTex.colorSpace = THREE.SRGBColorSpace;
+  return _leafTex;
+}
+
+// 樹冠ブロブの表面に貼るアルファカード群（シルエットを有機的に崩す）
+function canopyCards(THREE, blobs, hex) {
+  const b = createBuilder(THREE);
+  let s = 5;
+  const rr = () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+  for (const [bx, by, bz, br] of blobs) {
+    for (let i = 0; i < 4; i++) {
+      const th = rr() * Math.PI * 2, ph = rr() * Math.PI;
+      const ox = Math.cos(th) * Math.sin(ph) * br * 0.85;
+      const oy = Math.cos(ph) * br * 0.6;
+      const oz = Math.sin(th) * Math.sin(ph) * br * 0.85;
+      b.add(new THREE.PlaneGeometry(br * 2.0, br * 1.5), hex, bx + ox, by + oy, bz + oz,
+        { ry: rr() * Math.PI * 2, rx: (rr() - 0.5) * 1.2 });
+    }
+  }
+  return mergeParts(THREE, b.parts);
+}
+
+function cardMaterialize(THREE, im) {
+  im.material.map = leafTexture(THREE);
+  im.material.alphaTest = 0.45;
+  im.material.side = THREE.DoubleSide;
+  im.castShadow = true;
+  return im;
+}
+
 // 単色を頂点カラーで塗る（instanceColor と乗算される）
 function paint(THREE, geom, hex) {
   const g = geom.index ? geom.toNonIndexed() : geom;
@@ -92,9 +141,9 @@ export function createVegetation(THREE, scene) {
   // --- 杉（山肌を囲う） -----------------------------------------------------
   {
     const b = createBuilder(THREE);
-    b.cone(1.7, 3.2, 0x3d6b3a, 0, 3.4, 0);
-    b.cone(1.35, 2.8, 0x467842, 0, 5.2, 0);
-    b.cone(1.0, 2.4, 0x4f854a, 0, 6.9, 0);
+    b.cone(1.7, 3.2, 0x33532e, 0, 3.4, 0);
+    b.cone(1.35, 2.8, 0x3a6034, 0, 5.2, 0);
+    b.cone(1.0, 2.4, 0x426a3b, 0, 6.9, 0);
     const leaf = mergeParts(THREE, b.parts);
     const trunk = paint(THREE, new THREE.CylinderGeometry(0.22, 0.4, 3.6, 6), 0x6b4a33);
     trunk.translate(0, 1.8, 0);
@@ -113,7 +162,7 @@ export function createVegetation(THREE, scene) {
     const c = new THREE.Color();
     pts.forEach(([x, y, z], i) => {
       const ry = rnd() * Math.PI * 2, sc = 1.2 + rnd() * 1.3;
-      c.setHSL(0.36, 0.32, 0.3 + rnd() * 0.12);
+      c.setHSL(0.35, 0.24, 0.28 + rnd() * 0.1);
       place(leafIM, i, x, y - 0.3, z, ry, sc, c);
       place(trunkIM, i, x, y - 0.3, z, ry, sc, null);
     });
@@ -153,17 +202,22 @@ export function createVegetation(THREE, scene) {
     for (const [x, z] of [[-12, 9], [14, 9], [26, 8], [PLAZA.x - 4, PLAZA.z - 5], [-44, -30], [52, -20]]) {
       pts.push([x, heightAt(x, z), z]);
     }
+    const cards = canopyCards(THREE, [
+      [0, 3.3, 0, 1.5], [-1.2, 2.8, 0.5, 1.2], [1.1, 2.9, -0.4, 1.15], [0.2, 2.6, 1.1, 1.0],
+    ], 0xeec4cf);
     const leafIM = makeInstanced(THREE, leaf, pts.length);
+    const cardIM = cardMaterialize(THREE, makeInstanced(THREE, cards, pts.length));
     const trunkIM = makeInstanced(THREE, trunk, pts.length);
     const c = new THREE.Color();
     pts.forEach(([x, y, z], i) => {
       const ry = rnd() * Math.PI * 2, sc = 1.05 + rnd() * 0.55;
       c.setHSL(0.93, 0.3, 0.8 + rnd() * 0.05);
       place(leafIM, i, x, y - 0.15, z, ry, sc, c);
+      place(cardIM, i, x, y - 0.15, z, ry, sc, c);
       place(trunkIM, i, x, y - 0.15, z, ry, sc, null);
       addCircle(x, z, 0.4);
     });
-    scene.add(leafIM, trunkIM);
+    scene.add(leafIM, cardIM, trunkIM);
   }
 
   // --- 広葉樹（里の木） -------------------------------------------------------
@@ -184,17 +238,22 @@ export function createVegetation(THREE, scene) {
       if (blocked(x, z)) continue;
       pts.push([x, h, z]);
     }
+    const cards = canopyCards(THREE, [
+      [0, 3.6, 0, 1.6], [-1.2, 2.9, 0.4, 1.25], [1.1, 3.0, -0.5, 1.2],
+    ], 0x4f8a3a);
     const leafIM = makeInstanced(THREE, leaf, pts.length);
+    const cardIM = cardMaterialize(THREE, makeInstanced(THREE, cards, pts.length));
     const trunkIM = makeInstanced(THREE, trunk, pts.length);
     const c = new THREE.Color();
     pts.forEach(([x, y, z], i) => {
       const ry = rnd() * Math.PI * 2, sc = 0.9 + rnd() * 1.1;
       c.setHSL(0.3, 0.32, 0.36 + rnd() * 0.1);
       place(leafIM, i, x, y - 0.15, z, ry, sc, c);
+      place(cardIM, i, x, y - 0.15, z, ry, sc, c);
       place(trunkIM, i, x, y - 0.15, z, ry, sc, null);
       addCircle(x, z, 0.4);
     });
-    scene.add(leafIM, trunkIM);
+    scene.add(leafIM, cardIM, trunkIM);
   }
 
   // --- 稲（棚田の列） / 麦（畑の列） ------------------------------------------
@@ -274,6 +333,69 @@ export function createVegetation(THREE, scene) {
     pts.forEach(([x, y, z], i) => {
       c.setHSL(0.28, 0.38, 0.38 + rnd() * 0.16);
       place(im, i, x, y, z, rnd() * 3, 0.7 + rnd() * 0.8, c);
+    });
+    scene.add(im);
+  }
+
+  // --- 道ばたの岩（変位させた icosphere） ------------------------------------
+  {
+    const rockGeo = paint(THREE, (() => {
+      const g = new THREE.IcosahedronGeometry(0.45, 1);
+      const p = g.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+        const hh = Math.sin(x * 12.9 + y * 78.2 + z * 37.7) * 43758.5453;
+        const k = 1 + ((hh - Math.floor(hh)) - 0.5) * 0.6;
+        p.setXYZ(i, x * k, Math.max(-0.1, y * k * 0.7), z * k);
+      }
+      g.computeVertexNormals();
+      return g;
+    })(), 0x8d887c);
+    const pts = [];
+    let guard = 0;
+    while (pts.length < 110 && guard++ < 5000) {
+      const x = (rnd() - 0.5) * 270, z = (rnd() - 0.5) * 270;
+      const { d, w } = distToRoad(x, z);
+      const nearRoad = d > w * 0.55 && d < w * 0.55 + 5;
+      const nearRiver = Math.abs(z - riverZ(x)) > RIVER_BANK * 0.9 && Math.abs(z - riverZ(x)) < RIVER_BANK + 5;
+      if (!nearRoad && !nearRiver) continue;
+      if (surfaceAt(x, z) === 'water' || surfaceAt(x, z) === 'floor') continue;
+      pts.push([x, heightAt(x, z), z]);
+    }
+    const im = makeInstanced(THREE, rockGeo, pts.length);
+    const c = new THREE.Color();
+    pts.forEach(([x, y, z], i) => {
+      c.setHSL(0.1, 0.04 + rnd() * 0.05, 0.42 + rnd() * 0.18);
+      place(im, i, x, y + 0.05, z, rnd() * 6, 0.4 + rnd() * 1.4, c);
+      if (rnd() < 0.3) addCircle(x, z, 0.5);
+    });
+    scene.add(im);
+  }
+
+  // --- 野の花（白・黄のぽつぽつ） ---------------------------------------------
+  {
+    const fb = createBuilder(THREE);
+    fb.cyl(0.015, 0.02, 0.3, 0x4f7a3c, 0, 0.15, 0, {}, 5);
+    fb.sph(0.06, 0xffffff, 0, 0.33, 0);
+    fb.cyl(0.015, 0.02, 0.26, 0x4f7a3c, 0.12, 0.13, 0.05, {}, 5);
+    fb.sph(0.05, 0xffffff, 0.12, 0.29, 0.05);
+    fb.cyl(0.015, 0.02, 0.24, 0x4f7a3c, -0.1, 0.12, -0.06, {}, 5);
+    fb.sph(0.05, 0xffffff, -0.1, 0.27, -0.06);
+    const flower = mergeParts(THREE, fb.parts);
+    const pts = [];
+    let guard = 0;
+    while (pts.length < 260 && guard++ < 6000) {
+      const x = (rnd() - 0.5) * 220, z = (rnd() - 0.5) * 220;
+      const { d, w } = distToRoad(x, z);
+      if (d < w * 0.55 || d > w * 0.55 + 7) continue;
+      if (surfaceAt(x, z) !== 'grass') continue;
+      pts.push([x, heightAt(x, z), z]);
+    }
+    const im = makeInstanced(THREE, flower, pts.length, { castShadow: false, wind: true });
+    const c = new THREE.Color();
+    pts.forEach(([x, y, z], i) => {
+      c.setHSL(rnd() < 0.4 ? 0.13 : 0.0, rnd() < 0.4 ? 0.7 : 0.0, 0.85 + rnd() * 0.1);
+      place(im, i, x, y, z, rnd() * 6, 0.8 + rnd() * 0.8, c);
     });
     scene.add(im);
   }

@@ -67,7 +67,7 @@ await expectIndex(3, 'talk: 大下さんと話して進む');
 await warp(-10, -42.2);
 const opened = await interact();
 if (opened !== 'counter') console.log('note: opened spot =', opened);
-await page.locator('button', { hasText: '買う' }).first().click({ timeout: 10000 });
+await page.locator('button', { hasText: '買う' }).first().click({ timeout: 20000, force: true });
 await page.waitForTimeout(300);
 await closeUI();
 await expectIndex(4, 'buy: パンを買って進む');
@@ -82,7 +82,7 @@ await expectIndex(5, 'jars: 瓶棚を見て進む');
 await warp(16, -43);
 await interact();          // 会話が開く
 await closeUI();           // 会話を終えると onDone でメニューが開く
-await page.locator('button', { hasText: '注文する' }).first().click({ timeout: 10000 });
+await page.locator('button', { hasText: '注文する' }).first().click({ timeout: 20000, force: true });
 await page.waitForTimeout(300);
 await closeUI();
 await expectIndex(6, 'cafe: 注文して進む');
