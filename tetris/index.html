@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="apple-touch-icon" href="./icon-192.png" />
+    <title>TETRIS</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #000;
+        --fg: #fff;
+        --muted: #888;
+      }
+      * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        overflow: hidden;
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+        overscroll-behavior: none;
+      }
+      #app {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      canvas {
+        display: block;
+        touch-action: none;
+      }
+      #ui-layer {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+      #ui-layer > * { pointer-events: auto; }
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        gap: 16px;
+        text-align: center;
+        padding: 24px;
+      }
+      .title {
+        font-size: 48px;
+        font-weight: 800;
+        letter-spacing: 0.2em;
+      }
+      .subtitle {
+        font-size: 16px;
+        color: var(--muted);
+        letter-spacing: 0.1em;
+      }
+      .score-big { font-size: 32px; font-weight: 700; }
+      .score-label { font-size: 12px; color: var(--muted); letter-spacing: 0.15em; }
+      .btn {
+        margin-top: 16px;
+        padding: 12px 28px;
+        border: 1px solid #fff;
+        background: transparent;
+        color: #fff;
+        font-size: 14px;
+        letter-spacing: 0.2em;
+        border-radius: 999px;
+      }
+      .mute-btn {
+        position: absolute;
+        top: max(12px, env(safe-area-inset-top));
+        right: max(12px, env(safe-area-inset-right));
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.08);
+        border: none;
+        color: #fff;
+        font-size: 18px;
+        border-radius: 50%;
+        opacity: 0.6;
+      }
+      .landscape-warn {
+        display: none;
+      }
+      @media (orientation: landscape) and (max-height: 500px) {
+        #app canvas { display: none; }
+        .landscape-warn {
+          display: flex;
+          position: fixed;
+          inset: 0;
+          align-items: center;
+          justify-content: center;
+          background: #000;
+          color: #fff;
+          font-size: 16px;
+          text-align: center;
+          padding: 24px;
+          letter-spacing: 0.1em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game"></canvas>
+    </div>
+    <div id="ui-layer"></div>
+    <div class="landscape-warn">縦向きにしてください</div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
